@@ -43,5 +43,9 @@ once the public API is ready to stabilize.
 - JPL low-precision heliocentric ephemerides for Mercury through Neptune,
   traceable coefficient data, explicit 1800–2050 validity checks, all element
   representations, configurable safe radii, and scalar/batch Python access.
+- Feature-gated pure-Rust VSOP2013 ephemerides for all nine upstream bodies,
+  embedded MPL-2.0 coefficient data down to `1e-9`, direct ICRF state
+  evaluation without JIT or network access, and explicit Python availability
+  and threshold reporting.
 
-VSOP2013 ephemerides, dynamics, and low-thrust APIs are not yet implemented.
+Dynamics and low-thrust APIs are not yet implemented.

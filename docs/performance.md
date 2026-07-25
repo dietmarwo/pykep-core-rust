@@ -40,6 +40,13 @@ Keplerian ephemeris evaluation measured 80.299 ns for one scalar epoch and
 22.575 µs for an ordered 256-epoch batch in the Phase 7 orientation run.
 JPL low-precision Earth evaluation measured 95.198 ns for one scalar epoch
 and 31.611 µs for an ordered 256-epoch batch in the Phase 8 orientation run.
+The Phase 9 VSOP2013 spike measured 11.615 µs default-threshold
+initialization, 339.98 ns per default scalar state, 89.554 µs per ordered
+256-state batch, and 37.157 µs per `1e-9` scalar state. The matching C++/heyoka
+orientation harness measured 63.96 ms and 552.53 ms first-time JIT
+initialization at `1e-5` and `1e-9`, then 166 ns and 5.908 µs per scalar call.
+The feature increased the release benchmark executable from 2.6 MiB to
+7.0 MiB. See ADR 0003 for the data/cache decision and caveats.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -70,7 +77,8 @@ and perform no heap allocation.
 Mission benchmarks cover basic transfers, flyby constraints/delta-v, and both
 zero- and multi-revolution Lambert solution construction. The same harness
 measures scalar and 256-epoch Keplerian and JPL low-precision ephemeris
-evaluation separately.
+evaluation separately, plus VSOP2013 initialization, scalar, high-precision,
+and batch paths.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

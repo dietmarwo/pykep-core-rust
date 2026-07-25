@@ -7,6 +7,7 @@ use numpy::{IntoPyArray, PyArray2, PyReadonlyArray1};
 use pykep_core::astro::elements::ClassicalElements;
 use pykep_core::ephemeris::{
     ElementRepresentation, Ephemeris, JplLowPrecision, KeplerianEphemeris,
+    VSOP2013_MINIMUM_THRESHOLD, Vsop2013,
 };
 use pykep_core::time::epoch::Epoch;
 use pykep_core::{CartesianState, PykepError};
@@ -45,6 +46,34 @@ struct PyPlanet {
 
 #[pymethods]
 impl PyPlanet {
+    /// Construct a VSOP2013 analytical planetary ephemeris.
+    #[staticmethod]
+    #[pyo3(signature = (name, threshold=1e-5))]
+    fn vsop2013(name: &str, threshold: f64) -> PyResult<Self> {
+        let provider = Vsop2013::with_threshold(name, threshold).map_err(to_python)?;
+        Ok(Self {
+            inner: Arc::new(provider),
+        })
+    }
+
+    /// Return whether VSOP2013 coefficient data is compiled in.
+    #[staticmethod]
+    fn vsop2013_available() -> bool {
+        Vsop2013::available()
+    }
+
+    /// Return the smallest embedded VSOP2013 coefficient threshold.
+    #[staticmethod]
+    fn vsop2013_minimum_threshold() -> f64 {
+        VSOP2013_MINIMUM_THRESHOLD
+    }
+
+    /// Return the canonical names supported by VSOP2013.
+    #[staticmethod]
+    fn vsop2013_supported_bodies() -> Vec<&'static str> {
+        Vsop2013::supported_bodies().into()
+    }
+
     /// Construct a JPL low-precision heliocentric planetary ephemeris.
     #[staticmethod]
     #[pyo3(signature = (name, safe_radius=None))]

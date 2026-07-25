@@ -13,7 +13,8 @@ single/multi-revolution Lambert branches, and MIMA mass approximations.
 The object-safe ephemeris interface and analytic Keplerian provider support
 thread-safe scalar and ordered batch evaluation. The JPL low-precision
 provider supplies approximate heliocentric states for Mercury through Neptune
-over 1800–2050.
+over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
+evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
 
 The crate has no C or C++ runtime dependency. Later orbital algorithms remain
 planned and are not represented by the current status probe.

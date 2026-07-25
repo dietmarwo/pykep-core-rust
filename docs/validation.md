@@ -71,3 +71,15 @@ ordered batches, safe-radius validation, and both excluded interval
 boundaries. The provider retains the source table's slightly negative fitted
 Earth inclination near the ends of the interval while keeping the general
 public classical-element converter's canonical `[0, π]` inclination contract.
+
+Phase 9 adds 54 VSOP2013 states covering all nine bodies at six epochs around
+the 1890–2000 fit interval and the J2000/MJD2000 half-day offset. Two
+additional cases verify coefficient selection at the default `1e-5` and
+coarse `0.5` thresholds. `phase9-v1.json` has SHA-256
+`9d5af01df18acb17fcd1b2356af6f2cc08f1cf75e10864270d0c30732f8b00d8`.
+The oracle uses pykep 3.0.1 linked to heyoka 7.10.0. At the embedded
+high-precision floor of `1e-9`, the maximum observed Rust/C++ difference is
+0.185 m in position and `6.6e-8 m/s` in velocity. Independent checks cover
+case-insensitive names, feature reporting, threshold errors, clone
+determinism, ordered Python batches, and a build/test run without the optional
+coefficient feature.

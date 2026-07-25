@@ -59,6 +59,11 @@ pub enum PykepError {
         /// Human-readable failure context.
         reason: String,
     },
+    /// A required embedded or external dataset is unavailable or corrupt.
+    DataUnavailable {
+        /// Stable dataset name.
+        dataset: &'static str,
+    },
 }
 
 impl fmt::Display for PykepError {
@@ -95,6 +100,9 @@ impl fmt::Display for PykepError {
             }
             Self::IntegrationFailure { model, reason } => {
                 write!(formatter, "integration of {model} failed: {reason}")
+            }
+            Self::DataUnavailable { dataset } => {
+                write!(formatter, "required dataset is unavailable: {dataset}")
             }
         }
     }

@@ -6,4 +6,5 @@ model at J2000:
 
 ```bash
 cargo run -p pykep-examples --bin jpl-low-precision
+cargo run -p pykep-examples --bin ephemeris-comparison
 ```

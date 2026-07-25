@@ -13,9 +13,9 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_jpl_ephemerides() -> None:
+def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 8: JPL low-precision ephemerides implemented"
+    assert pk.port_status() == "phase 9: VSOP2013 ephemerides implemented"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -351,6 +351,46 @@ def test_jpl_low_precision_planets_names_window_and_batches() -> None:
         earth.state(18263.0)
     with pytest.raises(ValueError):
         pk.Planet.jpl_low_precision("pluto")
+
+
+def test_vsop2013_feature_names_thresholds_and_batches() -> None:
+    """VSOP2013 availability and threshold limits are explicit in Python."""
+    names = [
+        "mercury",
+        "venus",
+        "earth_moon",
+        "mars",
+        "jupiter",
+        "saturn",
+        "uranus",
+        "neptune",
+        "pluto",
+    ]
+    assert pk.Planet.vsop2013_available()
+    assert pk.Planet.vsop2013_supported_bodies() == names
+    assert pk.Planet.vsop2013_minimum_threshold() == 1e-9
+    venus = pk.Planet.vsop2013("vEnUs", 1e-9)
+    assert "venus" in venus.name
+    state = venus.state(123.0)
+    assert state == pytest.approx(
+        [
+            103_304_986_899.7981,
+            32_220_404_104.1199,
+            7_957_719_449.51538,
+            -10_696.505905435035,
+            30_061.035989651813,
+            14_201.00090492195,
+        ]
+    )
+    epochs = np.array([-0.5, 0.0, 0.5, 123.0], dtype=np.float64)
+    states = venus.states(epochs)
+    assert states.shape == (4, 6)
+    for index, epoch in enumerate(epochs):
+        assert states[index] == pytest.approx(venus.state(float(epoch)))
+    with pytest.raises(ValueError):
+        pk.Planet.vsop2013("venus", 1e-10)
+    with pytest.raises(ValueError):
+        pk.Planet.vsop2013("goofy")
 
 
 def test_public_api_has_runtime_documentation() -> None:

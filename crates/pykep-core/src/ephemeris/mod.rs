@@ -9,9 +9,11 @@
 
 mod jpl_lp;
 mod keplerian;
+mod vsop2013;
 
 pub use jpl_lp::JplLowPrecision;
 pub use keplerian::KeplerianEphemeris;
+pub use vsop2013::{VSOP2013_MINIMUM_THRESHOLD, Vsop2013};
 
 use crate::astro::anomalies::true_to_mean_anomaly;
 use crate::astro::elements::{

@@ -9,7 +9,8 @@ Cartesian, classical, and modified-equinoctial conversions are available as
 scalar functions and NumPy `N × 6` batches; analytic Jacobians use
 output-by-input row-major order.
 `Planet` owns thread-safe Keplerian or JPL low-precision ephemerides and
-evaluates scalar or NumPy epoch batches.
+evaluates scalar or NumPy epoch batches. Feature-gated VSOP2013 providers
+expose their availability and minimum embedded coefficient threshold.
 
 ```python
 import pykep_rust as pk
@@ -23,6 +24,8 @@ assert abs(pk.eccentric_to_mean_anomaly(eccentric, 0.5) - 0.1) < 1e-15
 state = pk.classical_to_cartesian([7e6, 0.01, 0.4, 1.0, 0.5, 0.2], 3.986004418e14)
 earth = pk.Planet.jpl_low_precision("earth")
 earth_state = earth.state(0.0)
+emb = pk.Planet.vsop2013("earth_moon")
+emb_state = emb.state(0.5)
 ```
 
 Angles are radians and Julian conversions are arithmetic day counts without

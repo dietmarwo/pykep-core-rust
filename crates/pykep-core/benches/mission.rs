@@ -7,7 +7,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use pykep_core::astro::flyby::{flyby_constraints, flyby_delta_v};
 use pykep_core::astro::lambert::LambertProblem;
 use pykep_core::astro::transfers::hohmann;
-use pykep_core::ephemeris::{Ephemeris, JplLowPrecision, KeplerianEphemeris};
+use pykep_core::ephemeris::{Ephemeris, JplLowPrecision, KeplerianEphemeris, Vsop2013};
 use pykep_core::time::epoch::Epoch;
 use std::hint::black_box;
 
@@ -89,6 +89,21 @@ fn mission_design(criterion: &mut Criterion) {
     criterion.bench_function("ephemeris/jpl_low_precision_256_epochs", |bencher| {
         let epochs: Vec<_> = (0..256).map(|index| f64::from(index) * 10.0).collect();
         bencher.iter(|| jpl.states(black_box(&epochs)).unwrap());
+    });
+    criterion.bench_function("ephemeris/vsop2013_initialization", |bencher| {
+        bencher.iter(|| Vsop2013::new(black_box("earth_moon")).unwrap());
+    });
+    let vsop = Vsop2013::new("earth_moon").unwrap();
+    criterion.bench_function("ephemeris/vsop2013_scalar", |bencher| {
+        bencher.iter(|| vsop.state(black_box(7_305.0)).unwrap());
+    });
+    criterion.bench_function("ephemeris/vsop2013_256_epochs", |bencher| {
+        let epochs: Vec<_> = (0..256).map(|index| f64::from(index) * 10.0).collect();
+        bencher.iter(|| vsop.states(black_box(&epochs)).unwrap());
+    });
+    let vsop_high_precision = Vsop2013::with_threshold("earth_moon", 1e-9).unwrap();
+    criterion.bench_function("ephemeris/vsop2013_high_precision_scalar", |bencher| {
+        bencher.iter(|| vsop_high_precision.state(black_box(7_305.0)).unwrap());
     });
 }
 
