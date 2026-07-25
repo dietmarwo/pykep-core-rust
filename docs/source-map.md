@@ -26,9 +26,9 @@ documentation required by the definition of done are complete.
       `astro::elements::equinoctial` (Phase 4)
 - [x] `src/core_astro/ic2mee2ic.cpp` →
       `astro::elements::equinoctial` (Phase 4)
-- [ ] `src/core_astro/propagate_lagrangian.cpp` →
+- [x] `src/core_astro/propagate_lagrangian.cpp` →
       `astro::propagation::lagrangian` (Phase 5)
-- [ ] `src/core_astro/stm.cpp` → `astro::propagation::stm` (Phase 5)
+- [x] `src/core_astro/stm.cpp` → `astro::propagation::stm` (Phase 5)
 - [ ] `src/core_astro/basic_transfers.cpp` → `astro::transfers::basic`
       (Phase 6)
 - [ ] `src/core_astro/encodings.cpp` → `astro::encodings` (Phase 6)

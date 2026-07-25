@@ -34,3 +34,14 @@ output-by-input order. Independent tests cover 2,000 deterministic elliptic
 and hyperbolic state round trips, both equinoctial pole conventions,
 finite-difference derivatives, and inverse-Jacobian identities. NumPy batches
 are compared row-for-row with the scalar Python API.
+
+Phase 5 adds 28 propagation cases spanning zero and negative duration,
+circular, elliptic, hyperbolic, near-parabolic, and many-period trajectories.
+Each case records both Lagrange-coefficient and universal-variable states plus
+the Lagrangian and Reynolds 6 by 6 STMs. The source file SHA-256 is
+`63e2340aa8e4f65a4ae831b7e1c8eb3a28930e2e1ed336d9324e0dbf44469e57`.
+Independent tests check energy and angular-momentum conservation, time
+reversal, central finite differences, and STM composition. Scalar propagation
+uses only fixed-size stack values; the core path performs zero heap
+allocations. Batch APIs allocate exactly their returned output storage after
+copying Python-owned input before releasing the GIL.

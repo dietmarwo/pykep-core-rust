@@ -412,3 +412,57 @@ def modified_equinoctial_to_cartesian_batch(
     retrograde: bool = False,
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of modified equinoctial elements."""
+
+def propagate_lagrangian(
+    state: Sequence[float], time: float, mu: float
+) -> list[float]:
+    """Propagate a Cartesian state with Lagrange coefficients."""
+
+def propagate_universal(
+    state: Sequence[float], time: float, mu: float
+) -> list[float]:
+    """Propagate a Cartesian state with universal variables."""
+
+def propagate_keplerian(
+    state: Sequence[float], time: float, mu: float
+) -> list[float]:
+    """Propagate a Cartesian state by advancing its mean anomaly."""
+
+def propagate_lagrangian_with_stm(
+    state: Sequence[float], time: float, mu: float
+) -> tuple[list[float], list[list[float]]]:
+    """Propagate and return the Lagrangian state-transition matrix."""
+
+def state_transition_matrix_lagrangian(
+    state: Sequence[float], time: float, mu: float
+) -> list[list[float]]:
+    """Return the row-major Lagrangian state-transition matrix."""
+
+def state_transition_matrix_reynolds(
+    initial_state: Sequence[float],
+    final_state: Sequence[float],
+    time: float,
+    mu: float,
+) -> list[list[float]]:
+    """Return the row-major Reynolds state-transition matrix."""
+
+def propagate_lagrangian_batch(
+    states: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    mu: float,
+) -> npt.NDArray[np.float64]:
+    """Propagate N states for N durations while releasing the GIL."""
+
+def propagate_universal_batch(
+    states: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    mu: float,
+) -> npt.NDArray[np.float64]:
+    """Universally propagate N states for N durations while releasing the GIL."""
+
+def propagate_lagrangian_grid(
+    state: Sequence[float],
+    time_grid: npt.NDArray[np.float64],
+    mu: float,
+) -> npt.NDArray[np.float64]:
+    """Propagate one state over a time grid relative to its first entry."""

@@ -7,3 +7,5 @@
 pub mod anomalies;
 /// Cartesian, classical, and modified-equinoctial element conversions.
 pub mod elements;
+/// Two-body propagation and state-transition matrices.
+pub mod propagation;

@@ -23,15 +23,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 4: element and Cartesian conversions implemented";
+pub const PORT_STATUS: &str = "phase 5: two-body propagation and STM implemented";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_element_conversions() {
-        assert!(PORT_STATUS.contains("element"));
-        assert!(PORT_STATUS.contains("Cartesian"));
+    fn status_reports_propagation() {
+        assert!(PORT_STATUS.contains("propagation"));
+        assert!(PORT_STATUS.contains("STM"));
     }
 }

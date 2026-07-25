@@ -13,11 +13,11 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_element_conversions() -> None:
+def test_status_probe_reports_propagation() -> None:
     """The public facade reports the current native implementation phase."""
     assert (
         pk.port_status()
-        == "phase 4: element and Cartesian conversions implemented"
+        == "phase 5: two-body propagation and STM implemented"
     )
 
 
@@ -209,6 +209,41 @@ def test_element_jacobians_and_numpy_batches() -> None:
     assert empty.shape == (0, 6)
     with pytest.raises(ValueError, match="expected 6"):
         pk.classical_to_cartesian_batch(np.zeros((2, 5)), 1.0)
+
+
+def test_propagation_stms_and_gil_releasing_batches() -> None:
+    """Propagation covers scalar, STM, grid, and NumPy batch interfaces."""
+    initial = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+    quarter = pk.propagate_lagrangian(initial, math.pi / 2.0, 1.0)
+    assert quarter == pytest.approx([0.0, 1.0, 0.0, -1.0, 0.0, 0.0], abs=2e-15)
+    assert pk.propagate_universal(initial, math.pi / 2.0, 1.0) == pytest.approx(
+        quarter, abs=2e-14
+    )
+    final_state, stm = pk.propagate_lagrangian_with_stm(initial, 0.4, 1.0)
+    assert np.asarray(stm).shape == (6, 6)
+    assert np.asarray(
+        pk.state_transition_matrix_lagrangian(initial, 0.4, 1.0)
+    ) == pytest.approx(np.asarray(stm))
+    reynolds = pk.state_transition_matrix_reynolds(
+        initial, final_state, 0.4, 1.0
+    )
+    assert np.asarray(reynolds) == pytest.approx(np.asarray(stm), rel=2e-13)
+
+    states = np.tile(np.asarray(initial), (32, 1))
+    times = np.linspace(-1.0, 1.0, 32)
+    batch = pk.propagate_lagrangian_batch(states, times, 1.0)
+    universal = pk.propagate_universal_batch(states, times, 1.0)
+    assert batch.shape == (32, 6)
+    assert universal == pytest.approx(batch, rel=3e-14, abs=3e-14)
+    assert batch[7] == pytest.approx(
+        pk.propagate_lagrangian(states[7], times[7], 1.0)
+    )
+    grid = pk.propagate_lagrangian_grid(
+        initial, np.array([10.0, 10.25, 10.5]), 1.0
+    )
+    assert grid[0] == pytest.approx(initial)
+    with pytest.raises(ValueError, match="expected 32"):
+        pk.propagate_lagrangian_batch(states, times[:-1], 1.0)
 
 
 def test_public_api_has_runtime_documentation() -> None:

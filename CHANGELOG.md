@@ -29,6 +29,9 @@ once the public API is ready to stabilize.
   equinoctial conversions with named Rust element values, analytic
   output-by-input Jacobians, NumPy batch APIs, and explicit singularity
   handling.
+- Forward/backward two-body propagation using Lagrange coefficients and
+  universal variables, analytic Lagrangian and Reynolds STMs, time-grid and
+  GIL-releasing NumPy batch APIs, golden parity vectors, invariant and
+  finite-difference validation, and Criterion benchmarks.
 
-Propagation, Lambert, ephemerides, dynamics, and low-thrust APIs are not yet
-implemented.
+Lambert, ephemerides, dynamics, and low-thrust APIs are not yet implemented.

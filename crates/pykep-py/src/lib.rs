@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 mod elements;
 mod error;
 mod foundations;
+mod propagation;
 mod time_anomalies;
 
 /// Return the implementation status of the native core.
@@ -20,6 +21,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     error::register(module)?;
     foundations::register(module)?;
     elements::register(module)?;
+    propagation::register(module)?;
     time_anomalies::register(module)?;
     Ok(())
 }

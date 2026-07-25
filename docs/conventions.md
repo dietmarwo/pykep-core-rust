@@ -27,3 +27,8 @@ elements cover those states: choose the prograde convention except at
 inclination `π`, and the retrograde convention except at inclination zero.
 Element Jacobians are `6 × 6`, with output components as rows and input
 components as columns.
+
+Two-body propagation accepts any caller-consistent position, velocity, time,
+and gravitational-parameter units. Negative durations propagate backward.
+Time grids are relative to their first entry. State-transition matrices use
+`∂state_final/∂state_initial`, with output components as rows.

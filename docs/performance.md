@@ -21,16 +21,31 @@ under Linux 6.8.0-136. One Criterion process reported:
 | Cartesian → equinoctial Jacobian | 151.7 ns |
 | 64 classical → Cartesian conversions | 2.575 µs |
 
+The Phase 5 orientation run used identical scalar inputs in Rust and the
+pinned C++ oracle, with both built in release mode on the same machine:
+
+| Propagation workload | Rust Criterion median | C++ elapsed average |
+|---|---:|---:|
+| Lagrange, elliptic | 146.24 ns | 149.263 ns |
+| Lagrange, hyperbolic | 567.50 ns | 450.166 ns |
+| Universal variables, elliptic | 250.05 ns | 260.613 ns |
+| Lagrange propagation + STM | 216.68 ns | 444.289 ns |
+| 1,024 Lagrange calls | 113.78 µs (9.00 million/s) | — |
+
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
 affinity and power settings. The Julian arithmetic result is small enough that
 compiler optimization and timer resolution dominate its interpretation.
+The C++ column is an elapsed average from five million calls rather than a
+Criterion distribution; it is included as the required same-input orientation
+baseline, not as a statistically controlled language comparison.
 
 Run the maintained harness with:
 
 ```bash
 cargo bench -p pykep-core --bench foundation
 cargo bench -p pykep-core --bench elements
+cargo bench -p pykep-core --bench propagation
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -38,6 +53,10 @@ The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
 separate from the foundation arithmetic measurements.
 Element benchmarks separate scalar classical/equinoctial conversion, analytic
 Jacobian evaluation, and a 64-state batch-equivalent loop.
+Propagation benchmarks separate elliptic and hyperbolic Lagrange coefficients,
+universal variables, analytic STM evaluation, and a 1,024-state throughput
+loop. Scalar propagation and STM APIs operate entirely on fixed-size arrays
+and perform no heap allocation.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

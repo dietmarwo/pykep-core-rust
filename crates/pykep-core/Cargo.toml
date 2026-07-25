@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "elements"
 harness = false
+
+[[bench]]
+name = "propagation"
+harness = false

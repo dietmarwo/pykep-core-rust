@@ -6,9 +6,10 @@ PyO3.
 
 The numerical foundations, microsecond-resolution epochs, anomaly
 conversions, and Cartesian/classical/modified-equinoctial element conversions
-are implemented. Orbit propagation, Lambert solutions, ephemerides, dynamics,
-and low-thrust legs remain planned. Do not infer full pykep parity from the
-current API.
+are implemented. Two-body orbit propagation and analytic state-transition
+matrices are also available. Lambert solutions, ephemerides, dynamics, and
+low-thrust legs remain planned. Do not infer full pykep parity from the current
+API.
 
 ## Layout
 
@@ -43,6 +44,7 @@ cargo run -p pykep-examples --bin port-status
 cargo run -p pykep-examples --bin foundations
 cargo run -p pykep-examples --bin epoch-anomalies
 cargo run -p pykep-examples --bin elements
+cargo run -p pykep-examples --bin propagation
 ```
 
 Once Maturin is installed, the Python module can be built in a virtual
