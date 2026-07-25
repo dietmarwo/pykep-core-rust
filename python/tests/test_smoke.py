@@ -13,9 +13,9 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_vsop_ephemerides() -> None:
+def test_status_probe_reports_generic_zoh_leg() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 14: Sims-Flanagan legs"
+    assert pk.port_status() == "phase 15: generic ZOH leg"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -541,6 +541,61 @@ def test_sims_flanagan_fixed_alpha_constraints_and_shapes() -> None:
     with pytest.raises(ValueError):
         pk.SimsFlanaganLeg(
             departure, 2.0, [], arrival, 1.7, 1.3, 0.04, 3.0, 1.0
+        )
+
+
+def test_generic_zoh_leg_constraints_gradients_histories_and_batch() -> None:
+    """Phase 15 exposes the native generic leg with stable matrix shapes."""
+    leg = pk.ZohLeg(
+        pk.ZohModel.Kepler,
+        [1.0, 0.1, -0.05, -0.1, 0.95, 0.03, 1.2],
+        [
+            [0.02, 1.0, 0.0, 0.0],
+            [0.01, 0.0, 1.0, 0.0],
+            [0.015, 0.0, 0.0, 1.0],
+        ],
+        [0.4, 0.9, 0.08, -0.8, 0.3, -0.04, 1.1],
+        [0.1, 0.35, 0.7, 1.0],
+        [0.2],
+        maximum_step=0.005,
+    )
+    assert leg.model == pk.ZohModel.Kepler
+    assert (leg.state_dimension, leg.control_dimension) == (7, 4)
+    assert (leg.segment_count, leg.forward_segment_count) == (3, 1)
+    assert leg.backward_segment_count == 2
+    mismatch = leg.mismatch_constraints()
+    assert mismatch == pytest.approx(
+        [
+            0.14639517124860257,
+            -0.19845853240981343,
+            -0.13033321567377493,
+            0.03878657191645779,
+            0.0970746217374101,
+            0.02578617262269304,
+            0.09739999999999971,
+        ],
+        rel=3e-9,
+        abs=3e-9,
+    )
+    initial, final, controls, time_grid = leg.mismatch_jacobian()
+    assert np.asarray(initial).shape == (7, 7)
+    assert np.asarray(final).shape == (7, 7)
+    assert np.asarray(controls).shape == (7, 12)
+    assert np.asarray(time_grid).shape == (7, 4)
+    forward, backward = leg.state_history(4)
+    assert (len(forward), len(backward)) == (1, 2)
+    assert all(len(segment) == 4 for segment in [*forward, *backward])
+    assert np.asarray(pk.ZohLeg.mismatch_constraints_batch([leg, leg])) == pytest.approx(
+        np.asarray([mismatch, mismatch])
+    )
+    with pytest.raises(ValueError):
+        pk.ZohLeg(
+            pk.ZohModel.SolarSail,
+            [1.0] * 7,
+            [[0.0, 0.0]],
+            [1.0] * 6,
+            [0.0, 1.0],
+            [0.1],
         )
 
 

@@ -58,7 +58,7 @@ documentation required by the definition of done are complete.
 - [x] `src/leg/sims_flanagan.cpp` → `leg::sims_flanagan` (Phase 14)
 - [x] `src/leg/sims_flanagan_alpha.cpp` →
       `leg::sims_flanagan_alpha` (Phase 14)
-- [ ] `src/leg/zoh.cpp` → `leg::zoh` (Phase 15)
+- [x] `src/leg/zoh.cpp` → `leg::zoh` (Phase 15)
 
 The C++-specific visibility, serialization, and type-erasure support headers
 are reviewed for semantics but are not port targets.

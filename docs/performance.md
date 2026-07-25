@@ -80,6 +80,13 @@ in Rust. The same warmed C++ configuration measured 1.037 µs and 12.748 µs,
 respectively. Both sides used the same endpoint states, masses, controls,
 duration, propulsion parameters, gravity parameter, and `cut = 0.6`; neither
 timing includes construction or validation.
+The Phase 15 20-segment normalized Kepler ZOH leg measured a Criterion
+23.67 µs median for mismatch evaluation and 493.55 µs for the complete
+endpoint/control/time-grid Jacobian. The matching warmed C++/heyoka harness
+averaged 6.865 µs and 182.17 µs. Both use the same states, chronological
+controls, time grid, constants, cut, and `1e-12` tolerance, with no maximum
+step. Rust integrates each segment independently and computes fixed-size
+numerical dynamics Jacobians, making both paths visible optimization targets.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -122,7 +129,8 @@ Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
 nominal and variational propagation, ZOH schedules, and Pontryagin
 state/costate propagation.
 Leg benchmarks separate Sims–Flanagan mismatch and analytic-gradient
-evaluation for the same five-segment configuration used by the C++ harness.
+evaluation and generic ZOH mismatch and sensitivity evaluation for the same
+configurations used by their C++ harnesses.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

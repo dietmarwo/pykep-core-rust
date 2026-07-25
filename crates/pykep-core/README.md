@@ -30,9 +30,11 @@ first-order sensitivity Jacobians.
 Fixed- and variable-duration Sims–Flanagan legs provide validated
 forward/backward transcription, throttle constraints, and analytic fixed-leg
 mismatch gradients.
+The generic ZOH leg applies the same cut transcription to continuous
+piecewise-constant controls for all four built-in ZOH dynamics models and
+returns endpoint, control, and time-grid sensitivities.
 
-The crate has no C or C++ runtime dependency. The generic ZOH leg remains
-planned.
+The crate has no C or C++ runtime dependency.
 
 ## Example
 

@@ -147,3 +147,16 @@ of `2e-10` to `3e-10` and with independent scale-adjusted central
 differences. Separate tests cover one segment, odd/even splits, zero and
 unit-limit throttle, all cut boundaries, normalized weights, invalid
 propulsion/gravity/mass values, dimension mismatches, and non-finite inputs.
+
+Phase 15 records generic ZOH-leg mismatches and all four Jacobian groups for
+Kepler, CR3BP, modified-equinoctial, and ideal solar-sail dynamics.
+`phase15-v1.json` has SHA-256
+`9d8d424c2af10ceee497f74f62acb30c53924f78f7be8a528dbe44bf14767935`.
+Nominal mismatches agree with the pinned C++/heyoka oracle within a scaled
+`3e-9` bound; endpoint, chronological-control, and time-grid derivatives agree
+within `3e-5`, reflecting the fixed-size numerical model Jacobians. Every
+Kepler derivative column is also checked against independent scale-adjusted
+central differences. Separate tests cover cut zero and one, strict time grids,
+dimensions, finite values, solver options, state histories, ordered batches,
+and maximum-step exhaustion with direction, segment index, and time interval
+in the reported failure.

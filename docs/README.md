@@ -26,3 +26,5 @@ costate, parameter, and control conventions are in
 [pontryagin.md](pontryagin.md).
 Sims–Flanagan leg construction, transcription, constraint, and derivative
 conventions are in [low-thrust-legs.md](low-thrust-legs.md).
+Generic continuous-thrust ZOH leg models, grids, integration controls, and
+sensitivities are in [zoh-leg.md](zoh-leg.md).

@@ -6,8 +6,13 @@
 //! Low-thrust trajectory leg models.
 
 mod sims_flanagan;
+mod zoh;
 
 pub use sims_flanagan::{
     SimsFlanaganAlphaLeg, SimsFlanaganLeg, SimsFlanaganMismatchJacobian, SimsFlanaganSettings,
     SpacecraftEndpoint,
+};
+pub use zoh::{
+    ZohCr3bpLeg, ZohEquinoctialLeg, ZohKeplerLeg, ZohLeg, ZohLegHistory, ZohLegMismatchJacobian,
+    ZohSolarSailLeg, evaluate_zoh_mismatch_batch,
 };

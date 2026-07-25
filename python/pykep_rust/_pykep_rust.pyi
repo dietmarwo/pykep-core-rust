@@ -130,6 +130,58 @@ class SimsFlanaganAlphaLeg:
     @property
     def time_of_flight(self) -> float: ...
 
+class ZohModel:
+    """Built-in dynamics for a generic zero-order-hold leg."""
+
+    Kepler: Final[ZohModel]
+    Cr3bp: Final[ZohModel]
+    Equinoctial: Final[ZohModel]
+    SolarSail: Final[ZohModel]
+
+class ZohLeg:
+    """Generic zero-order-hold low-thrust leg."""
+
+    def __init__(
+        self,
+        model: ZohModel,
+        initial_state: Sequence[float],
+        controls: Sequence[Sequence[float]],
+        final_state: Sequence[float],
+        time_grid: Sequence[float],
+        constants: Sequence[float],
+        cut: float = 0.5,
+        relative_tolerance: float = 1e-12,
+        absolute_tolerance: float = 1e-12,
+        maximum_step: float | None = None,
+        maximum_steps: int = 100_000,
+    ) -> None: ...
+    def mismatch_constraints(self) -> list[float]: ...
+    def mismatch_jacobian(
+        self,
+    ) -> tuple[
+        list[list[float]],
+        list[list[float]],
+        list[list[float]],
+        list[list[float]],
+    ]: ...
+    def state_history(
+        self, samples_per_segment: int = 2
+    ) -> tuple[list[list[list[float]]], list[list[list[float]]]]: ...
+    @staticmethod
+    def mismatch_constraints_batch(legs: Sequence[ZohLeg]) -> list[list[float]]: ...
+    @property
+    def model(self) -> ZohModel: ...
+    @property
+    def state_dimension(self) -> int: ...
+    @property
+    def control_dimension(self) -> int: ...
+    @property
+    def segment_count(self) -> int: ...
+    @property
+    def forward_segment_count(self) -> int: ...
+    @property
+    def backward_segment_count(self) -> int: ...
+
 class Epoch:
     """A microsecond-resolution proleptic-Gregorian epoch."""
 

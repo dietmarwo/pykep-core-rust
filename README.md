@@ -13,7 +13,9 @@ Kepler, CR3BP, bicircular, four zero-order-hold dynamics families, and
 Cartesian/equinoctial Pontryagin models with first-order sensitivities.
 Validated fixed- and variable-duration Sims–Flanagan legs provide mismatch
 and throttle constraints, with analytic fixed-leg gradients. The generic ZOH
-leg remains planned. Do not infer full pykep parity from the current API.
+leg supports the four built-in controlled dynamics families, complete
+first-order mismatch sensitivities, histories, and batches. Do not infer full
+pykep parity from the current API.
 
 ## Layout
 
@@ -38,6 +40,8 @@ Indirect-control state, costate, control, and parameter conventions are
 documented in [docs/pontryagin.md](docs/pontryagin.md).
 Sims–Flanagan endpoint, cut, impulse, constraint, and Jacobian conventions are
 documented in [docs/low-thrust-legs.md](docs/low-thrust-legs.md).
+Generic continuous-thrust ZOH leg models, grids, sensitivities, and integration
+settings are documented in [docs/zoh-leg.md](docs/zoh-leg.md).
 
 ## Intended properties
 

@@ -25,6 +25,7 @@ cmake --build .oracle-build
 .oracle-build/phase9_oracle
 .oracle-build/phase13_oracle
 .oracle-build/phase14_oracle
+.oracle-build/phase15_oracle
 ```
 
 Compare the output byte-for-byte with `foundations-v1.json` and
@@ -40,3 +41,7 @@ trajectories in mass- and time-optimal modes, the upstream dimensional
 analytic gradients at representative cut boundaries, plus equal- and
 irregular-duration alpha legs. It has SHA-256
 `0bd6adddc72d850f1de5e4ab95a436128d9b8181f8de2b3bbbc67300e004d542`.
+
+`phase15-v1.json` covers generic ZOH-leg mismatches and endpoint, control, and
+time-grid gradients for all four built-in ZOH dynamics. It has SHA-256
+`9d8d424c2af10ceee497f74f62acb30c53924f78f7be8a528dbe44bf14767935`.

@@ -129,7 +129,7 @@ impl Default for IntegratorOptions {
 }
 
 impl IntegratorOptions {
-    fn validate(self) -> Result<()> {
+    pub(crate) fn validate(self) -> Result<()> {
         validate_positive_finite("relative_tolerance", self.relative_tolerance)?;
         validate_positive_finite("absolute_tolerance", self.absolute_tolerance)?;
         if let Some(step) = self.initial_step {

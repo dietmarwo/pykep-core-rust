@@ -17,7 +17,7 @@ Evidence-backed status as of 2026-07-25:
 | ZOH dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | switches, reversal, zero control, sensitivity activation | Criterion + C++ harness | complete |
 | Pontryagin dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | Hamiltonians, coordinate transform, finite differences, singular primer | Criterion + C++ harness | complete |
 | Sims–Flanagan legs | implemented | implemented | 3.0.1 | cuts, odd/even and one-segment cases, central differences, validation | Criterion + C++ harness | complete |
-| Generic ZOH leg | planned | planned | planned | planned | planned | planned |
+| Generic ZOH leg | implemented | implemented | 3.0.1/heyoka 7.10.0 | four models, cuts, central differences, contextual failures | Criterion + C++ harness | complete |
 
 “Implemented” means the public contract is documented, validation is explicit,
 the committed C++ golden data passes except for documented numerical
