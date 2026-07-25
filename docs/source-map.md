@@ -21,10 +21,10 @@ documentation required by the definition of done are complete.
 
 - [x] `src/linalg.cpp` → `math::linalg` (Phase 2)
 - [x] `src/epoch.cpp` → `time::epoch` (Phase 3)
-- [ ] `src/core_astro/ic2par2ic.cpp` → `astro::elements::classical` (Phase 4)
-- [ ] `src/core_astro/mee2par2mee.cpp` →
+- [x] `src/core_astro/ic2par2ic.cpp` → `astro::elements::classical` (Phase 4)
+- [x] `src/core_astro/mee2par2mee.cpp` →
       `astro::elements::equinoctial` (Phase 4)
-- [ ] `src/core_astro/ic2mee2ic.cpp` →
+- [x] `src/core_astro/ic2mee2ic.cpp` →
       `astro::elements::equinoctial` (Phase 4)
 - [ ] `src/core_astro/propagate_lagrangian.cpp` →
       `astro::propagation::lagrangian` (Phase 5)

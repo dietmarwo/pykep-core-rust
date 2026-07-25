@@ -2,6 +2,7 @@
 
 use pyo3::prelude::*;
 
+mod elements;
 mod error;
 mod foundations;
 mod time_anomalies;
@@ -18,6 +19,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(port_status, module)?)?;
     error::register(module)?;
     foundations::register(module)?;
+    elements::register(module)?;
     time_anomalies::register(module)?;
     Ok(())
 }

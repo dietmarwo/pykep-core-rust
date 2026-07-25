@@ -8,6 +8,7 @@ dynamic = ["version"]
 description = "Native Rust astrodynamics algorithms with a Python API."
 readme = "python/README.md"
 requires-python = ">=3.11"
+dependencies = ["numpy>=1.26"]
 license = "MPL-2.0"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -22,4 +23,3 @@ manifest-path = "crates/pykep-py/Cargo.toml"
 python-source = "python"
 module-name = "pykep_rust._pykep_rust"
 strip = true
-

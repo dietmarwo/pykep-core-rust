@@ -25,6 +25,10 @@ once the public API is ready to stabilize.
 - Elliptic and hyperbolic anomaly conversions, bounded solvers, scalar and
   batch Python APIs, seeded C++ parity vectors, round-trip tests, and
   benchmarks.
+- Cartesian, classical Keplerian, and prograde/retrograde modified
+  equinoctial conversions with named Rust element values, analytic
+  output-by-input Jacobians, NumPy batch APIs, and explicit singularity
+  handling.
 
 Propagation, Lambert, ephemerides, dynamics, and low-thrust APIs are not yet
 implemented.

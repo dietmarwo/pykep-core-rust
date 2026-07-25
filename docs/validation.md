@@ -27,3 +27,10 @@ elliptic and hyperbolic boundary regimes, angles outside one revolution, and
 64 deterministic PCG32 solver samples. The Rust layer additionally rejects
 invalid calendars and true anomalies outside the physical hyperbolic
 asymptote instead of propagating non-finite values.
+
+Phase 4 adds 206 direct element/Cartesian cases and 16 analytic Jacobians from
+the pinned implementation. Jacobian files explicitly record row-major
+output-by-input order. Independent tests cover 2,000 deterministic elliptic
+and hyperbolic state round trips, both equinoctial pole conventions,
+finite-difference derivatives, and inverse-Jacobian identities. NumPy batches
+are compared row-for-row with the scalar Python API.

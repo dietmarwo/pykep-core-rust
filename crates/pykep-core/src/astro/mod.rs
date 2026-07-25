@@ -5,3 +5,5 @@
 
 /// Elliptic and hyperbolic anomaly conversions.
 pub mod anomalies;
+/// Cartesian, classical, and modified-equinoctial element conversions.
+pub mod elements;

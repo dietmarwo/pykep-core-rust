@@ -6,7 +6,7 @@ Evidence-backed status as of 2026-07-25:
 |---|---|---|---|---|---|---|
 | Foundations | implemented | implemented | 3.0.1 | series, derivatives, geometry | Criterion harness | complete |
 | Epoch/anomalies | implemented | implemented | 3.0.1 | round trips, calendar boundaries | Criterion harness | complete |
-| Elements | planned | planned | planned | planned | planned | planned |
+| Elements | implemented | implemented | 3.0.1 | 2,000 round trips, finite differences | Criterion harness | complete |
 | Propagation/STM | planned | planned | planned | planned | planned | planned |
 | Lambert/transfers | planned | planned | planned | planned | planned | planned |
 | Ephemerides | planned | planned | planned | planned | planned | planned |

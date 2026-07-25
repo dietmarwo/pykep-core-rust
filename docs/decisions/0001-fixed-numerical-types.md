@@ -31,3 +31,8 @@ straightforward. Aliases do not prevent semantic mix-ups, so public functions
 must use meaningful parameter names and named result structs where multiple
 arrays would be ambiguous. Newtypes remain an option before API stabilization
 if later phases demonstrate enough safety benefit.
+
+Phase 4 exercised that option for semantically distinct element sets:
+`ClassicalElements` and `ModifiedEquinoctialElements` provide named fields and
+lossless `[f64; 6]` conversions. Cartesian states retain the fixed alias
+because their ordering is unambiguous in every consuming API.

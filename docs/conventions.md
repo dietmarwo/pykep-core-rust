@@ -9,6 +9,8 @@ Unless an API states otherwise:
 - angles are in radians;
 - scalar ephemeris epochs will use MJD2000;
 - Cartesian state ordering is `[x, y, z, vx, vy, vz]`;
+- classical element ordering is `[a, e, i, Ω, ω, ν]`;
+- modified equinoctial ordering is `[p, f, g, h, k, L]`;
 - matrices use row-major nested arrays in Rust and C-contiguous row-major
   arrays at the Python boundary;
 - public functions reject NaN and positive or negative infinity;
@@ -18,3 +20,10 @@ Unless an API states otherwise:
 Some upstream functions propagate non-finite values or use them as invalid
 domain sentinels. The Rust API reports explicit errors instead. Algorithm
 guides document any narrower valid domain and all intentional deviations.
+
+Classical conversion reports circular and equatorial states as singular
+because their node/periapsis angles are undefined. Modified equinoctial
+elements cover those states: choose the prograde convention except at
+inclination `π`, and the retrograde convention except at inclination zero.
+Element Jacobians are `6 × 6`, with output components as rows and input
+components as columns.

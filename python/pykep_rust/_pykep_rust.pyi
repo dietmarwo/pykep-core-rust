@@ -3,6 +3,9 @@
 from collections.abc import Sequence
 from typing import Final
 
+import numpy as np
+import numpy.typing as npt
+
 PI: Final[float]
 HALF_PI: Final[float]
 ASTRONOMICAL_UNIT: Final[float]
@@ -339,3 +342,73 @@ def cross(
 
 def skew(vector: Sequence[float]) -> list[list[float]]:
     """Return a row-major 3 by 3 skew-symmetric matrix."""
+
+def cartesian_to_classical(state: Sequence[float], mu: float) -> list[float]:
+    """Convert Cartesian state to classical [a,e,i,Omega,omega,nu] elements."""
+
+def classical_to_cartesian(elements: Sequence[float], mu: float) -> list[float]:
+    """Convert classical elements to Cartesian [x,y,z,vx,vy,vz] state."""
+
+def classical_to_modified_equinoctial(
+    elements: Sequence[float], retrograde: bool = False
+) -> list[float]:
+    """Convert classical elements to modified equinoctial [p,f,g,h,k,L]."""
+
+def modified_equinoctial_to_classical(
+    elements: Sequence[float], retrograde: bool = False
+) -> list[float]:
+    """Convert modified equinoctial elements to classical elements."""
+
+def cartesian_to_modified_equinoctial(
+    state: Sequence[float], mu: float, retrograde: bool = False
+) -> list[float]:
+    """Convert Cartesian state directly to modified equinoctial elements."""
+
+def modified_equinoctial_to_cartesian(
+    elements: Sequence[float], mu: float, retrograde: bool = False
+) -> list[float]:
+    """Convert modified equinoctial elements directly to Cartesian state."""
+
+def cartesian_to_modified_equinoctial_jacobian(
+    state: Sequence[float], mu: float, retrograde: bool = False
+) -> list[list[float]]:
+    """Return the row-major Cartesian-to-equinoctial analytic Jacobian."""
+
+def modified_equinoctial_to_cartesian_jacobian(
+    elements: Sequence[float], mu: float, retrograde: bool = False
+) -> list[list[float]]:
+    """Return the row-major equinoctial-to-Cartesian analytic Jacobian."""
+
+def cartesian_to_classical_batch(
+    states: npt.NDArray[np.float64], mu: float
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of Cartesian states."""
+
+def classical_to_cartesian_batch(
+    elements: npt.NDArray[np.float64], mu: float
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of classical elements."""
+
+def classical_to_modified_equinoctial_batch(
+    elements: npt.NDArray[np.float64], retrograde: bool = False
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of classical elements."""
+
+def modified_equinoctial_to_classical_batch(
+    elements: npt.NDArray[np.float64], retrograde: bool = False
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of modified equinoctial elements."""
+
+def cartesian_to_modified_equinoctial_batch(
+    states: npt.NDArray[np.float64],
+    mu: float,
+    retrograde: bool = False,
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of Cartesian states."""
+
+def modified_equinoctial_to_cartesian_batch(
+    elements: npt.NDArray[np.float64],
+    mu: float,
+    retrograde: bool = False,
+) -> npt.NDArray[np.float64]:
+    """Batch-convert an N by 6 array of modified equinoctial elements."""

@@ -7,14 +7,18 @@ import inspect
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 import pykep_rust as pk
 
 
-def test_status_probe_reports_epoch_and_anomalies() -> None:
+def test_status_probe_reports_element_conversions() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 3: epoch and anomaly conversion implemented"
+    assert (
+        pk.port_status()
+        == "phase 4: element and Cartesian conversions implemented"
+    )
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -125,6 +129,86 @@ def test_anomaly_conversions_batches_round_trips_and_domains() -> None:
         pk.hyperbolic_mean_to_anomaly(0.1, 1.0)
     with pytest.raises(ValueError, match="asymptote"):
         pk.true_to_hyperbolic_anomaly(math.pi, 1.5)
+
+
+def test_element_scalar_conversions_and_singularities() -> None:
+    """Classical and both equinoctial conventions share one scalar core."""
+    classical = [3.0, 0.3, 0.7, 1.1, 0.4, -0.8]
+    state = pk.classical_to_cartesian(classical, 1.0)
+    reconstructed = pk.classical_to_cartesian(
+        pk.cartesian_to_classical(state, 1.0), 1.0
+    )
+    assert reconstructed == pytest.approx(state, rel=2e-13, abs=2e-13)
+    for retrograde in (False, True):
+        mee = pk.cartesian_to_modified_equinoctial(state, 1.0, retrograde)
+        assert pk.modified_equinoctial_to_cartesian(
+            mee, 1.0, retrograde
+        ) == pytest.approx(state, rel=2e-13, abs=2e-13)
+        via_classical = pk.classical_to_modified_equinoctial(
+            classical, retrograde
+        )
+        assert pk.modified_equinoctial_to_classical(
+            via_classical, retrograde
+        ) == pytest.approx(classical, rel=2e-13, abs=2e-13)
+    circular = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+    with pytest.raises(pk.SingularGeometryError):
+        pk.cartesian_to_classical(circular, 1.0)
+    circular_mee = pk.cartesian_to_modified_equinoctial(circular, 1.0)
+    assert pk.modified_equinoctial_to_cartesian(
+        circular_mee, 1.0
+    ) == pytest.approx(circular)
+    with pytest.raises(ValueError, match="greater than zero"):
+        pk.classical_to_cartesian(classical, 0.0)
+
+
+def test_element_jacobians_and_numpy_batches() -> None:
+    """Jacobians use output-by-input rows and NumPy batches match scalars."""
+    classical = np.array(
+        [
+            [3.0, 0.3, 0.7, 1.1, 0.4, -0.8],
+            [5.0, 0.1, 1.0, 2.1, 1.4, 0.8],
+        ],
+        dtype=np.float64,
+    )
+    states = pk.classical_to_cartesian_batch(classical, 1.0)
+    assert isinstance(states, np.ndarray)
+    assert states.shape == (2, 6)
+    for index in range(2):
+        assert states[index] == pytest.approx(
+            pk.classical_to_cartesian(classical[index], 1.0)
+        )
+    recovered = pk.cartesian_to_classical_batch(states, 1.0)
+    assert recovered == pytest.approx(
+        np.array([pk.cartesian_to_classical(row, 1.0) for row in states])
+    )
+    mee = pk.cartesian_to_modified_equinoctial_batch(states, 1.0)
+    assert pk.modified_equinoctial_to_cartesian_batch(
+        mee, 1.0
+    ) == pytest.approx(states)
+    assert pk.classical_to_modified_equinoctial_batch(
+        classical
+    ) == pytest.approx(
+        np.array(
+            [pk.classical_to_modified_equinoctial(row) for row in classical]
+        )
+    )
+    assert pk.modified_equinoctial_to_classical_batch(
+        mee
+    ) == pytest.approx(
+        np.array([pk.modified_equinoctial_to_classical(row) for row in mee])
+    )
+    forward = np.array(
+        pk.cartesian_to_modified_equinoctial_jacobian(states[0], 1.0)
+    )
+    inverse = np.array(
+        pk.modified_equinoctial_to_cartesian_jacobian(mee[0], 1.0)
+    )
+    assert forward.shape == (6, 6)
+    assert forward @ inverse == pytest.approx(np.eye(6), abs=3e-13)
+    empty = pk.classical_to_cartesian_batch(np.empty((0, 6)), 1.0)
+    assert empty.shape == (0, 6)
+    with pytest.raises(ValueError, match="expected 6"):
+        pk.classical_to_cartesian_batch(np.zeros((2, 5)), 1.0)
 
 
 def test_public_api_has_runtime_documentation() -> None:
