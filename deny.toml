@@ -1,5 +1,10 @@
 [advisories]
-ignore = []
+ignore = [
+    # Transitive through simba 0.9.1 in the selected integration backend.
+    # This is an unmaintained-project notice, not a vulnerability, and the
+    # advisory has no safe upgrade as of the Phase 10 decision snapshot.
+    "RUSTSEC-2024-0436",
+]
 
 [bans]
 multiple-versions = "warn"

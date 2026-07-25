@@ -47,5 +47,9 @@ once the public API is ready to stabilize.
   embedded MPL-2.0 coefficient data down to `1e-9`, direct ICRF state
   evaluation without JIT or network access, and explicit Python availability
   and threshold reporting.
+- A pykep-owned adaptive DOP853 integration facade with fixed-size evaluated
+  model contracts, exact final-time and backward propagation, dense output,
+  terminal events, step diagnostics, and allocation-free first-order
+  sensitivity states, plus a reproducible candidate decision benchmark.
 
-Dynamics and low-thrust APIs are not yet implemented.
+Production dynamics and low-thrust APIs are not yet implemented.

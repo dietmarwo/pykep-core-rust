@@ -39,6 +39,8 @@ documentation required by the definition of done are complete.
 - [x] `src/udpla/keplerian.cpp` → `ephemeris::keplerian` (Phase 7)
 - [x] `src/udpla/jpl_lp.cpp` → `ephemeris::jpl_lp` (Phase 8)
 - [x] `src/udpla/vsop2013.cpp` → `ephemeris::vsop2013` (Phase 9)
+- [x] heyoka integration requirements → `integration` facade and ADR 0004
+      (Phase 10; infrastructure rather than a source translation)
 - [ ] `src/ta/kep.cpp` → `dynamics::kepler` (Phase 11)
 - [ ] `src/ta/cr3bp.cpp` → `dynamics::cr3bp` (Phase 11)
 - [ ] `src/ta/bcp.cpp` → `dynamics::bcp` (Phase 11)

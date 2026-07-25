@@ -15,7 +15,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 9: VSOP2013 ephemerides implemented"
+    assert pk.port_status() == "phase 10: adaptive integration backend selected"
 
 
 def test_constants_and_julian_conversions() -> None:

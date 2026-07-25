@@ -1,4 +1,5 @@
 /target/
+/tools/*/target/
 /.venv/
 /dist/
 *.egg-info/
@@ -7,4 +8,3 @@
 *.dylib
 __pycache__/
 .pytest_cache/
-

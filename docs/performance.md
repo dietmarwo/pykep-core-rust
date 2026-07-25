@@ -47,6 +47,14 @@ orientation harness measured 63.96 ms and 552.53 ms first-time JIT
 initialization at `1e-5` and `1e-9`, then 166 ns and 5.908 µs per scalar call.
 The feature increased the release benchmark executable from 2.6 MiB to
 7.0 MiB. See ADR 0003 for the data/cache decision and caveats.
+The Phase 10 integration decision harness measured the selected DOP853 facade
+at 11.865 µs for the representative nominal Kepler solve and 85.663 µs for
+the state plus 6 by 6 STM. The equivalent warmed C++/heyoka solves measured
+3.722 µs and 84.440 µs; cloning the cached C++ nominal integrator once cost
+0.467 ms. A same-profile candidate tool measured 15.431 µs for the selected
+facade and 7.369 µs for `ode_solvers`, whose missing root/sensitivity
+facilities and per-step allocations outweighed the nominal timing advantage.
+See ADR 0004 for configuration, ranges, and risks.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -63,6 +71,7 @@ cargo bench -p pykep-core --bench foundation
 cargo bench -p pykep-core --bench elements
 cargo bench -p pykep-core --bench propagation
 cargo bench -p pykep-core --bench mission
+cargo bench -p pykep-core --bench integration
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -79,6 +88,9 @@ zero- and multi-revolution Lambert solution construction. The same harness
 measures scalar and 256-epoch Keplerian and JPL low-precision ephemeris
 evaluation separately, plus VSOP2013 initialization, scalar, high-precision,
 and batch paths.
+Integration benchmarks separate nominal six-state DOP853 propagation from an
+augmented state plus STM solve. The final-state output callback does not retain
+internal steps.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

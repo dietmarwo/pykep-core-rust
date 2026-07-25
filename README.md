@@ -8,8 +8,9 @@ The numerical foundations, epochs, anomalies, element conversions, two-body
 propagation, state-transition matrices, Lambert solutions, impulsive
 transfers, flybys, encodings, MIMA approximations, the planet interface, and
 the Keplerian, JPL low-precision, and feature-gated VSOP2013 ephemerides are
-implemented. Dynamics and low-thrust legs remain planned. Do not infer full
-pykep parity from the current API.
+implemented. The pure-Rust adaptive integration backend and sensitivity
+contract are selected; production dynamics and low-thrust legs remain
+planned. Do not infer full pykep parity from the current API.
 
 ## Layout
 
@@ -18,6 +19,8 @@ pykep parity from the current API.
 - `python/pykep_rust`: Python package and future type stubs.
 - `examples`: runnable Rust examples, added as capabilities become available.
 - `docs`: Rust-specific design and usage documentation.
+- `tools/phase10-candidates`: reproducible standalone solver decision
+  benchmark.
 
 The pinned upstream source and adaptation policy are recorded in
 [UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in

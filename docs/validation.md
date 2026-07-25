@@ -83,3 +83,19 @@ high-precision floor of `1e-9`, the maximum observed Rust/C++ difference is
 case-insensitive names, feature reporting, threshold errors, clone
 determinism, ordered Python batches, and a build/test run without the optional
 coefficient feature.
+
+Phase 10 selects a pure-Rust DOP853 backend through a pykep-owned facade.
+Decision tests compare Kepler states and the 6 by 6 STM to the independent
+analytic propagator, verify a parameter-sensitivity column by central
+differences, bound 100-orbit energy drift, and exercise a CR3BP close approach
+with Jacobi drift and backward reversal checks. Separate tests cover rejected
+steps, step exhaustion, bit-for-bit repeated solves, dense interpolation,
+terminal root location, malformed grids, non-finite values, and physical
+singularities. The selected final-state path retains no internal trajectory
+and performs no per-step heap allocation for fixed-size model states.
+
+The candidate harness and matching C++ benchmark use the same six-state
+Kepler initial condition, final time, and `1e-12` scalar tolerances. Nominal
+and variational timings, allocation limitations, and the dense-output
+maximum-step caveat are recorded in ADR 0004. This phase validates integration
+machinery only; the production dynamics models remain Phase 11 work.

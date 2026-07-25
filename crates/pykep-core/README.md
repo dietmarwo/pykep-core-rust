@@ -15,9 +15,13 @@ thread-safe scalar and ordered batch evaluation. The JPL low-precision
 provider supplies approximate heliocentric states for Mercury through Neptune
 over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
 evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
+An adaptive pure-Rust DOP853 facade now defines evaluated model, parameter,
+dense-output, terminal-event, and first-order sensitivity contracts for the
+next dynamics phases.
 
-The crate has no C or C++ runtime dependency. Later orbital algorithms remain
-planned and are not represented by the current status probe.
+The crate has no C or C++ runtime dependency. Production Kepler, CR3BP, BCP,
+low-thrust dynamics, and leg APIs remain planned and are not represented by
+the completed integration decision gate.
 
 ## Example
 

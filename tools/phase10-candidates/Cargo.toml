@@ -1,0 +1,12 @@
+[package]
+name = "phase10-candidates"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[workspace]
+
+[dependencies]
+ode_solvers = "0.6.2"
+pykep-core = { path = "../../crates/pykep-core", default-features = false }

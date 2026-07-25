@@ -13,6 +13,8 @@ pub mod constants;
 pub mod ephemeris;
 /// Stable error categories returned by numerical APIs.
 pub mod error;
+/// Adaptive integration interfaces used by evaluated dynamics models.
+pub mod integration;
 /// Small, dependency-free numerical helpers.
 pub mod math;
 /// Time representations and conversions.
@@ -25,15 +27,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 9: VSOP2013 ephemerides implemented";
+pub const PORT_STATUS: &str = "phase 10: adaptive integration backend selected";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_vsop_ephemerides() {
-        assert!(PORT_STATUS.contains("phase 9"));
-        assert!(PORT_STATUS.contains("VSOP2013"));
+    fn status_reports_integration_backend() {
+        assert!(PORT_STATUS.contains("phase 10"));
+        assert!(PORT_STATUS.contains("integration"));
     }
 }

@@ -16,6 +16,12 @@ Run benchmarks separately so timing work is never hidden in the test suite:
 cargo bench -p pykep-core
 ```
 
+The standalone Phase 10 candidate comparison is reproducible with:
+
+```bash
+cargo run --release --manifest-path tools/phase10-candidates/Cargo.toml
+```
+
 For Python integration:
 
 ```bash

@@ -17,6 +17,9 @@ name = "pykep_core"
 [lints]
 workspace = true
 
+[dependencies]
+differential-equations = { version = "0.6.1", default-features = false }
+
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 serde_json = "1.0.151"
@@ -35,4 +38,8 @@ harness = false
 
 [[bench]]
 name = "mission"
+harness = false
+
+[[bench]]
+name = "integration"
 harness = false
