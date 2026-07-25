@@ -1,15 +1,16 @@
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
 
-//! Criterion benchmarks for evaluated phase-11 dynamics.
+//! Criterion benchmarks for evaluated dynamics.
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use pykep_core::constants::{
     BCP_MU_EARTH_MOON, BCP_MU_SUN, BCP_SUN_ANGULAR_VELOCITY, BCP_SUN_DISTANCE,
 };
+use pykep_core::dynamics::pontryagin::CartesianMassOptimal;
 use pykep_core::dynamics::zoh::{ControlSchedule, ZohKeplerDynamics, propagate_schedule};
 use pykep_core::dynamics::{BcpDynamics, Cr3bpDynamics, KeplerDynamics};
-use pykep_core::integration::{DynamicsModel, IntegratorOptions};
+use pykep_core::integration::{Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions};
 use std::hint::black_box;
 
 fn dynamics(criterion: &mut Criterion) {
@@ -109,6 +110,47 @@ fn dynamics(criterion: &mut Criterion) {
             .unwrap()
         });
     });
+
+    let pontryagin_state = [
+        1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    ];
+    let pontryagin_parameters = [1.0, 0.01, 1.0, 0.5, 1.0];
+    let mut pontryagin_derivative = [0.0; 14];
+    criterion.bench_function("dynamics/pontryagin_cartesian_mass_rhs", |bencher| {
+        bencher.iter(|| {
+            CartesianMassOptimal
+                .rhs(
+                    black_box(0.0),
+                    black_box(&pontryagin_state),
+                    black_box(&pontryagin_parameters),
+                    black_box(&mut pontryagin_derivative),
+                )
+                .unwrap()
+        });
+    });
+    let pontryagin_options = IntegratorOptions {
+        maximum_step: Some(0.01),
+        ..options
+    };
+    criterion.bench_function(
+        "dynamics/pontryagin_cartesian_mass_propagation",
+        |bencher| {
+            bencher.iter(|| {
+                Dop853
+                    .propagate(
+                        black_box(&CartesianMassOptimal),
+                        black_box(InitialValueProblem::new(
+                            0.0,
+                            pontryagin_state,
+                            1.2345,
+                            pontryagin_parameters,
+                        )),
+                        black_box(pontryagin_options),
+                    )
+                    .unwrap()
+            });
+        },
+    );
 }
 
 criterion_group!(benches, dynamics);

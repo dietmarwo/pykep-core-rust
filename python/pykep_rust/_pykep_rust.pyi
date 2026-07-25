@@ -44,6 +44,12 @@ class UnsupportedCapabilityError(PykepError):
 class IntegrationError(PykepError):
     """A numerical integration could not be completed."""
 
+class Optimality:
+    """Indirect low-thrust optimality criterion."""
+
+    Mass: Final[Optimality]
+    Time: Final[Optimality]
+
 class Epoch:
     """A microsecond-resolution proleptic-Gregorian epoch."""
 
@@ -236,6 +242,72 @@ def cr3bp_effective_potential(state: Sequence[float], mu: float) -> float:
 
 def cr3bp_jacobi_constant(state: Sequence[float], mu: float) -> float:
     """Evaluate the CR3BP Jacobi constant."""
+
+def pontryagin_cartesian_rhs(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> list[float]:
+    """Evaluate Cartesian Pontryagin state/costate dynamics."""
+
+def pontryagin_equinoctial_rhs(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> list[float]:
+    """Evaluate modified-equinoctial Pontryagin state/costate dynamics."""
+
+def pontryagin_cartesian_control(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> tuple[float, list[float], float]:
+    """Return throttle, Cartesian direction, and switching function."""
+
+def pontryagin_equinoctial_control(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> tuple[float, list[float], float]:
+    """Return throttle, RTN direction, and switching function."""
+
+def pontryagin_cartesian_hamiltonian(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> float:
+    """Evaluate the minimized Cartesian Pontryagin Hamiltonian."""
+
+def pontryagin_equinoctial_hamiltonian(
+    state: Sequence[float],
+    optimality: Optimality,
+    parameters: Sequence[float],
+) -> float:
+    """Evaluate the minimized modified-equinoctial Pontryagin Hamiltonian."""
+
+def propagate_pontryagin_cartesian(
+    state: Sequence[float],
+    final_time: float,
+    optimality: Optimality,
+    parameters: Sequence[float],
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate Cartesian Pontryagin state/costate dynamics."""
+
+def propagate_pontryagin_equinoctial(
+    state: Sequence[float],
+    final_time: float,
+    optimality: Optimality,
+    parameters: Sequence[float],
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate modified-equinoctial Pontryagin state/costate dynamics."""
 
 def zoh_kepler_rhs(
     state: Sequence[float],

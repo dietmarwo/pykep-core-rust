@@ -48,10 +48,12 @@ documentation required by the definition of done are complete.
 - [x] `src/ta/zoh_cr3bp.cpp` → `dynamics::zoh::ZohCr3bpDynamics` (Phase 12)
 - [x] `src/ta/zoh_eq.cpp` → `dynamics::zoh::ZohEquinoctialDynamics` (Phase 12)
 - [x] `src/ta/zoh_ss.cpp` → `dynamics::zoh::ZohSolarSailDynamics` (Phase 12)
-- [ ] `src/ta/pontryagin_cartesian.cpp` →
-      `dynamics::pontryagin::cartesian` (Phase 13)
-- [ ] `src/ta/pontryagin_equinoctial.cpp` →
-      `dynamics::pontryagin::equinoctial` (Phase 13)
+- [x] `src/ta/pontryagin_cartesian.cpp` →
+      `dynamics::pontryagin::{CartesianMassOptimal, CartesianTimeOptimal}`
+      (Phase 13)
+- [x] `src/ta/pontryagin_equinoctial.cpp` →
+      `dynamics::pontryagin::{EquinoctialMassOptimal, EquinoctialTimeOptimal}`
+      (Phase 13)
 - [ ] `src/leg/sf_checks.cpp` → `leg::validation` (Phase 14)
 - [ ] `src/leg/sims_flanagan.cpp` → `leg::sims_flanagan` (Phase 14)
 - [ ] `src/leg/sims_flanagan_alpha.cpp` →

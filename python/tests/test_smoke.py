@@ -15,7 +15,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 12: zero-order-hold dynamics"
+    assert pk.port_status() == "phase 13: Pontryagin dynamics"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -363,6 +363,107 @@ def test_zero_order_hold_models_switch_and_reverse() -> None:
         pk.propagate_zoh_kepler(initial, boundaries, [[0.0] * 3] * 2, 0.02)
     with pytest.raises(ValueError, match="strictly increasing"):
         pk.propagate_zoh_kepler(initial, [0.0, 0.2, 0.1], controls, 0.02)
+
+
+def test_pontryagin_enum_controls_and_propagation() -> None:
+    """Phase 13 uses a typed optimality enum and one native numerical core."""
+    cartesian = [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        10.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+    ]
+    assert pk.Optimality.Mass != pk.Optimality.Time
+    derivative = pk.pontryagin_cartesian_rhs(
+        cartesian, pk.Optimality.Mass, [1.0, 0.01, 1.0, 0.5, 1.0]
+    )
+    assert len(derivative) == 14
+    throttle, direction, switching = pk.pontryagin_cartesian_control(
+        cartesian, pk.Optimality.Mass, [1.0, 0.01, 1.0, 0.5, 1.0]
+    )
+    assert 0.0 < throttle < 1.0
+    assert np.linalg.norm(direction) == pytest.approx(1.0)
+    assert math.isfinite(switching)
+    initial_hamiltonian = pk.pontryagin_cartesian_hamiltonian(
+        cartesian, pk.Optimality.Mass, [1.0, 0.01, 1.0, 0.5, 1.0]
+    )
+    final_state = pk.propagate_pontryagin_cartesian(
+        cartesian,
+        1.2345,
+        pk.Optimality.Mass,
+        [1.0, 0.01, 1.0, 0.5, 1.0],
+        relative_tolerance=2e-12,
+        absolute_tolerance=2e-12,
+        maximum_step=0.01,
+    )
+    assert final_state == pytest.approx(
+        [
+            0.3296405122183833,
+            0.9437361993515112,
+            -0.000126441649019,
+            -0.9446333908544454,
+            0.3295140980732467,
+            -0.0000302961826291,
+            9.993495810584642,
+            -0.2930516116019541,
+            0.1612382337718589,
+            1.2739955068582864,
+            0.9472048639975497,
+            0.0186280856006421,
+            -0.6140454396473527,
+            0.9999296119431648,
+        ],
+        rel=3e-10,
+        abs=3e-10,
+    )
+    assert pk.pontryagin_cartesian_hamiltonian(
+        final_state, pk.Optimality.Mass, [1.0, 0.01, 1.0, 0.5, 1.0]
+    ) == pytest.approx(initial_hamiltonian, rel=2e-10, abs=2e-10)
+
+    equinoctial = [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+    ]
+    assert len(
+        pk.pontryagin_equinoctial_rhs(
+            equinoctial, pk.Optimality.Time, [1.0, 1e-4, 1.0]
+        )
+    ) == 14
+    assert len(
+        pk.propagate_pontryagin_equinoctial(
+            equinoctial,
+            0.1,
+            pk.Optimality.Time,
+            [1.0, 1e-4, 1.0],
+            maximum_step=0.01,
+        )
+    ) == 14
+    with pytest.raises(TypeError):
+        pk.pontryagin_cartesian_rhs(
+            cartesian, "mass", [1.0, 0.01, 1.0, 0.5, 1.0]
+        )
 
 
 def test_transfers_encodings_flyby_lambert_and_mima() -> None:

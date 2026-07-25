@@ -23,9 +23,14 @@ cmake --build .oracle-build
 .oracle-build/phase7_oracle
 .oracle-build/phase8_oracle
 .oracle-build/phase9_oracle
+.oracle-build/phase13_oracle
 ```
 
 Compare the output byte-for-byte with `foundations-v1.json` and
 `phase3-v1.json`, `phase4-v1.json`, `phase5-v1.json`, `phase6-v1.json`, and
 `phase7-v1.json`, `phase8-v1.json`, and `phase9-v1.json`. Generation must be
 deterministic.
+
+`phase13-v1.json` covers Cartesian and modified-equinoctial Pontryagin
+trajectories in mass- and time-optimal modes, the upstream dimensional
+100-day trajectory, and first-order costate/`lambda0` variations.

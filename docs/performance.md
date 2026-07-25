@@ -67,6 +67,13 @@ C++/heyoka harness with the same state, boundaries, controls, and `1e-12`
 tolerance. The Rust path deliberately starts an independent DOP853 solve at
 each switch; the timing includes those 32 restarts and confirms there is no
 segment-count-dependent control search inside integration.
+The Phase 13 Cartesian mass-optimal RHS measured 52.384 ns and its normalized
+1.2345-time-unit propagation measured 142.52 µs in Rust. The warmed
+C++/heyoka integrator measured a 11.716 µs median for the same state,
+parameters, final time, and `1e-12` tolerance. Rust uses a `0.01` maximum step
+to enforce the recorded oracle tolerance; the C++ Taylor solve has no
+equivalent maximum-step restriction, so this orientation identifies an
+integration-performance target rather than like-for-like algorithm speed.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -105,7 +112,8 @@ Integration benchmarks separate nominal six-state DOP853 propagation from an
 augmented state plus STM solve. The final-state output callback does not retain
 internal steps.
 Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
-nominal and variational propagation.
+nominal and variational propagation, ZOH schedules, and Pontryagin
+state/costate propagation.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

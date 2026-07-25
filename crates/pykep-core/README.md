@@ -24,9 +24,12 @@ constant.
 Validated zero-order-hold schedules drive normalized Kepler, CR3BP,
 modified-equinoctial, and ideal solar-sail models with deterministic switch
 ownership, backward propagation, and segment-local sensitivities.
+Cartesian and modified-equinoctial Pontryagin models provide mass- and
+time-optimal state/costate dynamics, evaluated controls and Hamiltonians, and
+first-order sensitivity Jacobians.
 
-The crate has no C or C++ runtime dependency. Pontryagin dynamics and
-low-thrust leg APIs remain planned.
+The crate has no C or C++ runtime dependency. Low-thrust leg APIs remain
+planned.
 
 ## Example
 

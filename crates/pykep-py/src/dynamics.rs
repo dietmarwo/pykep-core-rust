@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::error::to_python;
+use pykep_core::dynamics::pontryagin::{
+    CartesianMassOptimal, CartesianTimeOptimal, EquinoctialMassOptimal, EquinoctialTimeOptimal,
+    OptimalControl, cartesian_control_mass, cartesian_control_time, cartesian_hamiltonian_mass,
+    cartesian_hamiltonian_time, equinoctial_control_mass, equinoctial_control_time,
+    equinoctial_hamiltonian_mass, equinoctial_hamiltonian_time,
+};
 use pykep_core::dynamics::zoh::{
     ControlSchedule, ZohCr3bpDynamics, ZohEquinoctialDynamics, ZohKeplerDynamics,
     ZohSolarSailDynamics, propagate_schedule, propagate_schedule_backward,
 };
 use pykep_core::dynamics::{BcpDynamics, Cr3bpDynamics, KeplerDynamics};
-use pykep_core::integration::{DynamicsModel, IntegratorOptions};
+use pykep_core::integration::{Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions};
 use pykep_core::{CartesianState, Matrix6, PykepError};
 use pyo3::prelude::*;
 
@@ -27,6 +33,310 @@ fn seven(values: Vec<f64>) -> Result<[f64; 7], PykepError> {
             expected: 7,
             actual: values.len(),
         })
+}
+
+fn fixed<const N: usize>(values: Vec<f64>) -> Result<[f64; N], PykepError> {
+    values
+        .try_into()
+        .map_err(|values: Vec<f64>| PykepError::DimensionMismatch {
+            expected: N,
+            actual: values.len(),
+        })
+}
+
+/// Indirect low-thrust optimality criterion.
+#[pyclass(name = "Optimality", eq, eq_int, frozen, skip_from_py_object)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PyOptimality {
+    /// Maximize final mass with logarithmic throttle regularization.
+    Mass = 0,
+    /// Minimize time at full throttle.
+    Time = 1,
+}
+
+fn control_tuple(control: OptimalControl) -> (f64, [f64; 3], f64) {
+    (
+        control.throttle,
+        control.direction,
+        control.switching_function,
+    )
+}
+
+fn pontryagin_result<M, const P: usize>(
+    model: &M,
+    state: [f64; 14],
+    parameters: [f64; P],
+    initial_time: f64,
+    final_time: f64,
+    integrator_options: IntegratorOptions,
+) -> Result<[f64; 14], PykepError>
+where
+    M: DynamicsModel<14, P>,
+{
+    Dop853
+        .propagate(
+            model,
+            InitialValueProblem::new(initial_time, state, final_time, parameters),
+            integrator_options,
+        )
+        .map(|result| result.state)
+}
+
+/// Evaluate Cartesian Pontryagin state/costate dynamics.
+///
+/// State order is `[x,y,z,vx,vy,vz,m,lx,ly,lz,lvx,lvy,lvz,lm]`.
+/// Mass-optimal parameters are `[mu, thrust, exhaust_velocity, barrier,
+/// lambda0]`; time-optimal parameters are `[mu, thrust, exhaust_velocity]`.
+#[pyfunction]
+fn pontryagin_cartesian_rhs(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<[f64; 14]> {
+    let state = fixed(state).map_err(to_python)?;
+    let mut derivative = [0.0; 14];
+    match *optimality {
+        PyOptimality::Mass => CartesianMassOptimal.rhs(
+            0.0,
+            &state,
+            &fixed(parameters).map_err(to_python)?,
+            &mut derivative,
+        ),
+        PyOptimality::Time => CartesianTimeOptimal.rhs(
+            0.0,
+            &state,
+            &fixed(parameters).map_err(to_python)?,
+            &mut derivative,
+        ),
+    }
+    .map_err(to_python)?;
+    Ok(derivative)
+}
+
+/// Evaluate modified-equinoctial Pontryagin state/costate dynamics.
+///
+/// State order is `[p,f,g,h,k,L,m,lp,lf,lg,lh,lk,lL,lm]`. Parameter
+/// order follows [`pontryagin_cartesian_rhs`].
+#[pyfunction]
+fn pontryagin_equinoctial_rhs(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<[f64; 14]> {
+    let state = fixed(state).map_err(to_python)?;
+    let mut derivative = [0.0; 14];
+    match *optimality {
+        PyOptimality::Mass => EquinoctialMassOptimal.rhs(
+            0.0,
+            &state,
+            &fixed(parameters).map_err(to_python)?,
+            &mut derivative,
+        ),
+        PyOptimality::Time => EquinoctialTimeOptimal.rhs(
+            0.0,
+            &state,
+            &fixed(parameters).map_err(to_python)?,
+            &mut derivative,
+        ),
+    }
+    .map_err(to_python)?;
+    Ok(derivative)
+}
+
+/// Return `(throttle, direction, switching_function)` for Cartesian
+/// Pontryagin dynamics.
+#[pyfunction]
+fn pontryagin_cartesian_control(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<(f64, [f64; 3], f64)> {
+    let state = fixed(state).map_err(to_python)?;
+    match *optimality {
+        PyOptimality::Mass => {
+            cartesian_control_mass(&state, &fixed(parameters).map_err(to_python)?)
+        }
+        PyOptimality::Time => {
+            cartesian_control_time(&state, &fixed(parameters).map_err(to_python)?)
+        }
+    }
+    .map(control_tuple)
+    .map_err(to_python)
+}
+
+/// Return `(throttle, RTN direction, switching_function)` for
+/// modified-equinoctial Pontryagin dynamics.
+#[pyfunction]
+fn pontryagin_equinoctial_control(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<(f64, [f64; 3], f64)> {
+    let state = fixed(state).map_err(to_python)?;
+    match *optimality {
+        PyOptimality::Mass => {
+            equinoctial_control_mass(&state, &fixed(parameters).map_err(to_python)?)
+        }
+        PyOptimality::Time => {
+            equinoctial_control_time(&state, &fixed(parameters).map_err(to_python)?)
+        }
+    }
+    .map(control_tuple)
+    .map_err(to_python)
+}
+
+/// Evaluate the minimized Cartesian Pontryagin Hamiltonian.
+#[pyfunction]
+fn pontryagin_cartesian_hamiltonian(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<f64> {
+    let state = fixed(state).map_err(to_python)?;
+    match *optimality {
+        PyOptimality::Mass => {
+            cartesian_hamiltonian_mass(&state, &fixed(parameters).map_err(to_python)?)
+        }
+        PyOptimality::Time => {
+            cartesian_hamiltonian_time(&state, &fixed(parameters).map_err(to_python)?)
+        }
+    }
+    .map_err(to_python)
+}
+
+/// Evaluate the minimized modified-equinoctial Pontryagin Hamiltonian.
+#[pyfunction]
+fn pontryagin_equinoctial_hamiltonian(
+    state: Vec<f64>,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+) -> PyResult<f64> {
+    let state = fixed(state).map_err(to_python)?;
+    match *optimality {
+        PyOptimality::Mass => {
+            equinoctial_hamiltonian_mass(&state, &fixed(parameters).map_err(to_python)?)
+        }
+        PyOptimality::Time => {
+            equinoctial_hamiltonian_time(&state, &fixed(parameters).map_err(to_python)?)
+        }
+    }
+    .map_err(to_python)
+}
+
+/// Propagate Cartesian Pontryagin state/costate dynamics.
+#[pyfunction(signature = (
+    state,
+    final_time,
+    optimality,
+    parameters,
+    initial_time = 0.0,
+    relative_tolerance = 1e-12,
+    absolute_tolerance = 1e-12,
+    maximum_step = None
+))]
+#[allow(clippy::too_many_arguments)]
+fn propagate_pontryagin_cartesian(
+    python: Python<'_>,
+    state: Vec<f64>,
+    final_time: f64,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+    initial_time: f64,
+    relative_tolerance: f64,
+    absolute_tolerance: f64,
+    maximum_step: Option<f64>,
+) -> PyResult<[f64; 14]> {
+    let state = fixed(state).map_err(to_python)?;
+    let optimality = *optimality;
+    let integrator_options = options(relative_tolerance, absolute_tolerance, maximum_step);
+    match optimality {
+        PyOptimality::Mass => {
+            let parameters = fixed(parameters).map_err(to_python)?;
+            python.detach(move || {
+                pontryagin_result(
+                    &CartesianMassOptimal,
+                    state,
+                    parameters,
+                    initial_time,
+                    final_time,
+                    integrator_options,
+                )
+                .map_err(to_python)
+            })
+        }
+        PyOptimality::Time => {
+            let parameters = fixed(parameters).map_err(to_python)?;
+            python.detach(move || {
+                pontryagin_result(
+                    &CartesianTimeOptimal,
+                    state,
+                    parameters,
+                    initial_time,
+                    final_time,
+                    integrator_options,
+                )
+                .map_err(to_python)
+            })
+        }
+    }
+}
+
+/// Propagate modified-equinoctial Pontryagin state/costate dynamics.
+#[pyfunction(signature = (
+    state,
+    final_time,
+    optimality,
+    parameters,
+    initial_time = 0.0,
+    relative_tolerance = 1e-12,
+    absolute_tolerance = 1e-12,
+    maximum_step = None
+))]
+#[allow(clippy::too_many_arguments)]
+fn propagate_pontryagin_equinoctial(
+    python: Python<'_>,
+    state: Vec<f64>,
+    final_time: f64,
+    optimality: PyRef<'_, PyOptimality>,
+    parameters: Vec<f64>,
+    initial_time: f64,
+    relative_tolerance: f64,
+    absolute_tolerance: f64,
+    maximum_step: Option<f64>,
+) -> PyResult<[f64; 14]> {
+    let state = fixed(state).map_err(to_python)?;
+    let optimality = *optimality;
+    let integrator_options = options(relative_tolerance, absolute_tolerance, maximum_step);
+    match optimality {
+        PyOptimality::Mass => {
+            let parameters = fixed(parameters).map_err(to_python)?;
+            python.detach(move || {
+                pontryagin_result(
+                    &EquinoctialMassOptimal,
+                    state,
+                    parameters,
+                    initial_time,
+                    final_time,
+                    integrator_options,
+                )
+                .map_err(to_python)
+            })
+        }
+        PyOptimality::Time => {
+            let parameters = fixed(parameters).map_err(to_python)?;
+            python.detach(move || {
+                pontryagin_result(
+                    &EquinoctialTimeOptimal,
+                    state,
+                    parameters,
+                    initial_time,
+                    final_time,
+                    integrator_options,
+                )
+                .map_err(to_python)
+            })
+        }
+    }
 }
 
 fn control_rows<const C: usize>(values: Vec<Vec<f64>>) -> Result<Vec<[f64; C]>, PykepError> {
@@ -631,6 +941,7 @@ fn propagate_bcp_with_stm(
 }
 
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<PyOptimality>()?;
     module.add_function(wrap_pyfunction!(kepler_rhs, module)?)?;
     module.add_function(wrap_pyfunction!(cr3bp_rhs, module)?)?;
     module.add_function(wrap_pyfunction!(bcp_rhs, module)?)?;
@@ -653,5 +964,16 @@ pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     module.add_function(wrap_pyfunction!(propagate_cr3bp_with_stm, module)?)?;
     module.add_function(wrap_pyfunction!(propagate_bcp_with_stm, module)?)?;
+    module.add_function(wrap_pyfunction!(pontryagin_cartesian_rhs, module)?)?;
+    module.add_function(wrap_pyfunction!(pontryagin_equinoctial_rhs, module)?)?;
+    module.add_function(wrap_pyfunction!(pontryagin_cartesian_control, module)?)?;
+    module.add_function(wrap_pyfunction!(pontryagin_equinoctial_control, module)?)?;
+    module.add_function(wrap_pyfunction!(pontryagin_cartesian_hamiltonian, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        pontryagin_equinoctial_hamiltonian,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(propagate_pontryagin_cartesian, module)?)?;
+    module.add_function(wrap_pyfunction!(propagate_pontryagin_equinoctial, module)?)?;
     Ok(())
 }

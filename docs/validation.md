@@ -122,3 +122,16 @@ Jacobians documented in `zero-order-hold.md`. Independent tests cover exact
 switch ownership, malformed grids, zero-control reductions, manual
 segment-by-segment equivalence, forward/backward reversal, and activation of
 per-segment sensitivity columns.
+
+Phase 13 records mass- and time-optimal Cartesian and modified-equinoctial
+states and all first-order variations with respect to the seven initial
+costates and upstream `lambda0` variational argument. It also records the
+upstream dimensional 100-day equinoctial case. `phase13-v1.json` has SHA-256
+`a1276c4c35c7ad60b481d81d69f8df64b542bad1d5cc6571738db820cb0e2c3d`.
+Normalized nominal trajectories use a scaled `3e-10` bound, the dimensional
+case uses `3e-9`, and variations use `2e-4` to account for the generic
+centered numerical Jacobians. Independent tests cover minimized-Hamiltonian
+conservation, propagated central differences, output-by-input Jacobian
+orientation, explicit zero-primer errors, control normalization, and
+canonical Hamiltonian agreement across the analytic coordinate/costate
+transform.

@@ -14,6 +14,8 @@
 //! `src/ta/kep.cpp`, `src/ta/cr3bp.cpp`, and `src/ta/bcp.cpp` from the pinned
 //! pykep/kep3 upstream source.
 
+/// Cartesian and modified-equinoctial Pontryagin dynamics.
+pub mod pontryagin;
 /// Zero-order-hold low-thrust and solar-sail dynamics.
 pub mod zoh;
 

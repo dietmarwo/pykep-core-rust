@@ -21,4 +21,6 @@ Development and validation commands are in
 [development.md](development.md) and [validation.md](validation.md). The
 user-facing evidence summary is [status.md](status.md), and common units and
 layouts are defined in [conventions.md](conventions.md). Benchmark conditions
-and results are in [performance.md](performance.md).
+and results are in [performance.md](performance.md). Pontryagin state,
+costate, parameter, and control conventions are in
+[pontryagin.md](pontryagin.md).
