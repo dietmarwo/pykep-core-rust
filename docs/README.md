@@ -16,6 +16,6 @@ Planned documents include:
 - performance methodology and C++ parity reports;
 - migration notes for users familiar with `kep3` or `pykep`.
 
-Until those documents exist, the authoritative work breakdown is
-[`../../pykep-rust-plan.md`](../../pykep-rust-plan.md).
-
+Current implementation coverage is tracked in [source-map.md](source-map.md).
+Development and validation commands are in
+[development.md](development.md) and [validation.md](validation.md).

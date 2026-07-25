@@ -5,9 +5,17 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 description = "Native Rust astrodynamics core for the pykep-rust port."
+publish = false
 
 [lib]
 name = "pykep_core"
 
-[lints.rust]
-unsafe_code = "forbid"
+[lints]
+workspace = true
+
+[dev-dependencies]
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "foundation"
+harness = false

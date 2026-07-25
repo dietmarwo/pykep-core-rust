@@ -1,10 +1,9 @@
-//! Native Rust astrodynamics core for the pykep-rust port.
-//!
-//! The crate is currently a buildable scaffold. Numerical modules will be
-//! introduced in the order documented in the repository's port plan.
-
+#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![deny(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+#![warn(clippy::missing_errors_doc)]
+#![warn(clippy::missing_panics_doc)]
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.

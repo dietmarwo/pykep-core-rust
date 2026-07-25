@@ -1,8 +1,8 @@
 # pykep-rust
 
-This directory is the staging area for a native Rust port of the numerical
-C++ library in pykep version 3 (`kep3`), together with a thin Python API built
-with PyO3.
+This repository contains an independent native Rust port of the numerical C++
+library in pykep version 3 (`kep3`), together with a thin Python API built with
+PyO3.
 
 The port is currently at the scaffolding stage. The crates compile, and the
 Python package boundary is defined, but the astrodynamics algorithms have not
@@ -17,11 +17,10 @@ feature parity.
 - `examples`: runnable Rust examples, added as capabilities become available.
 - `docs`: Rust-specific design and usage documentation.
 
-The detailed implementation sequence, source inventory, test strategy, and
-acceptance criteria live in
-[`../pykep-rust-plan.md`](../pykep-rust-plan.md). That planning document stays
-outside the eventual public Rust repository, following the same separation
-used for the fcmaes port.
+The pinned upstream source and adaptation policy are recorded in
+[UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in
+[docs/source-map.md](docs/source-map.md), and the evidence policy is in
+[docs/validation.md](docs/validation.md).
 
 ## Intended properties
 
@@ -52,9 +51,6 @@ python -c "import pykep_rust; print(pykep_rust.port_status())"
 
 ## Licensing
 
-The upstream source is licensed under the Mozilla Public License 2.0. The
-Rust port will preserve source-level notices and provenance and will include
-the complete MPL-2.0 license before it is split into or published as a
-standalone repository. Licensing and attribution are an explicit Phase 0
-release gate in the port plan.
-
+The upstream source and this adaptation are licensed under the Mozilla Public
+License 2.0. See [LICENSE](LICENSE) and
+[UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md).

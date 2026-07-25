@@ -13,7 +13,18 @@ rust-version = "1.88"
 license = "MPL-2.0"
 
 [workspace.dependencies]
-pykep-core = { path = "crates/pykep-core" }
+pykep-core = { version = "=0.1.0", path = "crates/pykep-core" }
+
+[workspace.lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
 
 [profile.release]
 codegen-units = 1
