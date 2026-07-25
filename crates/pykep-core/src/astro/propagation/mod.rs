@@ -4,7 +4,7 @@
 //! Two-body Cartesian propagation and state-transition matrices.
 
 mod lagrangian;
-mod stm;
+pub(crate) mod stm;
 
 pub use lagrangian::{
     propagate_keplerian, propagate_lagrangian, propagate_lagrangian_grid, propagate_universal,

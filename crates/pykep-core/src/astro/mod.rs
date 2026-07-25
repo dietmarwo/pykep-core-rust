@@ -7,5 +7,15 @@
 pub mod anomalies;
 /// Cartesian, classical, and modified-equinoctial element conversions.
 pub mod elements;
+/// Time-of-flight decision-vector encodings.
+pub mod encodings;
+/// Unpowered gravity-assist constraints and velocity mapping.
+pub mod flyby;
+/// Single- and multi-revolution Lambert boundary-value solver.
+pub mod lambert;
+/// Maximum-initial-mass approximations for low-thrust transfers.
+pub mod mima;
 /// Two-body propagation and state-transition matrices.
 pub mod propagation;
+/// Impulsive circular-orbit transfer approximations.
+pub mod transfers;

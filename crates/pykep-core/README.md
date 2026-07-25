@@ -8,6 +8,8 @@ small-vector/matrix operations. Cartesian, classical Keplerian, and modified
 equinoctial conversions include analytic 6 by 6 Jacobians. Two-body
 propagation supports Lagrange coefficients and universal variables, with
 analytic Lagrangian and Reynolds state-transition matrices.
+Mission-design utilities include impulsive transfers, time encodings, flybys,
+single/multi-revolution Lambert branches, and MIMA mass approximations.
 
 The crate has no C or C++ runtime dependency. Later orbital algorithms remain
 planned and are not represented by the current status probe.

@@ -111,6 +111,49 @@ class Epoch:
     def __gt__(self, other: Epoch) -> bool: ...
     def __ge__(self, other: Epoch) -> bool: ...
 
+class LambertSolution:
+    """One branch in a deterministic Lambert solution family."""
+
+    @property
+    def departure_velocity(self) -> list[float]: ...
+    @property
+    def arrival_velocity(self) -> list[float]: ...
+    @property
+    def x(self) -> float: ...
+    @property
+    def iterations(self) -> int: ...
+    @property
+    def revolutions(self) -> int: ...
+    @property
+    def path(self) -> str: ...
+
+class LambertProblem:
+    """Solved single- or multi-revolution Lambert problem."""
+
+    def __init__(
+        self,
+        initial_position: Sequence[float],
+        final_position: Sequence[float],
+        time: float,
+        mu: float,
+        clockwise: bool = False,
+        maximum_revolutions: int = 1,
+    ) -> None: ...
+    @property
+    def solutions(self) -> list[LambertSolution]: ...
+    @property
+    def maximum_revolutions(self) -> int: ...
+    @property
+    def initial_position(self) -> list[float]: ...
+    @property
+    def final_position(self) -> list[float]: ...
+    @property
+    def time(self) -> float: ...
+    @property
+    def mu(self) -> float: ...
+    @property
+    def clockwise(self) -> bool: ...
+
 def port_status() -> str:
     """Return the current implementation status of the native core."""
 
@@ -466,3 +509,76 @@ def propagate_lagrangian_grid(
     mu: float,
 ) -> npt.NDArray[np.float64]:
     """Propagate one state over a time grid relative to its first entry."""
+
+def hohmann(r1: float, r2: float, mu: float) -> tuple[float, float, list[float]]:
+    """Return total delta-v, duration, and impulses for a Hohmann transfer."""
+
+def bielliptic(
+    r1: float, r2: float, rb: float, mu: float
+) -> tuple[float, float, list[float]]:
+    """Return total delta-v, duration, and impulses for a bi-elliptic transfer."""
+
+def alpha_to_direct(alphas: Sequence[float], total_time: float) -> list[float]:
+    """Decode alpha decision variables into direct durations."""
+
+def direct_to_alpha(times: Sequence[float]) -> tuple[list[float], float]:
+    """Encode direct durations and return alphas plus total time."""
+
+def eta_to_direct(etas: Sequence[float], maximum_time: float) -> list[float]:
+    """Decode eta variables into direct durations."""
+
+def direct_to_eta(times: Sequence[float], maximum_time: float) -> list[float]:
+    """Encode direct durations into eta variables."""
+
+def flyby_constraints(
+    incoming: Sequence[float],
+    outgoing: Sequence[float],
+    mu: float,
+    safe_radius: float,
+) -> list[float]:
+    """Return flyby equality and inequality constraints."""
+
+def flyby_constraints_jacobian(
+    incoming: Sequence[float],
+    outgoing: Sequence[float],
+    mu: float,
+    safe_radius: float,
+) -> list[list[float]]:
+    """Return the row-major two-by-six flyby constraint Jacobian."""
+
+def flyby_delta_v(
+    incoming: Sequence[float],
+    outgoing: Sequence[float],
+    mu: float,
+    safe_radius: float,
+) -> float:
+    """Return minimum powered-flyby delta-v."""
+
+def flyby_outgoing_velocity(
+    incoming: Sequence[float],
+    planet_velocity: Sequence[float],
+    periapsis_radius: float,
+    beta: float,
+    mu: float,
+) -> list[float]:
+    """Map an incoming velocity through an unpowered flyby."""
+
+def mima(
+    departure_delta_v: Sequence[float],
+    arrival_delta_v: Sequence[float],
+    time: float,
+    maximum_thrust: float,
+    effective_exhaust_velocity: float,
+) -> tuple[float, float]:
+    """Return maximum initial mass and characteristic acceleration."""
+
+def mima2(
+    initial_state: Sequence[float],
+    departure_delta_v: Sequence[float],
+    arrival_delta_v: Sequence[float],
+    time: float,
+    maximum_thrust: float,
+    effective_exhaust_velocity: float,
+    mu: float,
+) -> tuple[float, float]:
+    """Return the STM-based maximum mass and acceleration estimate."""

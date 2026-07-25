@@ -45,3 +45,11 @@ reversal, central finite differences, and STM composition. Scalar propagation
 uses only fixed-size stack values; the core path performs zero heap
 allocations. Batch APIs allocate exactly their returned output storage after
 copying Python-owned input before releasing the GIL.
+
+Phase 6 records transfer, encoding, flyby, MIMA, and 13 Lambert solutions
+across three geometries in `phase6-v1.json` (SHA-256
+`d2a81311264ecc94a6caee15854273abb4df5f32f682fe5340ffeb247e3dd3e3`).
+Lambert ordering is zero revolution followed by left/right pairs. Every
+returned branch is independently propagated to its requested endpoint;
+encoding pairs round-trip, and the flyby Jacobian is checked by central
+differences. MIMA2 is checked against the published upstream reference case.

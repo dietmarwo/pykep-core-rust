@@ -32,3 +32,9 @@ Two-body propagation accepts any caller-consistent position, velocity, time,
 and gravitational-parameter units. Negative durations propagate backward.
 Time grids are relative to their first entry. State-transition matrices use
 `∂state_final/∂state_initial`, with output components as rows.
+
+Lambert solutions are ordered deterministically: the zero-revolution solution
+first, then left and right solutions for each increasing revolution count.
+`clockwise = false` selects prograde motion as viewed from positive `z`;
+collinear endpoints are rejected because that automatic direction convention
+is undefined.

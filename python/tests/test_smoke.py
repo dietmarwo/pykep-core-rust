@@ -17,7 +17,7 @@ def test_status_probe_reports_propagation() -> None:
     """The public facade reports the current native implementation phase."""
     assert (
         pk.port_status()
-        == "phase 5: two-body propagation and STM implemented"
+        == "phase 6: Lambert and mission-design core implemented"
     )
 
 
@@ -244,6 +244,50 @@ def test_propagation_stms_and_gil_releasing_batches() -> None:
     assert grid[0] == pytest.approx(initial)
     with pytest.raises(ValueError, match="expected 32"):
         pk.propagate_lagrangian_batch(states, times[:-1], 1.0)
+
+
+def test_transfers_encodings_flyby_lambert_and_mima() -> None:
+    """Phase 6 mission-design APIs preserve branch order and stable shapes."""
+    delta_v, duration, impulses = pk.hohmann(1.0, 2.0, 1.0)
+    assert delta_v == pytest.approx(sum(impulses))
+    assert duration > 0.0
+    bi_delta_v, _, bi_impulses = pk.bielliptic(1.0, 2.0, 2.0, 1.0)
+    assert bi_delta_v == pytest.approx(delta_v)
+    assert len(bi_impulses) == 3
+
+    direct = [0.1, 0.2, 0.3]
+    alpha, total = pk.direct_to_alpha(direct)
+    assert pk.alpha_to_direct(alpha, total) == pytest.approx(direct)
+    eta = pk.direct_to_eta(direct, 1.0)
+    assert pk.eta_to_direct(eta, 1.0) == pytest.approx(direct)
+
+    incoming = [7200.0, -4567.7655, 1234.4233]
+    outgoing = [7100.0, 220.123, -144.432]
+    constraints = pk.flyby_constraints(incoming, outgoing, 3.986e14, 7e6)
+    assert len(constraints) == 2
+    assert np.asarray(
+        pk.flyby_constraints_jacobian(incoming, outgoing, 3.986e14, 7e6)
+    ).shape == (2, 6)
+    assert pk.flyby_delta_v(incoming, outgoing, 3.986e14, 7e6) > 0.0
+
+    lambert = pk.LambertProblem(
+        [1.0, 0.0, 0.0], [0.2, 1.1, 0.3], 20.0, 1.0, False, 4
+    )
+    assert lambert.solutions[0].path == "zero"
+    assert [solution.path for solution in lambert.solutions[1:3]] == [
+        "left",
+        "right",
+    ]
+    for solution in lambert.solutions:
+        state = [*lambert.initial_position, *solution.departure_velocity]
+        endpoint = pk.propagate_lagrangian(state, lambert.time, lambert.mu)
+        assert endpoint[:3] == pytest.approx(lambert.final_position, abs=3e-10)
+
+    maximum_mass, acceleration = pk.mima(
+        [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 10.0, 0.6, 4000.0
+    )
+    assert maximum_mass > 0.0
+    assert acceleration > 0.0
 
 
 def test_public_api_has_runtime_documentation() -> None:

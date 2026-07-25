@@ -32,6 +32,11 @@ pinned C++ oracle, with both built in release mode on the same machine:
 | Lagrange propagation + STM | 216.68 ns | 444.289 ns |
 | 1,024 Lagrange calls | 113.78 µs (9.00 million/s) | — |
 
+Phase 6 Rust medians from the same orientation run were 6.258 ns for Hohmann,
+10.923 ns for flyby constraints, 34.567 ns for flyby delta-v, 235.76 ns for a
+zero-revolution Lambert problem, and 1.263 µs for the seven-solution
+multi-revolution case.
+
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
 affinity and power settings. The Julian arithmetic result is small enough that
@@ -46,6 +51,7 @@ Run the maintained harness with:
 cargo bench -p pykep-core --bench foundation
 cargo bench -p pykep-core --bench elements
 cargo bench -p pykep-core --bench propagation
+cargo bench -p pykep-core --bench mission
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -57,6 +63,8 @@ Propagation benchmarks separate elliptic and hyperbolic Lagrange coefficients,
 universal variables, analytic STM evaluation, and a 1,024-state throughput
 loop. Scalar propagation and STM APIs operate entirely on fixed-size arrays
 and perform no heap allocation.
+Mission benchmarks cover basic transfers, flyby constraints/delta-v, and both
+zero- and multi-revolution Lambert solution construction.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

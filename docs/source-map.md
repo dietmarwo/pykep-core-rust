@@ -29,12 +29,12 @@ documentation required by the definition of done are complete.
 - [x] `src/core_astro/propagate_lagrangian.cpp` →
       `astro::propagation::lagrangian` (Phase 5)
 - [x] `src/core_astro/stm.cpp` → `astro::propagation::stm` (Phase 5)
-- [ ] `src/core_astro/basic_transfers.cpp` → `astro::transfers::basic`
+- [x] `src/core_astro/basic_transfers.cpp` → `astro::transfers::basic`
       (Phase 6)
-- [ ] `src/core_astro/encodings.cpp` → `astro::encodings` (Phase 6)
-- [ ] `src/core_astro/flyby.cpp` → `astro::flyby` (Phase 6)
-- [ ] `src/lambert_problem.cpp` → `astro::lambert` (Phase 6)
-- [ ] `src/core_astro/mima.cpp` → `astro::mima` (Phase 6)
+- [x] `src/core_astro/encodings.cpp` → `astro::encodings` (Phase 6)
+- [x] `src/core_astro/flyby.cpp` → `astro::flyby` (Phase 6)
+- [x] `src/lambert_problem.cpp` → `astro::lambert` (Phase 6)
+- [x] `src/core_astro/mima.cpp` → `astro::mima` (Phase 6)
 - [ ] `src/planet.cpp` → `ephemeris` (Phase 7)
 - [ ] `src/udpla/keplerian.cpp` → `ephemeris::keplerian` (Phase 7)
 - [ ] `src/udpla/jpl_lp.cpp` → `ephemeris::jpl_lp` (Phase 8)

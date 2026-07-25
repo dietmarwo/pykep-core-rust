@@ -300,7 +300,7 @@ fn compute_y(
     result
 }
 
-fn invert(mut matrix: Matrix6) -> Result<Matrix6> {
+pub(crate) fn invert6(mut matrix: Matrix6) -> Result<Matrix6> {
     let mut inverse = identity::<6>();
     for pivot in 0..6 {
         let best = (pivot..6)
@@ -371,5 +371,5 @@ pub fn state_transition_matrix_reynolds(
         0.0,
         mu,
     );
-    matrix_multiply(&final_basis, &invert(initial_basis)?)
+    matrix_multiply(&final_basis, &invert6(initial_basis)?)
 }

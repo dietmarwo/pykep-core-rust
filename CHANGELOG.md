@@ -33,5 +33,9 @@ once the public API is ready to stabilize.
   universal variables, analytic Lagrangian and Reynolds STMs, time-grid and
   GIL-releasing NumPy batch APIs, golden parity vectors, invariant and
   finite-difference validation, and Criterion benchmarks.
+- Hohmann and bi-elliptic transfers, reversible alpha/eta encodings, flyby
+  constraints and analytic Jacobian, unpowered flyby mapping, deterministic
+  single/multi-revolution Lambert branches, and both MIMA approximations in
+  Rust and Python.
 
-Lambert, ephemerides, dynamics, and low-thrust APIs are not yet implemented.
+Ephemerides, dynamics, and low-thrust APIs are not yet implemented.
