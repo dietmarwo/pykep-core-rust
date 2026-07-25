@@ -4,10 +4,10 @@ This repository contains an independent native Rust port of the numerical C++
 library in pykep version 3 (`kep3`), together with a thin Python API built with
 PyO3.
 
-The port is currently at the scaffolding stage. The crates compile, and the
-Python package boundary is defined, but the astrodynamics algorithms have not
-yet been ported. Do not use the status probe as an indication of numerical
-feature parity.
+The numerical foundations are implemented: constants, Julian-date arithmetic,
+Stumpff functions, Kepler-equation residuals, and small fixed linear algebra.
+Orbit propagation, Lambert solutions, ephemerides, dynamics, and low-thrust
+legs remain planned. Do not infer full pykep parity from the foundation API.
 
 ## Layout
 
@@ -39,14 +39,15 @@ From this directory:
 ```bash
 cargo test --workspace
 cargo run -p pykep-examples --bin port-status
+cargo run -p pykep-examples --bin foundations
 ```
 
-Once Maturin is installed, the placeholder Python module can be built in a
-virtual environment with:
+Once Maturin is installed, the Python module can be built in a virtual
+environment with:
 
 ```bash
 python -m pip install -e .
-python -c "import pykep_rust; print(pykep_rust.port_status())"
+python -c "import pykep_rust as pk; print(pk.stumpff_c(0.0))"
 ```
 
 ## Licensing

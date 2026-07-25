@@ -26,6 +26,10 @@ jobs:
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features --locked
       - run: cargo run -p pykep-examples --bin port-status
+      - run: cmp LICENSE crates/pykep-core/LICENSE
+        if: runner.os != 'Windows'
+      - run: Compare-Object (Get-Content LICENSE) (Get-Content crates/pykep-core/LICENSE) | ForEach-Object { throw $_ }
+        if: runner.os == 'Windows'
       - run: cargo doc --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: -D warnings

@@ -7,19 +7,19 @@ documentation required by the definition of done are complete.
 
 ## Header-only numerical sources
 
-- [ ] `include/kep3/core_astro/constants.hpp` → `constants` (Phase 2)
-- [ ] `include/kep3/core_astro/convert_julian_dates.hpp` → `time::julian`
+- [x] `include/kep3/core_astro/constants.hpp` → `constants` (Phase 2)
+- [x] `include/kep3/core_astro/convert_julian_dates.hpp` → `time::julian`
       (Phase 2)
-- [ ] `include/kep3/core_astro/kepler_equations.hpp` →
+- [x] `include/kep3/core_astro/kepler_equations.hpp` →
       `math::kepler_equations` (Phase 2)
-- [ ] `include/kep3/core_astro/special_functions.hpp` → `math::stumpff`
+- [x] `include/kep3/core_astro/special_functions.hpp` → `math::stumpff`
       (Phase 2)
 - [ ] `include/kep3/core_astro/convert_anomalies.hpp` → `astro::anomalies`
       (Phase 3)
 
 ## Translation units
 
-- [ ] `src/linalg.cpp` → `math::linalg` (Phase 2)
+- [x] `src/linalg.cpp` → `math::linalg` (Phase 2)
 - [ ] `src/epoch.cpp` → `time::epoch` (Phase 3)
 - [ ] `src/core_astro/ic2par2ic.cpp` → `astro::elements::classical` (Phase 4)
 - [ ] `src/core_astro/mee2par2mee.cpp` →

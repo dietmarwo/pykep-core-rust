@@ -2,6 +2,9 @@
 
 use pyo3::prelude::*;
 
+mod error;
+mod foundations;
+
 /// Return the implementation status of the native core.
 #[pyfunction]
 fn port_status() -> &'static str {
@@ -12,5 +15,7 @@ fn port_status() -> &'static str {
 #[pymodule]
 fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(port_status, module)?)?;
+    error::register(module)?;
+    foundations::register(module)?;
     Ok(())
 }

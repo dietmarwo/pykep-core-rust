@@ -13,5 +13,12 @@ once the public API is ready to stabilize.
   C++ foundation oracle data.
 - Cross-platform formatting, lint, test, documentation, coverage, packaging,
   dependency-license, and vulnerability CI gates.
+- Physical constants, Julian-date conversions, numerically stable Stumpff
+  functions, Kepler-equation residuals/derivatives, and fixed small linear
+  algebra in Rust and Python.
+- Explicit numerical error taxonomy, fixed-shape type decision, golden C++
+  parity tests, independent derivative/geometry tests, and foundation
+  benchmarks.
 
-No numerical astrodynamics API is released yet.
+Propagation, Lambert, ephemerides, dynamics, and low-thrust APIs are not yet
+implemented.

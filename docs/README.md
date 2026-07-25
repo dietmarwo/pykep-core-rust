@@ -18,4 +18,7 @@ Planned documents include:
 
 Current implementation coverage is tracked in [source-map.md](source-map.md).
 Development and validation commands are in
-[development.md](development.md) and [validation.md](validation.md).
+[development.md](development.md) and [validation.md](validation.md). The
+user-facing evidence summary is [status.md](status.md), and common units and
+layouts are defined in [conventions.md](conventions.md). Benchmark conditions
+and results are in [performance.md](performance.md).
