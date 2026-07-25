@@ -17,7 +17,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_generic_zoh_leg() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 16: Python API audit"
+    assert pk.port_status() == "phase 17: examples and documentation"
 
 
 def test_constants_and_julian_conversions() -> None:

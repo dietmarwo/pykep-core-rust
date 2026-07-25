@@ -1,7 +1,12 @@
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
 
-//! Compare approximate and analytical heliocentric distance at J2000.
+//! Compare JPL low-precision and VSOP2013 heliocentric distance near J2000.
+//!
+//! Units: MJD2000 days, metres, and metres/second.
+//! Expected: two finite distances; frames intentionally differ as printed.
+//! Runtime: first VSOP evaluation is normally below 1 ms in release mode.
+//! Features: default `pykep-core`, including the `vsop2013` feature.
 
 use pykep_core::ephemeris::{Ephemeris, JplLowPrecision, Vsop2013};
 use pykep_core::math::linalg::norm;

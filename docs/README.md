@@ -1,34 +1,27 @@
 # Documentation
 
-This directory will contain the Rust-facing documentation for pykep-rust.
-Documentation will be added alongside implemented functionality rather than
-copied from the Python wrapper.
+The documentation describes the implemented native Rust core and its thin
+Python interface:
 
-Planned documents include:
+- [examples.md](examples.md): Rust/Python quick starts and runnable examples;
+- [conventions.md](conventions.md): units, epochs, frames, array layouts, and
+  numerical behavior;
+- [dynamics.md](dynamics.md), [pontryagin.md](pontryagin.md),
+  [zero-order-hold.md](zero-order-hold.md), [ephemerides.md](ephemerides.md),
+  [low-thrust-legs.md](low-thrust-legs.md), and [zoh-leg.md](zoh-leg.md):
+  module guides;
+- [python-api.md](python-api.md): Python units, arrays, defaults, errors,
+  ownership, GIL, and typing contract;
+- [python-migration.md](python-migration.md): upstream C++/Python names,
+  deliberate differences, deferrals, and unsupported ecosystem modules;
+- `decisions/`: architecture and dependency decisions;
+- [performance.md](performance.md): benchmark methodology and results;
+- [status.md](status.md), [source-map.md](source-map.md), and
+  [validation.md](validation.md): limitations, provenance, and validation
+  evidence;
+- [development.md](development.md): contributor commands and repository
+  policy.
 
-- conventions for units, epochs, anomalies, coordinate systems, and array
-  layouts;
-- numerical behavior and error handling;
-- Lambert and two-body propagation guides;
-- planet and ephemeris provider interfaces;
-- low-thrust leg and dynamics guides;
-- Rust and Python API quick starts;
-- performance methodology and C++ parity reports;
-- migration notes for users familiar with `kep3` or `pykep`.
-
-Current implementation coverage is tracked in [source-map.md](source-map.md).
-Development and validation commands are in
-[development.md](development.md) and [validation.md](validation.md). The
-user-facing evidence summary is [status.md](status.md), and common units and
-layouts are defined in [conventions.md](conventions.md). Benchmark conditions
-and results are in [performance.md](performance.md). Pontryagin state,
-costate, parameter, and control conventions are in
-[pontryagin.md](pontryagin.md).
-Sims–Flanagan leg construction, transcription, constraint, and derivative
-conventions are in [low-thrust-legs.md](low-thrust-legs.md).
-Generic continuous-thrust ZOH leg models, grids, integration controls, and
-sensitivities are in [zoh-leg.md](zoh-leg.md).
-The complete Python units, arrays, defaults, errors, ownership, and type
-contract is in [python-api.md](python-api.md). Upstream name and behavior
-mapping, including explicit deferrals, is in
-[python-migration.md](python-migration.md).
+Documentation is updated only for implemented behavior. Explicitly deferred or
+unavailable functionality is labelled as such in the migration and status
+documents.

@@ -21,8 +21,8 @@ pykep parity from the current API.
 
 - `crates/pykep-core`: C/C++-free Rust numerical library.
 - `crates/pykep-py`: thin PyO3 extension over `pykep-core`.
-- `python/pykep_rust`: Python package and future type stubs.
-- `examples`: runnable Rust examples, added as capabilities become available.
+- `python/pykep_rust`: typed Python package and extension stub.
+- `examples`: runnable deterministic Rust examples.
 - `docs`: Rust-specific design and usage documentation.
 - `tools/phase10-candidates`: reproducible standalone solver decision
   benchmark.
@@ -45,6 +45,8 @@ settings are documented in [docs/zoh-leg.md](docs/zoh-leg.md).
 The typed Python contract and upstream migration matrix are documented in
 [docs/python-api.md](docs/python-api.md) and
 [docs/python-migration.md](docs/python-migration.md).
+Rust and Python quick starts plus the complete runnable matrix are in
+[docs/examples.md](docs/examples.md).
 
 ## Intended properties
 
@@ -70,6 +72,9 @@ cargo run -p pykep-examples --bin propagation
 cargo run -p pykep-examples --bin lambert
 cargo run -p pykep-examples --bin jpl-low-precision
 cargo run -p pykep-examples --bin ephemeris-comparison
+cargo run -p pykep-examples --bin gravity-assist
+cargo run -p pykep-examples --bin low-thrust-legs
+cargo run -p pykep-examples --bin dynamics
 ```
 
 Once Maturin is installed, the Python module can be built in a virtual

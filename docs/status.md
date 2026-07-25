@@ -30,3 +30,8 @@ stub and `py.typed`, and has no C++ runtime dependency. Clean-wheel CI covers
 CPython 3.11–3.13 on Linux, macOS, and Windows. The upstream migration matrix
 records renames, deliberate contract changes, deferrals, and unsupported
 ecosystem modules.
+
+The runnable example matrix covers every major public module in Rust and
+through the installed Python extension. Each example states units, expected
+behavior, runtime orientation, and required features; CI compiles all Rust
+examples and executes all Python scripts.

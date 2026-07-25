@@ -1,7 +1,12 @@
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
 
-//! Solve a dimensionless multi-revolution Lambert transfer.
+//! Solve one zero- and six multi-revolution Lambert transfer branches.
+//!
+//! Units: normalized length, time, and gravitational parameter.
+//! Expected: seven deterministically ordered solutions through four revolutions.
+//! Runtime: constant bounded solve, normally below 1 ms in a release build.
+//! Features: default `pykep-core`; no external data or runtime.
 
 use pykep_core::astro::lambert::LambertProblem;
 

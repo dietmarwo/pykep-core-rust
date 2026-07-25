@@ -1,4 +1,9 @@
-//! Demonstrates the Phase 2 numerical foundation APIs.
+//! Evaluate constants, Julian arithmetic, Stumpff functions, and vector math.
+//!
+//! Units: SI constants, MJD2000 days, and dimensionless numerical functions.
+//! Expected: epoch zero, unit z normal, `C(0)=1/2`, and `S(0)=1/6`.
+//! Runtime: constant work, normally below 1 ms in a release build.
+//! Features: default `pykep-core`; no external data or runtime.
 
 use pykep_core::Result;
 use pykep_core::constants::ASTRONOMICAL_UNIT;

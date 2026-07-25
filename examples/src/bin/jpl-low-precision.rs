@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Evaluate an approximate heliocentric Earth state at J2000.
+//!
+//! Units: MJD2000 days, metres, and metres/second.
+//! Expected: one finite six-component J2000-ecliptic state.
+//! Runtime: constant work, normally below 1 ms in a release build.
+//! Features: works without optional `pykep-core` data features.
 
 use pykep_core::ephemeris::{Ephemeris, JplLowPrecision};
 

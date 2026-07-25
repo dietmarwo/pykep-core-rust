@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Propagate a normalized circular orbit and inspect its STM.
+//!
+//! Units: normalized radius, velocity, time, and `mu`.
+//! Expected: quarter-orbit state `[0,1,0,-1,0,0]` and a 6 × 6 STM.
+//! Runtime: constant work, normally below 1 ms in a release build.
+//! Features: default `pykep-core`; no external data or runtime.
 
 use pykep_core::astro::propagation::propagate_lagrangian_with_stm;
 

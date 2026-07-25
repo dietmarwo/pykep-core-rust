@@ -1,4 +1,9 @@
-//! Demonstrates Phase 4 classical and modified-equinoctial conversions.
+//! Convert classical elements, round-trip them, and evaluate a Jacobian.
+//!
+//! Units: SI metres, seconds, radians, and `mu` in m³/s².
+//! Expected: a stable Cartesian/MEE round trip and a finite 6 × 6 Jacobian.
+//! Runtime: constant work, normally below 1 ms in a release build.
+//! Features: default `pykep-core`; no external data or runtime.
 
 use pykep_core::Result;
 use pykep_core::astro::elements::{

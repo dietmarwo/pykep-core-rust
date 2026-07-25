@@ -1,4 +1,9 @@
-//! Demonstrates Phase 3 epoch and anomaly conversion APIs.
+//! Convert an epoch and round-trip elliptic and hyperbolic anomalies.
+//!
+//! Units: epochs use MJD2000 days and anomalies are radians.
+//! Expected: arrival 180 days later and round trips equal to 0.7 and 4.0.
+//! Runtime: constant work, normally below 1 ms in a release build.
+//! Features: default `pykep-core`; no external data or runtime.
 
 use pykep_core::Result;
 use pykep_core::astro::anomalies::{

@@ -31,7 +31,7 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 16: Python API audit";
+pub const PORT_STATUS: &str = "phase 17: examples and documentation";
 
 #[cfg(test)]
 mod tests {
@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn status_reports_generic_zoh_leg() {
-        assert!(PORT_STATUS.contains("phase 16"));
-        assert!(PORT_STATUS.contains("Python API"));
+        assert!(PORT_STATUS.contains("phase 17"));
+        assert!(PORT_STATUS.contains("documentation"));
     }
 }
