@@ -62,3 +62,25 @@ documentation required by the definition of done are complete.
 
 The C++-specific visibility, serialization, and type-erasure support headers
 are reviewed for semantics but are not port targets.
+
+## Explicitly unavailable upstream ecosystem areas
+
+These are not unchecked source-map rows. They are technically outside the
+native numerical-core product and have stable internal tracking identifiers:
+
+- `PY-EXT-001`: SPICE kernels, TLE parsing, and Python-defined UDPLA providers
+  require external data/runtime and dynamic Python callback contracts that are
+  absent from the C/C++-free core.
+- `TA-SYMBOLIC-001`: arbitrary heyoka expression graphs and Taylor-integrator
+  objects cannot be reproduced without exposing a symbolic/JIT runtime; native
+  evaluated dynamics and DOP853 propagation are the supported contract.
+- `PY-ECOSYSTEM-001`: plotting, trajectory-optimization UDPs, gym utilities,
+  and third-party integrations belong to their Python ecosystems rather than
+  the numerical core.
+- `MIMA-HOP-001`: `mima_from_hop` and `mima2_from_hop` depend on an upstream
+  higher-order-propagation object that the native API intentionally does not
+  expose.
+
+The Python migration matrix gives user-visible alternatives. A future change
+must resolve the corresponding tracking item and add a source-map row before
+claiming support.

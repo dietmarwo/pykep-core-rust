@@ -1,5 +1,8 @@
 /target/
 /tools/*/target/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
 /.venv/
 /dist/
 *.egg-info/

@@ -15,9 +15,9 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_generic_zoh_leg() -> None:
+def test_status_probe_reports_release_candidate() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 17: examples and documentation"
+    assert pk.port_status() == "phase 18: release candidate"
 
 
 def test_constants_and_julian_conversions() -> None:

@@ -143,3 +143,8 @@ configurations used by their C++ harnesses.
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization
 and batch throughput are reported separately from warm scalar latency.
+
+Phase 18 adds a protocol-matched 100-sample Rust/C++ distribution, bootstrap
+median confidence intervals, CI regression limits, allocation/cache/
+vectorization profiles, and five-point Python batch scaling. Full results and
+environment limitations are in [stabilization.md](stabilization.md).

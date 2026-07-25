@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 dependencies = ["numpy>=1.26"]
 license = "MPL-2.0"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",

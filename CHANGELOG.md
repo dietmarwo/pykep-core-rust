@@ -59,5 +59,31 @@ once the public API is ready to stabilize.
   modified-equinoctial, and ideal solar-sail models with deterministic
   switches, backward propagation, fixed-width segment sensitivities, Python
   wrappers, Taylor-reference variations, and scaling benchmarks.
+- Cartesian and modified-equinoctial Pontryagin state/costate dynamics for
+  mass- and time-optimal control, including controls, Hamiltonians,
+  propagation, sensitivities, Python APIs, parity vectors, and benchmarks.
+- Fixed- and variable-duration Sims–Flanagan legs with immutable validation,
+  mismatch/throttle constraints, analytic gradients, Python classes, and
+  C++/independent derivative validation.
+- A generic ZOH leg over all four controlled dynamics families, with
+  endpoint/control/time-grid sensitivities, state histories, batch evaluation,
+  contextual integration failures, and Python bindings.
+- A complete typed Python surface audit, including all-export Pytest coverage,
+  adversarial NumPy/lifetime/thread tests, explicit GIL-releasing batches,
+  migration matrix, clean-wheel CI, Mypy example, and wrapper benchmarks.
+- Paired deterministic Rust/Python examples for every major public module,
+  plus quick starts and a batch-throughput example.
+- Release-candidate packaging, performance regression tooling, bounded fuzz
+  targets, memory/cache profiling procedure, and local empty-project smoke
+  tests for the crate and wheel.
 
-Pontryagin and low-thrust leg APIs are not yet implemented.
+### Changed
+
+- Enabled independent packaging of `pykep-core`; the PyO3 implementation crate
+  remains unpublished and the Python distribution remains a separate wheel.
+
+### Known release blockers
+
+- Permanent repository ownership, private security contact, trusted publisher
+  configuration, external API review, registry publication, registry-download
+  smoke tests, and the release tag require release-owner action.

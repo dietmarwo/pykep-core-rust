@@ -42,12 +42,13 @@ upstream version recorded in `UPSTREAM_NOTICE.md`.
 The following upstream areas are not part of the completed native numerical
 core and are not emulated:
 
-- SPICE kernels, TLE parsing, and Python-defined UDPLA providers;
+- SPICE kernels, TLE parsing, and Python-defined UDPLA providers
+  (`PY-EXT-001`);
 - plotting helpers, trajectory-optimization UDPs, gym utilities, and optional
-  ecosystem integrations;
+  ecosystem integrations (`PY-ECOSYSTEM-001`);
 - symbolic heyoka dynamics/integrator construction and arbitrary user-supplied
-  expression graphs;
-- `mima_from_hop` and `mima2_from_hop`;
+  expression graphs (`TA-SYMBOLIC-001`);
+- `mima_from_hop` and `mima2_from_hop` (`MIMA-HOP-001`);
 - deprecated compatibility aliases and nested namespace layouts.
 
 Use `has_acceleration()` and the VSOP2013 availability/threshold queries when

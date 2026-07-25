@@ -18,6 +18,19 @@ Run the MSRV check separately:
 cargo +1.88.0 check --workspace --locked
 ```
 
+Release-facing changes also run:
+
+```bash
+cargo run --release -p pykep-release-benchmark -- --quick --check
+cargo audit
+cargo deny check
+cargo package -p pykep-core --locked
+```
+
+The bounded fuzz and suitable-code Miri commands are documented in
+`fuzz/README.md` and enforced in CI. Exact native floating-point parity tests
+must not be weakened to make Miri's software floating-point results match.
+
 Python-facing changes must build the extension in a clean virtual
 environment, run Pytest, update runtime docstrings and `.pyi` declarations,
 and demonstrate that wrappers call `pykep-core` rather than duplicate

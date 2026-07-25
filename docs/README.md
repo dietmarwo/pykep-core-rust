@@ -16,6 +16,8 @@ Python interface:
   deliberate differences, deferrals, and unsupported ecosystem modules;
 - `decisions/`: architecture and dependency decisions;
 - [performance.md](performance.md): benchmark methodology and results;
+- [stabilization.md](stabilization.md): matched distributions, profiling,
+  regression limits, Miri/fuzz/Valgrind evidence, and release blockers;
 - [status.md](status.md), [source-map.md](source-map.md), and
   [validation.md](validation.md): limitations, provenance, and validation
   evidence;

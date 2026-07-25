@@ -64,5 +64,6 @@ assert!(propagated.state.iter().all(|value| value.is_finite()));
 # Ok::<(), pykep_core::PykepError>(())
 ```
 
-The crate is deliberately marked `publish = false` until a useful,
-cross-module orbital-mechanics milestone is complete.
+The crate is packaged independently from the `pykep-rust` Python wheel. The
+numerical crate has no PyO3, NumPy, C, or C++ dependency; the unpublished
+`pykep-py` workspace crate supplies conversion and exception plumbing only.

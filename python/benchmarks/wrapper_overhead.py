@@ -31,9 +31,34 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--size", type=int, default=20_000)
     parser.add_argument("--repeats", type=int, default=9)
+    parser.add_argument(
+        "--scaling",
+        action="store_true",
+        help="measure Lagrange batches from 1 to 65,536 states",
+    )
     args = parser.parse_args()
     if args.size <= 0 or args.repeats <= 0:
         parser.error("--size and --repeats must be positive")
+
+    if args.scaling:
+        print("batch_size,median_ns_per_item,items_per_second")
+        for size in [1, 16, 256, 4_096, 65_536]:
+            states = np.tile(
+                np.asarray(
+                    [1.0, 0.0, 0.0, 0.0, 1.0, 0.0], dtype=np.float64
+                ),
+                (size, 1),
+            )
+            times = np.full(size, 0.1, dtype=np.float64)
+            elapsed = median_seconds(
+                lambda: pk.propagate_lagrangian_batch(states, times, 1.0),
+                args.repeats,
+            )
+            print(
+                f"{size},{1e9 * elapsed / size:.2f},"
+                f"{size / elapsed:.2f}"
+            )
+        return
 
     values = [1e-12] * args.size
     states = np.tile(

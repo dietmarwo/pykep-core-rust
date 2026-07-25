@@ -14,6 +14,8 @@ Run benchmarks separately so timing work is never hidden in the test suite:
 
 ```bash
 cargo bench -p pykep-core
+cargo run --release -p pykep-release-benchmark -- --quick --check
+python python/benchmarks/wrapper_overhead.py --scaling
 ```
 
 The standalone Phase 10 candidate comparison is reproducible with:
@@ -41,6 +43,21 @@ Coverage:
 cargo llvm-cov -p pykep-core --all-targets --summary-only
 cargo llvm-cov --workspace --all-targets --summary-only
 ```
+
+Release-candidate dynamic checks:
+
+```bash
+cargo +nightly miri test -p pykep-core --lib --no-default-features fixed_matrix_operations
+cargo +nightly fuzz run epoch_parser -- -max_total_time=30
+cargo +nightly fuzz run element_conversions -- -max_total_time=30
+cargo +nightly fuzz run lambert_inputs -- -max_total_time=30
+valgrind --error-exitcode=1 --leak-check=full \
+  target/release/pykep-release-benchmark --quick
+```
+
+The full protocol, profiler commands/results, and Miri floating-point scope are
+documented in [stabilization.md](stabilization.md). Packaging and
+clean-artifact consumption are documented in `RELEASE.md`.
 
 Build state belongs in `target/` or `.venv/` and is ignored. Development-only
 C++ oracle tools and internal planning notes are not part of this standalone

@@ -179,3 +179,11 @@ Every Rust binary is compiled under workspace test and clippy gates and run
 locally in release mode. Pytest discovers and runs every Python script against
 the installed release extension. The crate-level Rustdoc example is compiled
 with warnings denied.
+
+Phase 18 adds a protocol-matched 100-sample Rust/C++ performance distribution,
+coarse CI regression thresholds, batch scaling, and allocation/cache/
+vectorization profiling before any optimization. Miri runs suitable structural
+and parser tests, Valgrind checks the release harness, and bounded
+libFuzzer/AddressSanitizer campaigns cover epoch parsing, element conversion,
+and Lambert inputs. `stabilization.md` records exact results, limits, tool
+constraints, and the absence of algorithm changes.

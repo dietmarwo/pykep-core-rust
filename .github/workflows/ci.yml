@@ -66,6 +66,10 @@ jobs:
       - run: python -m pytest -q
       - run: python -m mypy
         if: runner.os == 'Linux' && matrix.python-version == '3.12'
+      - run: maturin sdist --manifest-path crates/pykep-py/Cargo.toml
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+      - run: python -m pip wheel --wheel-dir target/sdist-wheel target/wheels/pykep_rust-0.1.0.tar.gz
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
 
   coverage:
     name: Coverage
@@ -93,13 +97,62 @@ jobs:
       - run: cargo audit
       - run: cargo deny check
 
-  scaffold-package-guard:
-    name: Publication guard
+  performance-smoke:
+    name: Performance regression smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run --release -p pykep-release-benchmark -- --quick --check
+
+  miri:
+    name: Miri safe-core smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - run: cargo miri test -p pykep-core --lib --no-default-features fixed_matrix_operations
+      - run: cargo miri test -p pykep-core --lib --no-default-features difference_equations
+      - run: cargo miri test -p pykep-core --lib --no-default-features errors_have_stable_useful_messages
+      - run: cargo miri test -p pykep-core --lib --no-default-features iso_crops
+
+  fuzz:
+    name: Bounded fuzz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@cargo-fuzz
+      - run: cargo fuzz run epoch_parser -- -max_total_time=5
+      - run: cargo fuzz run element_conversions -- -max_total_time=5
+      - run: cargo fuzz run lambert_inputs -- -max_total_time=5
+
+  valgrind:
+    name: Valgrind release smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install --yes valgrind
+      - run: cargo build --release -p pykep-release-benchmark
+      - run: valgrind --error-exitcode=1 --leak-check=full target/release/pykep-release-benchmark --quick
+
+  scaffold-package-guard:
+    name: Publication and package guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - run: |
-          if ! grep -Eq '^publish = false$' crates/pykep-core/Cargo.toml; then
-            echo "The scaffold core must remain unpublishable."
+          if grep -Eq '^publish = false$' crates/pykep-core/Cargo.toml; then
+            echo "The completed core must remain independently packageable."
             exit 1
           fi
+          if ! grep -Eq '^publish = false$' crates/pykep-py/Cargo.toml; then
+            echo "The binding implementation crate must remain unpublished."
+            exit 1
+          fi
+      - run: cargo package -p pykep-core --locked

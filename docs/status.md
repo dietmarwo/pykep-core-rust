@@ -35,3 +35,10 @@ The runnable example matrix covers every major public module in Rust and
 through the installed Python extension. Each example states units, expected
 behavior, runtime orientation, and required features; CI compiles all Rust
 examples and executes all Python scripts.
+
+Phase 18 is a reproducible release candidate. The core is independently
+packageable, the binding implementation remains unpublished, performance
+regression/Miri/fuzz/Valgrind gates are maintained, and local crate/wheel/sdist
+smokes are required. Publication, a permanent name freeze, registry-download
+testing, and tagging remain explicitly blocked on release-owner metadata,
+external API review, trusted publishing, and authority.

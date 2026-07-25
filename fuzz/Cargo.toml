@@ -1,0 +1,33 @@
+[package]
+name = "pykep-core-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+pykep-core = { path = "../crates/pykep-core", default-features = false }
+
+[[bin]]
+name = "epoch_parser"
+path = "fuzz_targets/epoch_parser.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "element_conversions"
+path = "fuzz_targets/element_conversions.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "lambert_inputs"
+path = "fuzz_targets/lambert_inputs.rs"
+test = false
+doc = false
+bench = false

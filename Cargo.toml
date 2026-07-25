@@ -4,7 +4,9 @@ members = [
     "crates/pykep-core",
     "crates/pykep-py",
     "examples",
+    "tools/release-benchmark",
 ]
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.1.0"

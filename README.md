@@ -47,6 +47,9 @@ The typed Python contract and upstream migration matrix are documented in
 [docs/python-migration.md](docs/python-migration.md).
 Rust and Python quick starts plus the complete runnable matrix are in
 [docs/examples.md](docs/examples.md).
+Release-candidate performance distributions, profiling, dynamic analysis, and
+remaining external blockers are in
+[docs/stabilization.md](docs/stabilization.md).
 
 ## Intended properties
 
