@@ -36,6 +36,8 @@ Phase 6 Rust medians from the same orientation run were 6.258 ns for Hohmann,
 10.923 ns for flyby constraints, 34.567 ns for flyby delta-v, 235.76 ns for a
 zero-revolution Lambert problem, and 1.263 µs for the seven-solution
 multi-revolution case.
+Keplerian ephemeris evaluation measured 80.299 ns for one scalar epoch and
+22.575 µs for an ordered 256-epoch batch in the Phase 7 orientation run.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -64,7 +66,8 @@ universal variables, analytic STM evaluation, and a 1,024-state throughput
 loop. Scalar propagation and STM APIs operate entirely on fixed-size arrays
 and perform no heap allocation.
 Mission benchmarks cover basic transfers, flyby constraints/delta-v, and both
-zero- and multi-revolution Lambert solution construction.
+zero- and multi-revolution Lambert solution construction. The same harness
+measures scalar and 256-epoch Keplerian ephemeris evaluation separately.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

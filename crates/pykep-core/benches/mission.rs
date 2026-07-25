@@ -7,6 +7,8 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use pykep_core::astro::flyby::{flyby_constraints, flyby_delta_v};
 use pykep_core::astro::lambert::LambertProblem;
 use pykep_core::astro::transfers::hohmann;
+use pykep_core::ephemeris::{Ephemeris, KeplerianEphemeris};
+use pykep_core::time::epoch::Epoch;
 use std::hint::black_box;
 
 fn mission_design(criterion: &mut Criterion) {
@@ -62,6 +64,23 @@ fn mission_design(criterion: &mut Criterion) {
             )
             .unwrap()
         });
+    });
+    let provider = KeplerianEphemeris::from_state(
+        Epoch::default(),
+        [1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        1.0,
+        "benchmark",
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    criterion.bench_function("ephemeris/keplerian_scalar", |bencher| {
+        bencher.iter(|| provider.state(black_box(0.1)).unwrap());
+    });
+    criterion.bench_function("ephemeris/keplerian_256_epochs", |bencher| {
+        let epochs: Vec<_> = (0..256).map(|index| f64::from(index) * 0.001).collect();
+        bencher.iter(|| provider.states(black_box(&epochs)).unwrap());
     });
 }
 

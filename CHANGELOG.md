@@ -37,5 +37,8 @@ once the public API is ready to stabilize.
   constraints and analytic Jacobian, unpowered flyby mapping, deterministic
   single/multi-revolution Lambert branches, and both MIMA approximations in
   Rust and Python.
+- Object-safe, thread-safe ephemeris providers with explicit optional
+  capabilities and metadata, derived period/elements behavior, a Keplerian
+  provider, shared Python `Planet`, and GIL-releasing epoch batches.
 
-Ephemerides, dynamics, and low-thrust APIs are not yet implemented.
+JPL/VSOP ephemerides, dynamics, and low-thrust APIs are not yet implemented.

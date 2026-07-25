@@ -6,9 +6,10 @@ PyO3.
 
 The numerical foundations, epochs, anomalies, element conversions, two-body
 propagation, state-transition matrices, Lambert solutions, impulsive
-transfers, flybys, encodings, and MIMA approximations are implemented.
-Ephemerides, dynamics, and low-thrust legs remain planned. Do not infer full
-pykep parity from the current API.
+transfers, flybys, encodings, MIMA approximations, the planet interface, and
+the Keplerian ephemeris are implemented. JPL/VSOP ephemerides, dynamics, and
+low-thrust legs remain planned. Do not infer full pykep parity from the current
+API.
 
 ## Layout
 

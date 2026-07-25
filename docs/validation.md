@@ -53,3 +53,10 @@ Lambert ordering is zero revolution followed by left/right pairs. Every
 returned branch is independently propagated to its requested endpoint;
 encoding pairs round-trip, and the flyby Jacobian is checked by central
 differences. MIMA2 is checked against the published upstream reference case.
+
+Phase 7 adds six Keplerian states over negative, reference, near-reference,
+and long-span MJD2000 epochs. `phase7-v1.json` has SHA-256
+`7eda8fb03796ab7d70cdb0e94c422773422ed682aff9310cd06512c0f6396a54`.
+Independent tests cover period recurrence, all supported element
+representations, ordered batches, explicit unsupported capabilities, and
+concurrent read-only evaluation through shared ownership.

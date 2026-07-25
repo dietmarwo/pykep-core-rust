@@ -17,7 +17,7 @@ def test_status_probe_reports_propagation() -> None:
     """The public facade reports the current native implementation phase."""
     assert (
         pk.port_status()
-        == "phase 6: Lambert and mission-design core implemented"
+        == "phase 7: planet interface and Keplerian ephemeris implemented"
     )
 
 
@@ -288,6 +288,34 @@ def test_transfers_encodings_flyby_lambert_and_mima() -> None:
     )
     assert maximum_mass > 0.0
     assert acceleration > 0.0
+
+
+def test_keplerian_planet_scalar_batch_metadata_and_capabilities() -> None:
+    """The Python planet owns a thread-safe native ephemeris provider."""
+    planet = pk.Planet.keplerian_from_classical(
+        12.22,
+        [3.0, 0.2, 0.4, 0.3, 0.2, 0.1],
+        1.1,
+        "oracle",
+        1.2,
+        2.2,
+        2.9,
+    )
+    assert planet.name == "oracle"
+    assert planet.central_mu == 1.1
+    assert planet.body_mu == 1.2
+    assert planet.radius == 2.2
+    assert planet.safe_radius == 2.9
+    assert planet.period(12.22) == pytest.approx(2 * math.pi * math.sqrt(27 / 1.1))
+    epochs = np.array([-100.0, 12.22, 40.0], dtype=np.float64)
+    states = planet.states(epochs)
+    assert states.shape == (3, 6)
+    for index, epoch in enumerate(epochs):
+        assert states[index] == pytest.approx(planet.state(float(epoch)))
+    assert len(planet.elements(40.0, "modified_equinoctial")) == 6
+    assert not planet.has_acceleration()
+    with pytest.raises(pk.UnsupportedCapabilityError):
+        planet.acceleration(0.0)
 
 
 def test_public_api_has_runtime_documentation() -> None:

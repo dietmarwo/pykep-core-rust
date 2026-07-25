@@ -9,6 +9,8 @@
 pub mod astro;
 /// Physical and astrodynamical constants.
 pub mod constants;
+/// Ephemeris providers and the object-safe planet interface.
+pub mod ephemeris;
 /// Stable error categories returned by numerical APIs.
 pub mod error;
 /// Small, dependency-free numerical helpers.
@@ -23,15 +25,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 6: Lambert and mission-design core implemented";
+pub const PORT_STATUS: &str = "phase 7: planet interface and Keplerian ephemeris implemented";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_mission_design() {
-        assert!(PORT_STATUS.contains("Lambert"));
-        assert!(PORT_STATUS.contains("mission"));
+    fn status_reports_keplerian_ephemeris() {
+        assert!(PORT_STATUS.contains("planet"));
+        assert!(PORT_STATUS.contains("Keplerian"));
     }
 }

@@ -154,6 +154,50 @@ class LambertProblem:
     @property
     def clockwise(self) -> bool: ...
 
+class Planet:
+    """Thread-safe owner of an ephemeris provider."""
+
+    @staticmethod
+    def keplerian_from_state(
+        reference_epoch_mjd2000: float,
+        state: Sequence[float],
+        central_mu: float,
+        name: str = "Unknown",
+        body_mu: float | None = None,
+        radius: float | None = None,
+        safe_radius: float | None = None,
+    ) -> Planet: ...
+    @staticmethod
+    def keplerian_from_classical(
+        reference_epoch_mjd2000: float,
+        elements: Sequence[float],
+        central_mu: float,
+        name: str = "Unknown",
+        body_mu: float | None = None,
+        radius: float | None = None,
+        safe_radius: float | None = None,
+    ) -> Planet: ...
+    def state(self, epoch_mjd2000: float) -> list[float]: ...
+    def states(
+        self, epochs_mjd2000: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]: ...
+    def acceleration(self, epoch_mjd2000: float) -> list[float]: ...
+    def elements(
+        self, epoch_mjd2000: float, representation: str = "classical_true"
+    ) -> list[float]: ...
+    def period(self, epoch_mjd2000: float) -> float | None: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def central_mu(self) -> float | None: ...
+    @property
+    def body_mu(self) -> float | None: ...
+    @property
+    def radius(self) -> float | None: ...
+    @property
+    def safe_radius(self) -> float | None: ...
+    def has_acceleration(self) -> bool: ...
+
 def port_status() -> str:
     """Return the current implementation status of the native core."""
 

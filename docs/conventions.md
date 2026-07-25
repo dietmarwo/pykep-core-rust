@@ -38,3 +38,8 @@ first, then left and right solutions for each increasing revolution count.
 `clockwise = false` selects prograde motion as viewed from positive `z`;
 collinear endpoints are rejected because that automatic direction convention
 is undefined.
+
+Ephemeris scalar epochs use MJD2000 days. Returned states use SI units for
+built-in Solar System providers and caller-consistent units for constructed
+Keplerian providers. Provider metadata uses `Option` rather than upstream
+negative sentinels, and hyperbolic periods are `None`.

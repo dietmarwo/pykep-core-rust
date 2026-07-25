@@ -3,6 +3,7 @@
 use pyo3::prelude::*;
 
 mod elements;
+mod ephemeris;
 mod error;
 mod foundations;
 mod mission;
@@ -22,6 +23,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     error::register(module)?;
     foundations::register(module)?;
     elements::register(module)?;
+    ephemeris::register(module)?;
     mission::register(module)?;
     propagation::register(module)?;
     time_anomalies::register(module)?;
