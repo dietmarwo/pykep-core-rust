@@ -29,10 +29,10 @@ fn rows(matrix: Matrix6) -> Vec<Vec<f64>> {
 fn batch<'py, F>(
     python: Python<'py>,
     values: PyReadonlyArray2<'py, f64>,
-    mut operation: F,
+    operation: F,
 ) -> PyResult<Bound<'py, PyArray2<f64>>>
 where
-    F: FnMut(Elements6) -> pykep_core::Result<Elements6>,
+    F: Fn(Elements6) -> pykep_core::Result<Elements6> + Send + 'static,
 {
     let shape = values.shape();
     if shape[1] != 6 {
@@ -41,13 +41,21 @@ where
             actual: shape[1],
         }));
     }
-    let input = values.as_array();
-    let mut output = Vec::with_capacity(shape[0] * 6);
-    for row in input.rows() {
-        let converted =
-            operation([row[0], row[1], row[2], row[3], row[4], row[5]]).map_err(to_python)?;
-        output.extend(converted);
-    }
+    let input = values
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|row| [row[0], row[1], row[2], row[3], row[4], row[5]])
+        .collect::<Vec<_>>();
+    let output = python
+        .detach(move || {
+            let mut output = Vec::with_capacity(input.len() * 6);
+            for row in input {
+                output.extend(operation(row)?);
+            }
+            Ok::<_, PykepError>(output)
+        })
+        .map_err(to_python)?;
     let array = Array2::from_shape_vec((shape[0], 6), output)
         .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
     Ok(array.into_pyarray(python))
@@ -153,7 +161,7 @@ fn cartesian_to_classical_batch<'py>(
     states: PyReadonlyArray2<'py, f64>,
     mu: f64,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, states, |state| {
+    batch(python, states, move |state| {
         cartesian_to_classical(&state, mu).map(ClassicalElements::to_array)
     })
 }
@@ -165,7 +173,7 @@ fn classical_to_cartesian_batch<'py>(
     elements: PyReadonlyArray2<'py, f64>,
     mu: f64,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, |elements| {
+    batch(python, elements, move |elements| {
         classical_to_cartesian(elements.into(), mu)
     })
 }
@@ -178,7 +186,7 @@ fn classical_to_modified_equinoctial_batch<'py>(
     elements: PyReadonlyArray2<'py, f64>,
     retrograde: bool,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, |elements| {
+    batch(python, elements, move |elements| {
         classical_to_modified_equinoctial(elements.into(), retrograde)
             .map(ModifiedEquinoctialElements::to_array)
     })
@@ -192,7 +200,7 @@ fn modified_equinoctial_to_classical_batch<'py>(
     elements: PyReadonlyArray2<'py, f64>,
     retrograde: bool,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, |elements| {
+    batch(python, elements, move |elements| {
         modified_equinoctial_to_classical(elements.into(), retrograde)
             .map(ClassicalElements::to_array)
     })
@@ -207,7 +215,7 @@ fn cartesian_to_modified_equinoctial_batch<'py>(
     mu: f64,
     retrograde: bool,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, states, |state| {
+    batch(python, states, move |state| {
         cartesian_to_modified_equinoctial(&state, mu, retrograde)
             .map(ModifiedEquinoctialElements::to_array)
     })
@@ -222,7 +230,7 @@ fn modified_equinoctial_to_cartesian_batch<'py>(
     mu: f64,
     retrograde: bool,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, |elements| {
+    batch(python, elements, move |elements| {
         modified_equinoctial_to_cartesian(elements.into(), mu, retrograde)
     })
 }

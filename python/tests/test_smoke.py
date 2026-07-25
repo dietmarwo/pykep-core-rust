@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import ast
+import gc
 import inspect
 import math
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +17,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_generic_zoh_leg() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 15: generic ZOH leg"
+    assert pk.port_status() == "phase 16: Python API audit"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -25,6 +27,31 @@ def test_constants_and_julian_conversions() -> None:
     assert pk.jd_to_mjd(2_451_544.5) == 51_544.0
     assert pk.jd_to_mjd2000(2_451_544.5) == 0.0
     assert pk.mjd2000_to_jd(0.0) == 2_451_544.5
+    assert pk.mjd_to_jd(pk.mjd2000_to_mjd(0.0)) == 2_451_544.5
+    assert pk.mjd_to_mjd2000(pk.mjd2000_to_mjd(123.0)) == 123.0
+    constants = [
+        pk.HALF_PI,
+        pk.CAVENDISH_CONSTANT,
+        pk.MU_SUN,
+        pk.MU_EARTH,
+        pk.MU_MOON,
+        pk.EARTH_ORBITAL_VELOCITY,
+        pk.EARTH_J2,
+        pk.EARTH_RADIUS,
+        pk.DEGREES_TO_RADIANS,
+        pk.RADIANS_TO_DEGREES,
+        pk.DAY_TO_SECONDS,
+        pk.SECONDS_TO_DAY,
+        pk.JULIAN_YEAR_DAYS,
+        pk.DAYS_TO_JULIAN_YEAR,
+        pk.STANDARD_GRAVITY,
+        pk.CR3BP_MU_EARTH_MOON,
+        pk.BCP_MU_EARTH_MOON,
+        pk.BCP_MU_SUN,
+    ]
+    assert all(math.isfinite(value) and value > 0.0 for value in constants)
+    assert pk.DEGREES_TO_RADIANS * pk.RADIANS_TO_DEGREES == pytest.approx(1.0)
+    assert pk.DAY_TO_SECONDS * pk.SECONDS_TO_DAY == pytest.approx(1.0)
     with pytest.raises(ValueError, match="must be finite"):
         pk.jd_to_mjd(math.nan)
 
@@ -54,8 +81,23 @@ def test_kepler_residuals_and_domains() -> None:
         pk.hyperbolic_kepler_residual(0.0, 0.0, 1.0)
     residual = pk.elliptic_difference_residual(0.4, 0.3, 0.2, 2.0, 4.0, 3.0)
     assert math.isfinite(residual)
+    residual_family = [
+        pk.elliptic_kepler_second_derivative(0.4, 0.2),
+        pk.hyperbolic_kepler_derivative(0.4, 1.5),
+        pk.hyperbolic_kepler_second_derivative(0.4, 1.5),
+        pk.elliptic_difference_derivative(0.4, 0.2, 2.0, 4.0, 3.0),
+        pk.elliptic_difference_second_derivative(0.4, 0.2, 2.0, 4.0, 3.0),
+        pk.hyperbolic_difference_residual(0.4, 0.3, 0.2, 2.0, -4.0, 3.0),
+        pk.hyperbolic_difference_derivative(0.4, 0.2, 2.0, -4.0, 3.0),
+        pk.hyperbolic_difference_second_derivative(0.4, 0.2, 2.0, -4.0, 3.0),
+    ]
+    assert all(math.isfinite(value) for value in residual_family)
     universal = pk.universal_kepler_residual(0.4, 20.0, 7.0, 0.2, 0.01, 3.0)
     assert math.isfinite(universal)
+    assert math.isfinite(pk.universal_kepler_derivative(0.4, 7.0, 0.2, 0.01, 3.0))
+    assert math.isfinite(
+        pk.universal_kepler_second_derivative(0.4, 7.0, 0.2, 0.01, 3.0)
+    )
 
 
 def test_vector_operations_and_validation() -> None:
@@ -111,12 +153,22 @@ def test_anomaly_conversions_batches_round_trips_and_domains() -> None:
     assert pk.true_to_eccentric_anomaly(true_anomaly, 0.5) == pytest.approx(
         eccentric
     )
+    assert pk.true_to_mean_anomaly(
+        pk.mean_to_true_anomaly(0.1, 0.5), 0.5
+    ) == pytest.approx(0.1)
     means = [-4.0, 0.0, 0.1, 100.0]
     assert pk.mean_to_eccentric_anomaly_batch(means, 0.9) == [
         pk.mean_to_eccentric_anomaly(value, 0.9) for value in means
     ]
     hyperbolic = pk.hyperbolic_mean_to_anomaly(20.0, 10.0)
     assert pk.hyperbolic_anomaly_to_mean(hyperbolic, 10.0) == pytest.approx(20.0)
+    hyperbolic_true = pk.hyperbolic_anomaly_to_true(hyperbolic, 10.0)
+    assert pk.true_to_hyperbolic_mean(hyperbolic_true, 10.0) == pytest.approx(20.0)
+    assert pk.hyperbolic_mean_to_true(20.0, 10.0) == pytest.approx(hyperbolic_true)
+    gudermannian = pk.true_to_gudermannian_anomaly(hyperbolic_true, 10.0)
+    assert pk.gudermannian_to_true_anomaly(
+        gudermannian, 10.0
+    ) == pytest.approx(hyperbolic_true)
     assert pk.hyperbolic_mean_to_anomaly_batch(means, 1.5) == [
         pk.hyperbolic_mean_to_anomaly(value, 1.5) for value in means
     ]
@@ -208,6 +260,34 @@ def test_element_jacobians_and_numpy_batches() -> None:
         pk.classical_to_cartesian_batch(np.zeros((2, 5)), 1.0)
 
 
+def test_numpy_batch_layout_dtype_and_finite_validation() -> None:
+    """NumPy wrappers accept strided float64 arrays and reject invalid buffers."""
+    classical = np.array(
+        [
+            [3.0, 0.3, 0.7, 1.1, 0.4, -0.8],
+            [5.0, 0.1, 1.0, 2.1, 1.4, 0.8],
+        ],
+        dtype=np.float64,
+    )
+    storage = np.empty((2, 12), dtype=np.float64)
+    storage[:, ::2] = classical
+    storage[:, 1::2] = -99.0
+    strided = storage[:, ::2]
+    assert not strided.flags.c_contiguous
+    strided.flags.writeable = False
+    assert pk.classical_to_cartesian_batch(strided, 1.0) == pytest.approx(
+        pk.classical_to_cartesian_batch(classical, 1.0)
+    )
+    with pytest.raises(TypeError):
+        pk.classical_to_cartesian_batch(classical.astype(np.int64), 1.0)
+    with pytest.raises(TypeError):
+        pk.classical_to_cartesian_batch(classical[0], 1.0)
+    invalid = classical.copy()
+    invalid[1, 2] = math.inf
+    with pytest.raises(ValueError, match="finite"):
+        pk.classical_to_cartesian_batch(invalid, 1.0)
+
+
 def test_propagation_stms_and_gil_releasing_batches() -> None:
     """Propagation covers scalar, STM, grid, and NumPy batch interfaces."""
     initial = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
@@ -290,6 +370,21 @@ def test_evaluated_kepler_cr3bp_and_bcp_dynamics() -> None:
     )
     assert len(final_state) == 6
     assert np.asarray(stm).shape == (6, 6)
+    assert len(pk.propagate_kepler_dynamics(initial, 0.01, 1.0)) == 6
+    assert np.asarray(
+        pk.propagate_kepler_dynamics_with_stm(initial, 0.01, 1.0)[1]
+    ).shape == (6, 6)
+    assert len(pk.propagate_keplerian(initial, 0.01, 1.0)) == 6
+    bcp_parameters = (
+        mu,
+        pk.BCP_MU_SUN,
+        pk.BCP_SUN_DISTANCE,
+        pk.BCP_SUN_ANGULAR_VELOCITY,
+    )
+    assert len(pk.propagate_bcp(initial, 0.01, *bcp_parameters)) == 6
+    assert np.asarray(
+        pk.propagate_bcp_with_stm(initial, 0.01, *bcp_parameters)[1]
+    ).shape == (6, 6)
     assert pk.bcp_rhs(
         0.4,
         initial,
@@ -451,6 +546,17 @@ def test_pontryagin_enum_controls_and_propagation() -> None:
             equinoctial, pk.Optimality.Time, [1.0, 1e-4, 1.0]
         )
     ) == 14
+    throttle, direction, switching = pk.pontryagin_equinoctial_control(
+        equinoctial, pk.Optimality.Time, [1.0, 1e-4, 1.0]
+    )
+    assert throttle == 1.0
+    assert np.linalg.norm(direction) == pytest.approx(1.0)
+    assert math.isfinite(switching)
+    assert math.isfinite(
+        pk.pontryagin_equinoctial_hamiltonian(
+            equinoctial, pk.Optimality.Time, [1.0, 1e-4, 1.0]
+        )
+    )
     assert len(
         pk.propagate_pontryagin_equinoctial(
             equinoctial,
@@ -622,10 +728,16 @@ def test_transfers_encodings_flyby_lambert_and_mima() -> None:
         pk.flyby_constraints_jacobian(incoming, outgoing, 3.986e14, 7e6)
     ).shape == (2, 6)
     assert pk.flyby_delta_v(incoming, outgoing, 3.986e14, 7e6) > 0.0
+    assert len(
+        pk.flyby_outgoing_velocity(
+            incoming, [10_000.0, 20_000.0, -1_000.0], 7e6, 0.2, 3.986e14
+        )
+    ) == 3
 
     lambert = pk.LambertProblem(
         [1.0, 0.0, 0.0], [0.2, 1.1, 0.3], 20.0, 1.0, False, 4
     )
+    assert isinstance(lambert.solutions[0], pk.LambertSolution)
     assert lambert.solutions[0].path == "zero"
     assert [solution.path for solution in lambert.solutions[1:3]] == [
         "left",
@@ -641,6 +753,48 @@ def test_transfers_encodings_flyby_lambert_and_mima() -> None:
     )
     assert maximum_mass > 0.0
     assert acceleration > 0.0
+    maximum_mass2, acceleration2 = pk.mima2(
+        [1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        [0.01, 0.0, 0.0],
+        [0.0, 0.01, 0.0],
+        1.0,
+        0.1,
+        1.0,
+        1.0,
+    )
+    assert maximum_mass2 > 0.0
+    assert acceleration2 > 0.0
+
+
+def test_owned_inputs_repeatability_and_thread_safety() -> None:
+    """Objects own constructor data and support deterministic concurrent reuse."""
+    state = np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+    planet = pk.Planet.keplerian_from_state(0.0, state, 1.0)
+    expected_state = planet.state(0.25)
+    state[:] = math.nan
+    del state
+
+    controls = [[0.0, 1.0, 0.0, 0.0]]
+    leg = pk.ZohLeg(
+        pk.ZohModel.Kepler,
+        [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0],
+        controls,
+        [0.9, 0.1, 0.0, -0.1, 0.9, 0.0, 1.0],
+        [0.0, 0.1],
+        [0.0],
+    )
+    expected_mismatch = leg.mismatch_constraints()
+    controls[0][0] = math.nan
+    del controls
+    gc.collect()
+
+    assert planet.state(0.25) == expected_state
+    assert leg.mismatch_constraints() == expected_mismatch
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        states = list(pool.map(lambda _: planet.state(0.25), range(16)))
+        mismatches = list(pool.map(lambda _: leg.mismatch_constraints(), range(16)))
+    assert all(value == expected_state for value in states)
+    assert all(value == expected_mismatch for value in mismatches)
 
 
 def test_keplerian_planet_scalar_batch_metadata_and_capabilities() -> None:
@@ -758,6 +912,16 @@ def test_public_api_has_runtime_documentation() -> None:
         if callable(value) and not inspect.getdoc(value):
             missing.append(name)
     assert not missing
+
+
+def test_public_exception_hierarchy_and_exports_are_reachable() -> None:
+    """All public exceptions are typed and every declared export is reachable."""
+    assert issubclass(pk.ConvergenceError, pk.PykepError)
+    assert issubclass(pk.SingularGeometryError, pk.PykepError)
+    assert issubclass(pk.UnsupportedCapabilityError, pk.PykepError)
+    assert issubclass(pk.IntegrationError, pk.PykepError)
+    for name in pk.__all__:
+        assert getattr(pk, name) is not None
 
 
 def test_stub_and_runtime_exports_match() -> None:

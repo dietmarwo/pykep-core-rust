@@ -160,3 +160,14 @@ central differences. Separate tests cover cut zero and one, strict time grids,
 dimensions, finite values, solver options, state histories, ordered batches,
 and maximum-step exhaustion with direction, segment index, and time interval
 in the reported failure.
+
+Phase 16 audits the complete Python surface against the pinned upstream
+exports and records every equivalent, renamed, intentionally different,
+deferred, and unsupported area in `python-migration.md`. Pytest checks every
+runtime export against the shipped stub and documentation, then exercises
+strided/read-only arrays, wrong dtype and rank, wrong shape, NaN/infinity,
+typed exceptions, repeatability, copied constructor inputs, and concurrent
+reuse. Mypy checks representative code against the packaged stub. A clean
+wheel matrix installs and imports CPython 3.11–3.13 wheels on Linux, macOS,
+and Windows; local shared-library inspection verifies that the extension has
+no C++ runtime dependency.

@@ -18,8 +18,15 @@ Evidence-backed status as of 2026-07-25:
 | Pontryagin dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | Hamiltonians, coordinate transform, finite differences, singular primer | Criterion + C++ harness | complete |
 | Sims–Flanagan legs | implemented | implemented | 3.0.1 | cuts, odd/even and one-segment cases, central differences, validation | Criterion + C++ harness | complete |
 | Generic ZOH leg | implemented | implemented | 3.0.1/heyoka 7.10.0 | four models, cuts, central differences, contextual failures | Criterion + C++ harness | complete |
+| Python API audit | same native core | complete typed surface | same core entry points | exports, adversarial buffers, ownership, threads, clean wheels | wrapper/batch harness | complete |
 
 “Implemented” means the public contract is documented, validation is explicit,
 the committed C++ golden data passes except for documented numerical
 improvements, independent properties pass, and Rust/Python tests call the same
 core implementation. It does not imply that later modules exist.
+
+The Python wheel uses the collision-safe `pykep_rust` import, ships a complete
+stub and `py.typed`, and has no C++ runtime dependency. Clean-wheel CI covers
+CPython 3.11–3.13 on Linux, macOS, and Windows. The upstream migration matrix
+records renames, deliberate contract changes, deferrals, and unsupported
+ecosystem modules.

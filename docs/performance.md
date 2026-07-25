@@ -87,6 +87,13 @@ averaged 6.865 µs and 182.17 µs. Both use the same states, chronological
 controls, time grid, constants, cut, and `1e-12` tolerance, with no maximum
 step. Rust integrates each segment independently and computes fixed-size
 numerical dynamics Jacobians, making both paths visible optimization targets.
+The Phase 16 release-wheel wrapper harness used 20,000 items and the median of
+nine samples on the same machine. A Python scalar loop around `stumpff_c`
+measured 38.9 ns/item versus 14.6 ns/item through `stumpff_c_batch`, a 2.67×
+throughput improvement. Scalar Lagrange calls measured 0.72 µs/item versus
+0.09 µs/item for the `N × 6` NumPy batch, a 7.82× improvement. These include
+Python input/output conversion and demonstrate that throughput-sensitive code
+should use explicit batches; they are not Rust-core timings.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -106,6 +113,7 @@ cargo bench -p pykep-core --bench mission
 cargo bench -p pykep-core --bench integration
 cargo bench -p pykep-core --bench dynamics
 cargo bench -p pykep-core --bench legs
+python python/benchmarks/wrapper_overhead.py
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a

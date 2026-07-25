@@ -68,21 +68,27 @@ fn stumpff_s(value: f64) -> PyResult<f64> {
 
 /// Evaluate the Stumpff C function for a sequence, preserving input order.
 #[pyfunction]
-fn stumpff_c_batch(values: Vec<f64>) -> PyResult<Vec<f64>> {
-    values
-        .into_iter()
-        .map(stumpff::stumpff_c)
-        .collect::<pykep_core::Result<Vec<_>>>()
+fn stumpff_c_batch(python: Python<'_>, values: Vec<f64>) -> PyResult<Vec<f64>> {
+    python
+        .detach(move || {
+            values
+                .into_iter()
+                .map(stumpff::stumpff_c)
+                .collect::<pykep_core::Result<Vec<_>>>()
+        })
         .map_err(to_python)
 }
 
 /// Evaluate the Stumpff S function for a sequence, preserving input order.
 #[pyfunction]
-fn stumpff_s_batch(values: Vec<f64>) -> PyResult<Vec<f64>> {
-    values
-        .into_iter()
-        .map(stumpff::stumpff_s)
-        .collect::<pykep_core::Result<Vec<_>>>()
+fn stumpff_s_batch(python: Python<'_>, values: Vec<f64>) -> PyResult<Vec<f64>> {
+    python
+        .detach(move || {
+            values
+                .into_iter()
+                .map(stumpff::stumpff_s)
+                .collect::<pykep_core::Result<Vec<_>>>()
+        })
         .map_err(to_python)
 }
 

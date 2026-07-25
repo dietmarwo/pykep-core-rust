@@ -269,26 +269,34 @@ anomaly_wrapper!(
 /// Convert elliptic mean anomalies in input order at one eccentricity.
 #[pyfunction]
 fn mean_to_eccentric_anomaly_batch(
+    python: Python<'_>,
     mean_anomalies: Vec<f64>,
     eccentricity: f64,
 ) -> PyResult<Vec<f64>> {
-    mean_anomalies
-        .into_iter()
-        .map(|mean| anomalies::mean_to_eccentric_anomaly(mean, eccentricity))
-        .collect::<pykep_core::Result<Vec<_>>>()
+    python
+        .detach(move || {
+            mean_anomalies
+                .into_iter()
+                .map(|mean| anomalies::mean_to_eccentric_anomaly(mean, eccentricity))
+                .collect::<pykep_core::Result<Vec<_>>>()
+        })
         .map_err(to_python)
 }
 
 /// Convert hyperbolic mean anomalies in input order at one eccentricity.
 #[pyfunction]
 fn hyperbolic_mean_to_anomaly_batch(
+    python: Python<'_>,
     mean_anomalies: Vec<f64>,
     eccentricity: f64,
 ) -> PyResult<Vec<f64>> {
-    mean_anomalies
-        .into_iter()
-        .map(|mean| anomalies::hyperbolic_mean_to_anomaly(mean, eccentricity))
-        .collect::<pykep_core::Result<Vec<_>>>()
+    python
+        .detach(move || {
+            mean_anomalies
+                .into_iter()
+                .map(|mean| anomalies::hyperbolic_mean_to_anomaly(mean, eccentricity))
+                .collect::<pykep_core::Result<Vec<_>>>()
+        })
         .map_err(to_python)
 }
 

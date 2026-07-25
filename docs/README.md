@@ -28,3 +28,7 @@ Sims–Flanagan leg construction, transcription, constraint, and derivative
 conventions are in [low-thrust-legs.md](low-thrust-legs.md).
 Generic continuous-thrust ZOH leg models, grids, integration controls, and
 sensitivities are in [zoh-leg.md](zoh-leg.md).
+The complete Python units, arrays, defaults, errors, ownership, and type
+contract is in [python-api.md](python-api.md). Upstream name and behavior
+mapping, including explicit deferrals, is in
+[python-migration.md](python-migration.md).

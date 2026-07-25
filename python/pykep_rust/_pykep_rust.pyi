@@ -1,10 +1,18 @@
 """Type declarations for the native pykep-rust extension."""
 
 from collections.abc import Sequence
-from typing import Final
+from typing import Final, Literal
 
 import numpy as np
 import numpy.typing as npt
+
+EpochScale = Literal["mjd2000", "mjd", "jd"]
+ElementRepresentation = Literal[
+    "classical_true",
+    "classical_mean",
+    "modified_equinoctial",
+    "modified_equinoctial_retrograde",
+]
 
 PI: Final[float]
 HALF_PI: Final[float]
@@ -185,7 +193,9 @@ class ZohLeg:
 class Epoch:
     """A microsecond-resolution proleptic-Gregorian epoch."""
 
-    def __init__(self, value: float = 0.0, scale: str = "mjd2000") -> None:
+    def __init__(
+        self, value: float = 0.0, scale: EpochScale = "mjd2000"
+    ) -> None:
         """Construct from an MJD2000, MJD, or JD day count."""
 
     @staticmethod
@@ -335,7 +345,9 @@ class Planet:
     ) -> npt.NDArray[np.float64]: ...
     def acceleration(self, epoch_mjd2000: float) -> list[float]: ...
     def elements(
-        self, epoch_mjd2000: float, representation: str = "classical_true"
+        self,
+        epoch_mjd2000: float,
+        representation: ElementRepresentation = "classical_true",
     ) -> list[float]: ...
     def period(self, epoch_mjd2000: float) -> float | None: ...
     @property

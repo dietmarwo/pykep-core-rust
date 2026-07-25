@@ -42,6 +42,9 @@ Sims–Flanagan endpoint, cut, impulse, constraint, and Jacobian conventions are
 documented in [docs/low-thrust-legs.md](docs/low-thrust-legs.md).
 Generic continuous-thrust ZOH leg models, grids, sensitivities, and integration
 settings are documented in [docs/zoh-leg.md](docs/zoh-leg.md).
+The typed Python contract and upstream migration matrix are documented in
+[docs/python-api.md](docs/python-api.md) and
+[docs/python-migration.md](docs/python-migration.md).
 
 ## Intended properties
 

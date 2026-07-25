@@ -1,4 +1,18 @@
-"""Typed Python interface to the native pykep-rust astrodynamics core."""
+"""Typed Python interface to the native pykep-rust astrodynamics core.
+
+Angles are radians, durations are seconds unless an API explicitly uses Julian
+days, and Cartesian quantities use one consistent length/mass/time unit system.
+NumPy batch APIs consume ``float64`` arrays with the documented shapes and
+return newly owned arrays. Numerical failures use the :class:`PykepError`
+hierarchy; invalid values and shapes use :class:`ValueError`.
+
+Examples:
+    >>> import pykep_rust as pk
+    >>> pk.Epoch.from_iso("2030-01").mjd2000
+    10958.0
+    >>> pk.cross([1.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+    [0.0, 0.0, 1.0]
+"""
 
 from ._pykep_rust import (
     ASTRONOMICAL_UNIT,

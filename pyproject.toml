@@ -18,8 +18,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
+[project.optional-dependencies]
+test = [
+    "mypy>=1.15,<2",
+    "pytest>=8,<10",
+]
+
 [tool.maturin]
 manifest-path = "crates/pykep-py/Cargo.toml"
 python-source = "python"
 module-name = "pykep_rust._pykep_rust"
 strip = true
+
+[tool.mypy]
+files = ["python/typecheck"]
+mypy_path = "python"
+strict = true
