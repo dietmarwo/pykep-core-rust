@@ -47,3 +47,7 @@ harness = false
 [[bench]]
 name = "dynamics"
 harness = false
+
+[[bench]]
+name = "legs"
+harness = false

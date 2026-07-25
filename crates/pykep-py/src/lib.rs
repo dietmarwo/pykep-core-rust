@@ -7,6 +7,7 @@ mod elements;
 mod ephemeris;
 mod error;
 mod foundations;
+mod leg;
 mod mission;
 mod propagation;
 mod time_anomalies;
@@ -23,6 +24,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(port_status, module)?)?;
     error::register(module)?;
     foundations::register(module)?;
+    leg::register(module)?;
     dynamics::register(module)?;
     elements::register(module)?;
     ephemeris::register(module)?;

@@ -27,8 +27,11 @@ ownership, backward propagation, and segment-local sensitivities.
 Cartesian and modified-equinoctial Pontryagin models provide mass- and
 time-optimal state/costate dynamics, evaluated controls and Hamiltonians, and
 first-order sensitivity Jacobians.
+Fixed- and variable-duration Sims–Flanagan legs provide validated
+forward/backward transcription, throttle constraints, and analytic fixed-leg
+mismatch gradients.
 
-The crate has no C or C++ runtime dependency. Low-thrust leg APIs remain
+The crate has no C or C++ runtime dependency. The generic ZOH leg remains
 planned.
 
 ## Example

@@ -50,6 +50,86 @@ class Optimality:
     Mass: Final[Optimality]
     Time: Final[Optimality]
 
+class SimsFlanaganLeg:
+    """Fixed-duration Sims–Flanagan low-thrust leg."""
+
+    def __init__(
+        self,
+        departure_state: Sequence[float],
+        departure_mass: float,
+        throttles: Sequence[Sequence[float]],
+        arrival_state: Sequence[float],
+        arrival_mass: float,
+        time_of_flight: float,
+        maximum_thrust: float,
+        exhaust_velocity: float,
+        mu: float,
+        cut: float = 0.5,
+    ) -> None: ...
+    def mismatch_constraints(self) -> list[float]: ...
+    def throttle_constraints(self) -> list[float]: ...
+    def mismatch_jacobian(
+        self,
+    ) -> tuple[list[list[float]], list[list[float]], list[list[float]]]: ...
+    def throttle_jacobian(self) -> list[list[float]]: ...
+    @property
+    def segment_count(self) -> int: ...
+    @property
+    def forward_segment_count(self) -> int: ...
+    @property
+    def backward_segment_count(self) -> int: ...
+    @property
+    def cut(self) -> float: ...
+    @property
+    def time_of_flight(self) -> float: ...
+
+class SimsFlanaganAlphaLeg:
+    """Variable-duration Sims–Flanagan low-thrust leg."""
+
+    def __init__(
+        self,
+        departure_state: Sequence[float],
+        departure_mass: float,
+        throttles: Sequence[Sequence[float]],
+        segment_durations: Sequence[float],
+        arrival_state: Sequence[float],
+        arrival_mass: float,
+        time_of_flight: float,
+        maximum_thrust: float,
+        exhaust_velocity: float,
+        mu: float,
+        cut: float = 0.5,
+    ) -> None: ...
+    @staticmethod
+    def from_time_weights(
+        departure_state: Sequence[float],
+        departure_mass: float,
+        throttles: Sequence[Sequence[float]],
+        time_weights: Sequence[float],
+        arrival_state: Sequence[float],
+        arrival_mass: float,
+        time_of_flight: float,
+        maximum_thrust: float,
+        exhaust_velocity: float,
+        mu: float,
+        cut: float = 0.5,
+    ) -> SimsFlanaganAlphaLeg: ...
+    def mismatch_constraints(self) -> list[float]: ...
+    def throttle_constraints(self) -> list[float]: ...
+    def throttle_jacobian(self) -> list[list[float]]: ...
+    @property
+    def segment_durations(self) -> list[float]: ...
+    @property
+    def segment_count(self) -> int: ...
+    @property
+    def forward_segment_count(self) -> int: ...
+    @property
+    def backward_segment_count(self) -> int: ...
+    @property
+    def cut(self) -> float: ...
+    @property
+    def time_of_flight(self) -> float: ...
+
 class Epoch:
     """A microsecond-resolution proleptic-Gregorian epoch."""
 

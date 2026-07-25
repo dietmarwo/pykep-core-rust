@@ -16,7 +16,8 @@ Evidence-backed status as of 2026-07-25:
 | Kepler/CR3BP/BCP dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | equilibria, invariants, finite differences, singularities | Criterion + C++ harness | complete |
 | ZOH dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | switches, reversal, zero control, sensitivity activation | Criterion + C++ harness | complete |
 | Pontryagin dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | Hamiltonians, coordinate transform, finite differences, singular primer | Criterion + C++ harness | complete |
-| Low-thrust legs | planned | planned | planned | planned | planned | planned |
+| Sims–Flanagan legs | implemented | implemented | 3.0.1 | cuts, odd/even and one-segment cases, central differences, validation | Criterion + C++ harness | complete |
+| Generic ZOH leg | planned | planned | planned | planned | planned | planned |
 
 “Implemented” means the public contract is documented, validation is explicit,
 the committed C++ golden data passes except for documented numerical

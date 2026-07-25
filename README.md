@@ -11,8 +11,9 @@ the Keplerian, JPL low-precision, and feature-gated VSOP2013 ephemerides are
 implemented. The pure-Rust adaptive integration backend now drives evaluated
 Kepler, CR3BP, bicircular, four zero-order-hold dynamics families, and
 Cartesian/equinoctial Pontryagin models with first-order sensitivities.
-Low-thrust leg classes remain planned. Do not infer full pykep parity from
-the current API.
+Validated fixed- and variable-duration Sims–Flanagan legs provide mismatch
+and throttle constraints, with analytic fixed-leg gradients. The generic ZOH
+leg remains planned. Do not infer full pykep parity from the current API.
 
 ## Layout
 
@@ -35,6 +36,8 @@ Piecewise-constant controls, switching boundaries, and ZOH sensitivities are
 documented in [docs/zero-order-hold.md](docs/zero-order-hold.md).
 Indirect-control state, costate, control, and parameter conventions are
 documented in [docs/pontryagin.md](docs/pontryagin.md).
+Sims–Flanagan endpoint, cut, impulse, constraint, and Jacobian conventions are
+documented in [docs/low-thrust-legs.md](docs/low-thrust-legs.md).
 
 ## Intended properties
 

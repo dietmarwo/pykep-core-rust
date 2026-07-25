@@ -17,6 +17,8 @@ pub mod ephemeris;
 pub mod error;
 /// Adaptive integration interfaces used by evaluated dynamics models.
 pub mod integration;
+/// Low-thrust trajectory leg models and constraint Jacobians.
+pub mod leg;
 /// Small, dependency-free numerical helpers.
 pub mod math;
 /// Time representations and conversions.
@@ -29,15 +31,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 13: Pontryagin dynamics";
+pub const PORT_STATUS: &str = "phase 14: Sims-Flanagan legs";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_pontryagin_dynamics() {
-        assert!(PORT_STATUS.contains("phase 13"));
-        assert!(PORT_STATUS.contains("Pontryagin"));
+    fn status_reports_sims_flanagan_legs() {
+        assert!(PORT_STATUS.contains("phase 14"));
+        assert!(PORT_STATUS.contains("Sims-Flanagan"));
     }
 }

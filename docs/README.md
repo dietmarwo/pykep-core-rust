@@ -24,3 +24,5 @@ layouts are defined in [conventions.md](conventions.md). Benchmark conditions
 and results are in [performance.md](performance.md). Pontryagin state,
 costate, parameter, and control conventions are in
 [pontryagin.md](pontryagin.md).
+Sims–Flanagan leg construction, transcription, constraint, and derivative
+conventions are in [low-thrust-legs.md](low-thrust-legs.md).

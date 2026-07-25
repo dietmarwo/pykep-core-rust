@@ -24,6 +24,7 @@ cmake --build .oracle-build
 .oracle-build/phase8_oracle
 .oracle-build/phase9_oracle
 .oracle-build/phase13_oracle
+.oracle-build/phase14_oracle
 ```
 
 Compare the output byte-for-byte with `foundations-v1.json` and
@@ -34,3 +35,8 @@ deterministic.
 `phase13-v1.json` covers Cartesian and modified-equinoctial Pontryagin
 trajectories in mass- and time-optimal modes, the upstream dimensional
 100-day trajectory, and first-order costate/`lambda0` variations.
+
+`phase14-v1.json` covers fixed-duration Sims–Flanagan constraints and
+analytic gradients at representative cut boundaries, plus equal- and
+irregular-duration alpha legs. It has SHA-256
+`0bd6adddc72d850f1de5e4ab95a436128d9b8181f8de2b3bbbc67300e004d542`.

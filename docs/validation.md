@@ -135,3 +135,15 @@ conservation, propagated central differences, output-by-input Jacobian
 orientation, explicit zero-primer errors, control normalization, and
 canonical Hamiltonian agreement across the analytic coordinate/costate
 transform.
+
+Phase 14 records fixed-duration Sims–Flanagan mismatch and throttle
+constraints, all three analytic mismatch-Jacobian groups, and throttle
+Jacobians for one physical five-segment case and normalized four-segment cases
+at cuts zero, one half, and one. It also records equal and irregular direct
+durations for the alpha variant. `phase14-v1.json` has SHA-256
+`0bd6adddc72d850f1de5e4ab95a436128d9b8181f8de2b3bbbc67300e004d542`.
+The Rust analytic gradients agree with the pinned C++ values to scaled bounds
+of `2e-10` to `3e-10` and with independent scale-adjusted central
+differences. Separate tests cover one segment, odd/even splits, zero and
+unit-limit throttle, all cut boundaries, normalized weights, invalid
+propulsion/gravity/mass values, dimension mismatches, and non-finite inputs.

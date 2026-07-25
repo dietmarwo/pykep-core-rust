@@ -15,7 +15,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 13: Pontryagin dynamics"
+    assert pk.port_status() == "phase 14: Sims-Flanagan legs"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -463,6 +463,84 @@ def test_pontryagin_enum_controls_and_propagation() -> None:
     with pytest.raises(TypeError):
         pk.pontryagin_cartesian_rhs(
             cartesian, "mass", [1.0, 0.01, 1.0, 0.5, 1.0]
+        )
+
+
+def test_sims_flanagan_fixed_alpha_constraints_and_shapes() -> None:
+    """Phase 14 exposes validated immutable leg classes and stable Jacobians."""
+    departure = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+    arrival = [0.2, 1.1, 0.1, -0.9, 0.15, -0.05]
+    throttles = [
+        [0.1, -0.2, 0.05],
+        [0.3, 0.1, -0.15],
+        [-0.25, 0.2, 0.1],
+        [0.05, -0.1, 0.2],
+    ]
+    leg = pk.SimsFlanaganLeg(
+        departure,
+        2.0,
+        throttles,
+        arrival,
+        1.7,
+        1.3,
+        0.04,
+        3.0,
+        1.0,
+    )
+    assert leg.segment_count == 4
+    assert leg.forward_segment_count == 2
+    assert leg.backward_segment_count == 2
+    assert len(leg.mismatch_constraints()) == 7
+    assert len(leg.throttle_constraints()) == 4
+    departure_jacobian, arrival_jacobian, control_time_jacobian = (
+        leg.mismatch_jacobian()
+    )
+    assert np.asarray(departure_jacobian).shape == (7, 7)
+    assert np.asarray(arrival_jacobian).shape == (7, 7)
+    assert np.asarray(control_time_jacobian).shape == (7, 13)
+    assert np.asarray(leg.throttle_jacobian()).shape == (4, 12)
+
+    alpha = pk.SimsFlanaganAlphaLeg(
+        departure,
+        2.0,
+        throttles,
+        [0.1, 0.2, 0.4, 0.6],
+        arrival,
+        1.7,
+        1.3,
+        0.04,
+        3.0,
+        1.0,
+    )
+    assert alpha.mismatch_constraints() == pytest.approx(
+        [
+            0.023919853076296405,
+            -0.3060611737971523,
+            -0.11324122549191241,
+            0.1782908006996728,
+            0.16755567783157332,
+            -0.026531387267934307,
+            0.2951375889873944,
+        ],
+        rel=4e-12,
+        abs=4e-12,
+    )
+    weighted = pk.SimsFlanaganAlphaLeg.from_time_weights(
+        departure,
+        2.0,
+        throttles,
+        [1.0, 2.0, 3.0, 4.0],
+        arrival,
+        1.7,
+        1.3,
+        0.04,
+        3.0,
+        1.0,
+    )
+    assert sum(weighted.segment_durations) == pytest.approx(1.3)
+    with pytest.raises(ValueError):
+        pk.SimsFlanaganLeg(
+            departure, 2.0, [], arrival, 1.7, 1.3, 0.04, 3.0, 1.0
         )
 
 

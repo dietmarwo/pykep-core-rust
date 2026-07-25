@@ -54,9 +54,9 @@ documentation required by the definition of done are complete.
 - [x] `src/ta/pontryagin_equinoctial.cpp` →
       `dynamics::pontryagin::{EquinoctialMassOptimal, EquinoctialTimeOptimal}`
       (Phase 13)
-- [ ] `src/leg/sf_checks.cpp` → `leg::validation` (Phase 14)
-- [ ] `src/leg/sims_flanagan.cpp` → `leg::sims_flanagan` (Phase 14)
-- [ ] `src/leg/sims_flanagan_alpha.cpp` →
+- [x] `src/leg/sf_checks.cpp` → `leg::sims_flanagan` validation (Phase 14)
+- [x] `src/leg/sims_flanagan.cpp` → `leg::sims_flanagan` (Phase 14)
+- [x] `src/leg/sims_flanagan_alpha.cpp` →
       `leg::sims_flanagan_alpha` (Phase 14)
 - [ ] `src/leg/zoh.cpp` → `leg::zoh` (Phase 15)
 

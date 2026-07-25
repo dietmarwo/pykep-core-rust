@@ -74,6 +74,12 @@ parameters, final time, and `1e-12` tolerance. Rust uses a `0.01` maximum step
 to enforce the recorded oracle tolerance; the C++ Taylor solve has no
 equivalent maximum-step restriction, so this orientation identifies an
 integration-performance target rather than like-for-like algorithm speed.
+The Phase 14 physical five-segment Sims–Flanagan case measured 1.002 µs for
+mismatch evaluation and 4.241 µs for its complete analytic mismatch Jacobian
+in Rust. The same warmed C++ configuration measured 1.037 µs and 12.748 µs,
+respectively. Both sides used the same endpoint states, masses, controls,
+duration, propulsion parameters, gravity parameter, and `cut = 0.6`; neither
+timing includes construction or validation.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -92,6 +98,7 @@ cargo bench -p pykep-core --bench propagation
 cargo bench -p pykep-core --bench mission
 cargo bench -p pykep-core --bench integration
 cargo bench -p pykep-core --bench dynamics
+cargo bench -p pykep-core --bench legs
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -114,6 +121,8 @@ internal steps.
 Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
 nominal and variational propagation, ZOH schedules, and Pontryagin
 state/costate propagation.
+Leg benchmarks separate Sims–Flanagan mismatch and analytic-gradient
+evaluation for the same five-segment configuration used by the C++ harness.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization
