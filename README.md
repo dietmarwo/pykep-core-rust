@@ -9,9 +9,9 @@ propagation, state-transition matrices, Lambert solutions, impulsive
 transfers, flybys, encodings, MIMA approximations, the planet interface, and
 the Keplerian, JPL low-precision, and feature-gated VSOP2013 ephemerides are
 implemented. The pure-Rust adaptive integration backend now drives evaluated
-Kepler, CR3BP, and bicircular dynamics with analytic sensitivities. ZOH,
-Pontryagin, and low-thrust legs remain planned. Do not infer full pykep parity
-from the current API.
+Kepler, CR3BP, bicircular, and four zero-order-hold dynamics families with
+first-order sensitivities. Pontryagin models and low-thrust legs remain
+planned. Do not infer full pykep parity from the current API.
 
 ## Layout
 
@@ -30,6 +30,8 @@ The pinned upstream source and adaptation policy are recorded in
 accuracy are documented in [docs/ephemerides.md](docs/ephemerides.md).
 Dynamics frames, parameters, errors, and reference tolerances are documented
 in [docs/dynamics.md](docs/dynamics.md).
+Piecewise-constant controls, switching boundaries, and ZOH sensitivities are
+documented in [docs/zero-order-hold.md](docs/zero-order-hold.md).
 
 ## Intended properties
 

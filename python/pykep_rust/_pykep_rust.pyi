@@ -237,6 +237,88 @@ def cr3bp_effective_potential(state: Sequence[float], mu: float) -> float:
 def cr3bp_jacobi_constant(state: Sequence[float], mu: float) -> float:
     """Evaluate the CR3BP Jacobi constant."""
 
+def zoh_kepler_rhs(
+    state: Sequence[float],
+    thrust: float,
+    direction: Sequence[float],
+    mass_flow_coefficient: float,
+) -> list[float]:
+    """Evaluate normalized seven-state low-thrust Kepler dynamics."""
+
+def zoh_cr3bp_rhs(
+    state: Sequence[float],
+    thrust: float,
+    direction: Sequence[float],
+    mass_flow_coefficient: float,
+    mu: float,
+) -> list[float]:
+    """Evaluate seven-state low-thrust CR3BP dynamics."""
+
+def zoh_equinoctial_rhs(
+    state: Sequence[float],
+    thrust: float,
+    rtn_direction: Sequence[float],
+    mass_flow_coefficient: float,
+) -> list[float]:
+    """Evaluate normalized modified-equinoctial low-thrust dynamics."""
+
+def zoh_solar_sail_rhs(
+    state: Sequence[float],
+    alpha: float,
+    beta: float,
+    lightness: float,
+) -> list[float]:
+    """Evaluate normalized ideal solar-sail dynamics."""
+
+def propagate_zoh_kepler(
+    state: Sequence[float],
+    boundaries: Sequence[float],
+    controls: Sequence[Sequence[float]],
+    mass_flow_coefficient: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate a piecewise-constant low-thrust Kepler schedule."""
+
+def propagate_zoh_cr3bp(
+    state: Sequence[float],
+    boundaries: Sequence[float],
+    controls: Sequence[Sequence[float]],
+    mass_flow_coefficient: float,
+    mu: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate a piecewise-constant low-thrust CR3BP schedule."""
+
+def propagate_zoh_equinoctial(
+    state: Sequence[float],
+    boundaries: Sequence[float],
+    controls: Sequence[Sequence[float]],
+    mass_flow_coefficient: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate a piecewise-constant modified-equinoctial schedule."""
+
+def propagate_zoh_solar_sail(
+    state: Sequence[float],
+    boundaries: Sequence[float],
+    controls: Sequence[Sequence[float]],
+    lightness: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Propagate a piecewise-constant ideal solar-sail schedule."""
+
 def jd_to_mjd(value: float) -> float:
     """Convert Julian date to modified Julian date, in days."""
 

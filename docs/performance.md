@@ -61,6 +61,12 @@ CR3BP propagation measured 7.808 µs and its state-plus-STM propagation
 measured 45.368 µs. The same initial state, final time, parameter, and
 `1e-12` tolerance in warmed C++/heyoka measured 2.885 µs and 95.017 µs
 median, respectively.
+The Phase 12 ZOH Kepler RHS measured 8.928 ns. A 32-segment alternating
+control schedule measured 36.089 µs in Rust and 10.268 µs in the warmed
+C++/heyoka harness with the same state, boundaries, controls, and `1e-12`
+tolerance. The Rust path deliberately starts an independent DOP853 solve at
+each switch; the timing includes those 32 restarts and confirms there is no
+segment-count-dependent control search inside integration.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled

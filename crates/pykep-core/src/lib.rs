@@ -29,15 +29,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 11: Kepler, CR3BP, and BCP dynamics";
+pub const PORT_STATUS: &str = "phase 12: zero-order-hold dynamics";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_evaluated_dynamics() {
-        assert!(PORT_STATUS.contains("phase 11"));
-        assert!(PORT_STATUS.contains("CR3BP"));
+    fn status_reports_zero_order_hold_dynamics() {
+        assert!(PORT_STATUS.contains("phase 12"));
+        assert!(PORT_STATUS.contains("zero-order-hold"));
     }
 }

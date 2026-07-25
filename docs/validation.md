@@ -111,3 +111,14 @@ The oracle uses pykep 3.0.1 and heyoka 7.10.0 at a requested tolerance of
 the triangular equilibrium, preserve the Jacobi constant, make zero-Sun BCP
 reduce to CR3BP, check every state/parameter Jacobian column by central
 differences, and distinguish body singularities from solver failures.
+
+Phase 12 records the final state and all first-order state/control variations
+for one upstream regression case from each of the four ZOH systems.
+`phase12-v1.json` has SHA-256
+`294bab93355628cd22991b83563c6f93deefc19dd93911dfc4b654a101764f22`.
+Single-segment nominal tolerances range from `2e-12` to `3e-10`; variation
+tolerances range from `2e-7` to `2e-5`, reflecting the fixed-size numerical
+Jacobians documented in `zero-order-hold.md`. Independent tests cover exact
+switch ownership, malformed grids, zero-control reductions, manual
+segment-by-segment equivalence, forward/backward reversal, and activation of
+per-segment sensitivity columns.

@@ -21,8 +21,11 @@ remaining dynamics phases. Stateless evaluated Kepler, CR3BP, and bicircular
 models provide direct right-hand sides, adaptive propagation, analytic
 Jacobians and STMs; CR3BP also provides its effective potential and Jacobi
 constant.
+Validated zero-order-hold schedules drive normalized Kepler, CR3BP,
+modified-equinoctial, and ideal solar-sail models with deterministic switch
+ownership, backward propagation, and segment-local sensitivities.
 
-The crate has no C or C++ runtime dependency. ZOH and Pontryagin dynamics and
+The crate has no C or C++ runtime dependency. Pontryagin dynamics and
 low-thrust leg APIs remain planned.
 
 ## Example

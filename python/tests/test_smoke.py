@@ -15,7 +15,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 11: Kepler, CR3BP, and BCP dynamics"
+    assert pk.port_status() == "phase 12: zero-order-hold dynamics"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -300,6 +300,69 @@ def test_evaluated_kepler_cr3bp_and_bcp_dynamics() -> None:
     ) == pytest.approx(pk.cr3bp_rhs(initial, mu))
     with pytest.raises(pk.SingularGeometryError):
         pk.kepler_rhs([0.0] * 6, 1.0)
+
+
+def test_zero_order_hold_models_switch_and_reverse() -> None:
+    """Phase 12 Python APIs preserve schedule dimensions and switch order."""
+    initial = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.5]
+    boundaries = [0.0, 0.2, 0.5]
+    controls = [[0.01, 1.0, 0.0, 0.0], [0.02, 0.0, 1.0, 0.0]]
+    final_state = pk.propagate_zoh_kepler(
+        initial,
+        boundaries,
+        controls,
+        0.02,
+        relative_tolerance=2e-13,
+        absolute_tolerance=2e-13,
+        maximum_step=0.01,
+    )
+    assert len(final_state) == 7
+    assert final_state[6] < initial[6]
+    recovered = pk.propagate_zoh_kepler(
+        final_state,
+        boundaries,
+        controls,
+        0.02,
+        backward=True,
+        relative_tolerance=2e-13,
+        absolute_tolerance=2e-13,
+        maximum_step=0.01,
+    )
+    assert recovered == pytest.approx(initial, rel=2e-11, abs=2e-11)
+    assert pk.zoh_kepler_rhs(
+        initial, 0.0, [1.0, 0.0, 0.0], 0.02
+    )[:6] == pytest.approx(pk.kepler_rhs(initial[:6], 1.0))
+    rotating = [0.8, -0.2, 0.1, 0.03, -0.04, 0.02, 1.5]
+    assert len(
+        pk.zoh_cr3bp_rhs(rotating, 0.0, [1.0, 0.0, 0.0], 0.02, 0.01)
+    ) == 7
+    assert len(
+        pk.propagate_zoh_cr3bp(
+            rotating, [0.0, 0.01], [[0.0, 1.0, 0.0, 0.0]], 0.02, 0.01
+        )
+    ) == 7
+    equinoctial = [1.2, 0.1, 0.0, 0.0, 0.0, 0.2, 1.0]
+    assert len(
+        pk.zoh_equinoctial_rhs(
+            equinoctial, 0.0, [0.0, 0.0, 0.0], 0.0
+        )
+    ) == 7
+    assert len(
+        pk.propagate_zoh_equinoctial(
+            equinoctial, [0.0, 0.01], [[0.0, 0.0, 0.0, 0.0]], 0.0
+        )
+    ) == 7
+    sail = [0.8, -0.4, 0.3, 0.2, 0.9, -0.1]
+    assert len(pk.zoh_solar_sail_rhs(sail, 0.25, -1.1, 0.04)) == 6
+    assert len(
+        pk.propagate_zoh_solar_sail(
+            sail, [0.0, 0.01], [[0.25, -1.1]], 0.04
+        )
+    ) == 6
+    with pytest.raises(ValueError, match="expected 4"):
+        pk.propagate_zoh_kepler(initial, boundaries, [[0.0] * 3] * 2, 0.02)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        pk.propagate_zoh_kepler(initial, [0.0, 0.2, 0.1], controls, 0.02)
 
 
 def test_transfers_encodings_flyby_lambert_and_mima() -> None:

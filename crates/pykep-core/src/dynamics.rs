@@ -14,6 +14,9 @@
 //! `src/ta/kep.cpp`, `src/ta/cr3bp.cpp`, and `src/ta/bcp.cpp` from the pinned
 //! pykep/kep3 upstream source.
 
+/// Zero-order-hold low-thrust and solar-sail dynamics.
+pub mod zoh;
+
 use crate::error::ensure_finite;
 use crate::integration::{
     DifferentiableDynamicsModel, Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions,

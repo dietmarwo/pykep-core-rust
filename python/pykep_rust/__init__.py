@@ -105,6 +105,10 @@ from ._pykep_rust import (
     propagate_lagrangian_with_stm,
     propagate_universal,
     propagate_universal_batch,
+    propagate_zoh_cr3bp,
+    propagate_zoh_equinoctial,
+    propagate_zoh_kepler,
+    propagate_zoh_solar_sail,
     skew,
     state_transition_matrix_lagrangian,
     state_transition_matrix_reynolds,
@@ -125,6 +129,10 @@ from ._pykep_rust import (
     universal_kepler_derivative,
     universal_kepler_residual,
     universal_kepler_second_derivative,
+    zoh_cr3bp_rhs,
+    zoh_equinoctial_rhs,
+    zoh_kepler_rhs,
+    zoh_solar_sail_rhs,
 )
 
 __all__ = [
@@ -232,6 +240,10 @@ __all__ = [
     "propagate_lagrangian_with_stm",
     "propagate_universal",
     "propagate_universal_batch",
+    "propagate_zoh_cr3bp",
+    "propagate_zoh_equinoctial",
+    "propagate_zoh_kepler",
+    "propagate_zoh_solar_sail",
     "skew",
     "state_transition_matrix_lagrangian",
     "state_transition_matrix_reynolds",
@@ -252,4 +264,8 @@ __all__ = [
     "universal_kepler_derivative",
     "universal_kepler_residual",
     "universal_kepler_second_derivative",
+    "zoh_cr3bp_rhs",
+    "zoh_equinoctial_rhs",
+    "zoh_kepler_rhs",
+    "zoh_solar_sail_rhs",
 ]

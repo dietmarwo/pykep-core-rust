@@ -55,5 +55,9 @@ once the public API is ready to stabilize.
   rotating-frame conventions, CR3BP effective potential and Jacobi constant,
   analytic state/parameter Jacobians, adaptive propagation and STMs, Python
   wrappers, C++ Taylor-reference trajectories, and Criterion benchmarks.
+- A validated zero-order-hold control schedule plus Kepler, CR3BP,
+  modified-equinoctial, and ideal solar-sail models with deterministic
+  switches, backward propagation, fixed-width segment sensitivities, Python
+  wrappers, Taylor-reference variations, and scaling benchmarks.
 
-ZOH, Pontryagin, and low-thrust leg APIs are not yet implemented.
+Pontryagin and low-thrust leg APIs are not yet implemented.

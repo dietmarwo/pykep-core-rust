@@ -44,10 +44,10 @@ documentation required by the definition of done are complete.
 - [x] `src/ta/kep.cpp` → `dynamics::KeplerDynamics` (Phase 11)
 - [x] `src/ta/cr3bp.cpp` → `dynamics::Cr3bpDynamics` (Phase 11)
 - [x] `src/ta/bcp.cpp` → `dynamics::BcpDynamics` (Phase 11)
-- [ ] `src/ta/zoh_kep.cpp` → `dynamics::zoh::kepler` (Phase 12)
-- [ ] `src/ta/zoh_cr3bp.cpp` → `dynamics::zoh::cr3bp` (Phase 12)
-- [ ] `src/ta/zoh_eq.cpp` → `dynamics::zoh::equinoctial` (Phase 12)
-- [ ] `src/ta/zoh_ss.cpp` → `dynamics::zoh::spacecraft` (Phase 12)
+- [x] `src/ta/zoh_kep.cpp` → `dynamics::zoh::ZohKeplerDynamics` (Phase 12)
+- [x] `src/ta/zoh_cr3bp.cpp` → `dynamics::zoh::ZohCr3bpDynamics` (Phase 12)
+- [x] `src/ta/zoh_eq.cpp` → `dynamics::zoh::ZohEquinoctialDynamics` (Phase 12)
+- [x] `src/ta/zoh_ss.cpp` → `dynamics::zoh::ZohSolarSailDynamics` (Phase 12)
 - [ ] `src/ta/pontryagin_cartesian.cpp` →
       `dynamics::pontryagin::cartesian` (Phase 13)
 - [ ] `src/ta/pontryagin_equinoctial.cpp` →

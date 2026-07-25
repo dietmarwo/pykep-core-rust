@@ -14,6 +14,7 @@ Evidence-backed status as of 2026-07-25:
 | VSOP2013 ephemerides | implemented (`>=1e-9` feature) | implemented | 3.0.1/heyoka 7.10.0 | expanded epoch grid, threshold selection, feature-off build | Criterion + C++ harness | complete |
 | Adaptive integration backend | implemented | intentionally deferred to model APIs | analytic/C++ orientation | drift, reversal, rejection, dense/event, sensitivities | Criterion + candidate + C++ harness | complete |
 | Kepler/CR3BP/BCP dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | equilibria, invariants, finite differences, singularities | Criterion + C++ harness | complete |
+| ZOH dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | switches, reversal, zero control, sensitivity activation | Criterion + C++ harness | complete |
 | Low-thrust legs | planned | planned | planned | planned | planned | planned |
 
 “Implemented” means the public contract is documented, validation is explicit,
