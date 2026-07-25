@@ -1,0 +1,25 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "pykep-rust"
+dynamic = ["version"]
+description = "Native Rust astrodynamics algorithms with a Python API."
+readme = "python/README.md"
+requires-python = ">=3.11"
+license = "MPL-2.0"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[tool.maturin]
+manifest-path = "crates/pykep-py/Cargo.toml"
+python-source = "python"
+module-name = "pykep_rust._pykep_rust"
+strip = true
+

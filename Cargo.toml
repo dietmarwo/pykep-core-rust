@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/pykep-core",
+    "crates/pykep-py",
+    "examples",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MPL-2.0"
+
+[workspace.dependencies]
+pykep-core = { path = "crates/pykep-core" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

@@ -1,0 +1,13 @@
+[package]
+name = "pykep-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Native Rust astrodynamics core for the pykep-rust port."
+
+[lib]
+name = "pykep_core"
+
+[lints.rust]
+unsafe_code = "forbid"

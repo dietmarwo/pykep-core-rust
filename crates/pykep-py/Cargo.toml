@@ -1,0 +1,17 @@
+[package]
+name = "pykep-py"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "PyO3 bindings for the pykep-rust Python distribution."
+publish = false
+
+[lib]
+name = "_pykep_rust"
+crate-type = ["cdylib"]
+doc = false
+
+[dependencies]
+pykep-core = { workspace = true }
+pyo3 = { version = "0.23", features = ["extension-module"] }
