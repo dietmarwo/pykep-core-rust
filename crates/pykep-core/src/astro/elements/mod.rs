@@ -13,6 +13,7 @@ mod classical;
 mod equinoctial;
 mod values;
 
+pub(crate) use classical::classical_to_cartesian_unbounded_inclination;
 pub use classical::{cartesian_to_classical, classical_to_cartesian};
 pub use equinoctial::{
     cartesian_to_modified_equinoctial, cartesian_to_modified_equinoctial_jacobian,

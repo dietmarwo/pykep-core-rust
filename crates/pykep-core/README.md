@@ -11,7 +11,9 @@ analytic Lagrangian and Reynolds state-transition matrices.
 Mission-design utilities include impulsive transfers, time encodings, flybys,
 single/multi-revolution Lambert branches, and MIMA mass approximations.
 The object-safe ephemeris interface and analytic Keplerian provider support
-thread-safe scalar and ordered batch evaluation.
+thread-safe scalar and ordered batch evaluation. The JPL low-precision
+provider supplies approximate heliocentric states for Mercury through Neptune
+over 1800–2050.
 
 The crate has no C or C++ runtime dependency. Later orbital algorithms remain
 planned and are not represented by the current status probe.

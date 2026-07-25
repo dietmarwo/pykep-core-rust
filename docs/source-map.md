@@ -37,7 +37,7 @@ documentation required by the definition of done are complete.
 - [x] `src/core_astro/mima.cpp` → `astro::mima` (Phase 6)
 - [x] `src/planet.cpp` → `ephemeris` (Phase 7)
 - [x] `src/udpla/keplerian.cpp` → `ephemeris::keplerian` (Phase 7)
-- [ ] `src/udpla/jpl_lp.cpp` → `ephemeris::jpl_lp` (Phase 8)
+- [x] `src/udpla/jpl_lp.cpp` → `ephemeris::jpl_lp` (Phase 8)
 - [ ] `src/udpla/vsop2013.cpp` → `ephemeris::vsop2013` (Phase 9)
 - [ ] `src/ta/kep.cpp` → `dynamics::kepler` (Phase 11)
 - [ ] `src/ta/cr3bp.cpp` → `dynamics::cr3bp` (Phase 11)

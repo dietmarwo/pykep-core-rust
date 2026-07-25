@@ -13,12 +13,9 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_propagation() -> None:
+def test_status_probe_reports_jpl_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert (
-        pk.port_status()
-        == "phase 7: planet interface and Keplerian ephemeris implemented"
-    )
+    assert pk.port_status() == "phase 8: JPL low-precision ephemerides implemented"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -316,6 +313,44 @@ def test_keplerian_planet_scalar_batch_metadata_and_capabilities() -> None:
     assert not planet.has_acceleration()
     with pytest.raises(pk.UnsupportedCapabilityError):
         planet.acceleration(0.0)
+
+
+def test_jpl_low_precision_planets_names_window_and_batches() -> None:
+    """The eight JPL low-precision providers share scalar and batch behavior."""
+    names = [
+        "mercury",
+        "venus",
+        "earth",
+        "mars",
+        "jupiter",
+        "saturn",
+        "uranus",
+        "neptune",
+    ]
+    assert pk.Planet.jpl_supported_bodies() == names
+    epochs = np.array([-73047.999, 0.0, 18262.999], dtype=np.float64)
+    for name in names:
+        planet = pk.Planet.jpl_low_precision(name.upper())
+        assert planet.name == f"{name}(jpl_lp)"
+        assert planet.central_mu is not None
+        assert planet.body_mu is not None
+        assert planet.radius is not None
+        assert planet.safe_radius is not None
+        assert planet.safe_radius >= planet.radius
+        states = planet.states(epochs)
+        assert states.shape == (3, 6)
+        for index, epoch in enumerate(epochs):
+            assert states[index] == pytest.approx(planet.state(float(epoch)))
+        assert len(planet.elements(0.0)) == 6
+
+    earth = pk.Planet.jpl_low_precision("earth", 7_000_000.0)
+    assert earth.safe_radius == 7_000_000.0
+    with pytest.raises(ValueError):
+        earth.state(-73048.0)
+    with pytest.raises(ValueError):
+        earth.state(18263.0)
+    with pytest.raises(ValueError):
+        pk.Planet.jpl_low_precision("pluto")
 
 
 def test_public_api_has_runtime_documentation() -> None:

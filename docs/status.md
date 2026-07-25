@@ -10,7 +10,8 @@ Evidence-backed status as of 2026-07-25:
 | Propagation/STM | implemented | implemented | 3.0.1 | invariants, reversal, finite differences, composition | Criterion harness | complete |
 | Lambert/transfers/flyby/MIMA | implemented | implemented | 3.0.1 | round trips, endpoint reconstruction, finite differences | Criterion harness | complete |
 | Planet/Keplerian ephemeris | implemented | implemented | 3.0.1 | period, element round trips, thread stress | Criterion harness | complete |
-| JPL/VSOP ephemerides | planned | planned | planned | planned | planned | planned |
+| JPL low-precision ephemerides | implemented | implemented | 3.0.1 | names, window boundaries, ordered batches | Criterion harness | complete |
+| VSOP2013 ephemerides | planned | planned | planned | planned | planned | planned |
 | Dynamics | planned | planned | planned | planned | planned | planned |
 | Low-thrust legs | planned | planned | planned | planned | planned | planned |
 

@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{CartesianState, PykepError, Result};
 
-fn validate_classical(elements: ClassicalElements) -> Result<()> {
+fn validate_classical_shape(elements: ClassicalElements) -> Result<()> {
     validate_six("elements", &elements.to_array())?;
     let a = elements.semi_major_axis;
     let eccentricity = elements.eccentricity;
@@ -36,6 +36,11 @@ fn validate_classical(elements: ClassicalElements) -> Result<()> {
             reason: "the convention requires a > 0 for e < 1 and a < 0 for e > 1".into(),
         });
     }
+    Ok(())
+}
+
+fn validate_classical(elements: ClassicalElements) -> Result<()> {
+    validate_classical_shape(elements)?;
     if !(0.0..=PI).contains(&elements.inclination) {
         return Err(PykepError::InvalidInput {
             parameter: "inclination",
@@ -144,6 +149,21 @@ pub fn cartesian_to_classical(state: &CartesianState, mu: f64) -> Result<Classic
 /// `[0, π]`, a hyperbolic anomaly beyond an asymptote, or overflow.
 pub fn classical_to_cartesian(elements: ClassicalElements, mu: f64) -> Result<CartesianState> {
     validate_classical(elements)?;
+    classical_to_cartesian_validated(elements, mu)
+}
+
+pub(crate) fn classical_to_cartesian_unbounded_inclination(
+    elements: ClassicalElements,
+    mu: f64,
+) -> Result<CartesianState> {
+    validate_classical_shape(elements)?;
+    classical_to_cartesian_validated(elements, mu)
+}
+
+fn classical_to_cartesian_validated(
+    elements: ClassicalElements,
+    mu: f64,
+) -> Result<CartesianState> {
     validate_mu(mu)?;
     let ClassicalElements {
         semi_major_axis: a,

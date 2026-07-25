@@ -8,6 +8,8 @@ three-vector operations. It also provides an immutable, microsecond-resolution
 Cartesian, classical, and modified-equinoctial conversions are available as
 scalar functions and NumPy `N × 6` batches; analytic Jacobians use
 output-by-input row-major order.
+`Planet` owns thread-safe Keplerian or JPL low-precision ephemerides and
+evaluates scalar or NumPy epoch batches.
 
 ```python
 import pykep_rust as pk
@@ -19,6 +21,8 @@ assert epoch.to_iso() == "2030-01-01T00:00:00.000000"
 eccentric = pk.mean_to_eccentric_anomaly(0.1, 0.5)
 assert abs(pk.eccentric_to_mean_anomaly(eccentric, 0.5) - 0.1) < 1e-15
 state = pk.classical_to_cartesian([7e6, 0.01, 0.4, 1.0, 0.5, 0.2], 3.986004418e14)
+earth = pk.Planet.jpl_low_precision("earth")
+earth_state = earth.state(0.0)
 ```
 
 Angles are radians and Julian conversions are arithmetic day counts without

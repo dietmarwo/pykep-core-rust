@@ -7,9 +7,9 @@ PyO3.
 The numerical foundations, epochs, anomalies, element conversions, two-body
 propagation, state-transition matrices, Lambert solutions, impulsive
 transfers, flybys, encodings, MIMA approximations, the planet interface, and
-the Keplerian ephemeris are implemented. JPL/VSOP ephemerides, dynamics, and
-low-thrust legs remain planned. Do not infer full pykep parity from the current
-API.
+the Keplerian and JPL low-precision ephemerides are implemented. VSOP2013
+ephemerides, dynamics, and low-thrust legs remain planned. Do not infer full
+pykep parity from the current API.
 
 ## Layout
 
@@ -22,7 +22,8 @@ API.
 The pinned upstream source and adaptation policy are recorded in
 [UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in
 [docs/source-map.md](docs/source-map.md), and the evidence policy is in
-[docs/validation.md](docs/validation.md).
+[docs/validation.md](docs/validation.md). Ephemeris frames, validity, and
+accuracy are documented in [docs/ephemerides.md](docs/ephemerides.md).
 
 ## Intended properties
 
@@ -46,6 +47,7 @@ cargo run -p pykep-examples --bin epoch-anomalies
 cargo run -p pykep-examples --bin elements
 cargo run -p pykep-examples --bin propagation
 cargo run -p pykep-examples --bin lambert
+cargo run -p pykep-examples --bin jpl-low-precision
 ```
 
 Once Maturin is installed, the Python module can be built in a virtual

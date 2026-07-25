@@ -60,3 +60,14 @@ and long-span MJD2000 epochs. `phase7-v1.json` has SHA-256
 Independent tests cover period recurrence, all supported element
 representations, ordered batches, explicit unsupported capabilities, and
 concurrent read-only evaluation through shared ownership.
+
+Phase 8 adds true-anomaly elements, Cartesian states, and physical metadata
+for all eight JPL low-precision bodies at five epochs spanning the open
+1800–2050 validity interval. `phase8-v1.json` contains 40 cases and has
+SHA-256
+`0a3408893b5c04fdfddb452408057faa92d38a46775290c32eb6d2393683e3da`.
+Independent tests cover case-insensitive lookup, the exact supported-name set,
+ordered batches, safe-radius validation, and both excluded interval
+boundaries. The provider retains the source table's slightly negative fitted
+Earth inclination near the ends of the interval while keeping the general
+public classical-element converter's canonical `[0, π]` inclination contract.

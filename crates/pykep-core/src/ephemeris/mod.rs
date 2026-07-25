@@ -7,8 +7,10 @@
 
 //! Object-safe ephemeris interface and built-in providers.
 
+mod jpl_lp;
 mod keplerian;
 
+pub use jpl_lp::JplLowPrecision;
 pub use keplerian::KeplerianEphemeris;
 
 use crate::astro::anomalies::true_to_mean_anomaly;

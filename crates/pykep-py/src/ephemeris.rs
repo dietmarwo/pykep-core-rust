@@ -5,7 +5,9 @@ use crate::error::to_python;
 use numpy::ndarray::Array2;
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray1};
 use pykep_core::astro::elements::ClassicalElements;
-use pykep_core::ephemeris::{ElementRepresentation, Ephemeris, KeplerianEphemeris};
+use pykep_core::ephemeris::{
+    ElementRepresentation, Ephemeris, JplLowPrecision, KeplerianEphemeris,
+};
 use pykep_core::time::epoch::Epoch;
 use pykep_core::{CartesianState, PykepError};
 use pyo3::prelude::*;
@@ -43,6 +45,25 @@ struct PyPlanet {
 
 #[pymethods]
 impl PyPlanet {
+    /// Construct a JPL low-precision heliocentric planetary ephemeris.
+    #[staticmethod]
+    #[pyo3(signature = (name, safe_radius=None))]
+    fn jpl_low_precision(name: &str, safe_radius: Option<f64>) -> PyResult<Self> {
+        let mut provider = JplLowPrecision::new(name).map_err(to_python)?;
+        if let Some(value) = safe_radius {
+            provider.set_safe_radius(value).map_err(to_python)?;
+        }
+        Ok(Self {
+            inner: Arc::new(provider),
+        })
+    }
+
+    /// Return the canonical names supported by the JPL low-precision model.
+    #[staticmethod]
+    fn jpl_supported_bodies() -> Vec<&'static str> {
+        JplLowPrecision::supported_bodies().into()
+    }
+
     /// Construct a Keplerian planet from a reference Cartesian state.
     #[staticmethod]
     #[pyo3(signature = (reference_epoch_mjd2000, state, central_mu, name="Unknown", body_mu=None, radius=None, safe_radius=None))]

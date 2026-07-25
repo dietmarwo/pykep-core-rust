@@ -25,15 +25,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 7: planet interface and Keplerian ephemeris implemented";
+pub const PORT_STATUS: &str = "phase 8: JPL low-precision ephemerides implemented";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_keplerian_ephemeris() {
-        assert!(PORT_STATUS.contains("planet"));
-        assert!(PORT_STATUS.contains("Keplerian"));
+    fn status_reports_jpl_ephemerides() {
+        assert!(PORT_STATUS.contains("phase 8"));
+        assert!(PORT_STATUS.contains("JPL"));
     }
 }

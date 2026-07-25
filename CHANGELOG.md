@@ -40,5 +40,8 @@ once the public API is ready to stabilize.
 - Object-safe, thread-safe ephemeris providers with explicit optional
   capabilities and metadata, derived period/elements behavior, a Keplerian
   provider, shared Python `Planet`, and GIL-releasing epoch batches.
+- JPL low-precision heliocentric ephemerides for Mercury through Neptune,
+  traceable coefficient data, explicit 1800–2050 validity checks, all element
+  representations, configurable safe radii, and scalar/batch Python access.
 
-JPL/VSOP ephemerides, dynamics, and low-thrust APIs are not yet implemented.
+VSOP2013 ephemerides, dynamics, and low-thrust APIs are not yet implemented.

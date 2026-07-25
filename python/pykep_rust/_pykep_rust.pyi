@@ -158,6 +158,12 @@ class Planet:
     """Thread-safe owner of an ephemeris provider."""
 
     @staticmethod
+    def jpl_low_precision(
+        name: str, safe_radius: float | None = None
+    ) -> Planet: ...
+    @staticmethod
+    def jpl_supported_bodies() -> list[str]: ...
+    @staticmethod
     def keplerian_from_state(
         reference_epoch_mjd2000: float,
         state: Sequence[float],
