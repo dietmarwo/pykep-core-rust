@@ -14,13 +14,13 @@ documentation required by the definition of done are complete.
       `math::kepler_equations` (Phase 2)
 - [x] `include/kep3/core_astro/special_functions.hpp` → `math::stumpff`
       (Phase 2)
-- [ ] `include/kep3/core_astro/convert_anomalies.hpp` → `astro::anomalies`
+- [x] `include/kep3/core_astro/convert_anomalies.hpp` → `astro::anomalies`
       (Phase 3)
 
 ## Translation units
 
 - [x] `src/linalg.cpp` → `math::linalg` (Phase 2)
-- [ ] `src/epoch.cpp` → `time::epoch` (Phase 3)
+- [x] `src/epoch.cpp` → `time::epoch` (Phase 3)
 - [ ] `src/core_astro/ic2par2ic.cpp` → `astro::elements::classical` (Phase 4)
 - [ ] `src/core_astro/mee2par2mee.cpp` →
       `astro::elements::equinoctial` (Phase 4)

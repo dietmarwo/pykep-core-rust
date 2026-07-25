@@ -9,13 +9,14 @@ file records the schema, units, generator, compiler, source revision, and
 random seed. The development-only exporter lives outside the standalone
 public repository; no C++ code or runtime is part of `pykep-core`.
 
-Regenerate the foundation data from the staging source root:
+Regenerate the foundation and Phase 3 data from the staging source root:
 
 ```bash
 cmake -S oracle -B .oracle-build -G Ninja
 cmake --build .oracle-build
 .oracle-build/foundations_oracle
+.oracle-build/phase3_oracle
 ```
 
-Compare the output byte-for-byte with `foundations-v1.json`. Generation must
-be deterministic.
+Compare the output byte-for-byte with `foundations-v1.json` and
+`phase3-v1.json`. Generation must be deterministic.

@@ -20,3 +20,10 @@ Rust workloads exist.
 
 Randomized oracle cases use a named PCG32 seed recorded in each data file.
 Discovered failures are promoted to fixed regression cases.
+
+Phase 3 adds 9 epoch cases and 134 anomaly cases from the pinned C++
+implementation. The anomaly set includes every conversion direction,
+elliptic and hyperbolic boundary regimes, angles outside one revolution, and
+64 deterministic PCG32 solver samples. The Rust layer additionally rejects
+invalid calendars and true anomalies outside the physical hyperbolic
+asymptote instead of propagating non-finite values.

@@ -19,6 +19,12 @@ once the public API is ready to stabilize.
 - Explicit numerical error taxonomy, fixed-shape type decision, golden C++
   parity tests, independent derivative/geometry tests, and foundation
   benchmarks.
+- Immutable microsecond-resolution epochs with MJD2000/MJD/JD and cropped ISO
+  conversion, checked duration arithmetic, rich Python comparison, and
+  explicit time-scale limitations.
+- Elliptic and hyperbolic anomaly conversions, bounded solvers, scalar and
+  batch Python APIs, seeded C++ parity vectors, round-trip tests, and
+  benchmarks.
 
 Propagation, Lambert, ephemerides, dynamics, and low-thrust APIs are not yet
 implemented.

@@ -5,7 +5,7 @@ Evidence-backed status as of 2026-07-25:
 | Module | Rust core | Python API | Golden parity | Independent tests | Benchmarked | Docs |
 |---|---|---|---|---|---|---|
 | Foundations | implemented | implemented | 3.0.1 | series, derivatives, geometry | Criterion harness | complete |
-| Epoch/anomalies | planned | planned | planned | planned | planned | planned |
+| Epoch/anomalies | implemented | implemented | 3.0.1 | round trips, calendar boundaries | Criterion harness | complete |
 | Elements | planned | planned | planned | planned | planned | planned |
 | Propagation/STM | planned | planned | planned | planned | planned | planned |
 | Lambert/transfers | planned | planned | planned | planned | planned | planned |

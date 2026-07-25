@@ -41,6 +41,73 @@ class UnsupportedCapabilityError(PykepError):
 class IntegrationError(PykepError):
     """A numerical integration could not be completed."""
 
+class Epoch:
+    """A microsecond-resolution proleptic-Gregorian epoch."""
+
+    def __init__(self, value: float = 0.0, scale: str = "mjd2000") -> None:
+        """Construct from an MJD2000, MJD, or JD day count."""
+
+    @staticmethod
+    def from_iso(text: str) -> Epoch:
+        """Parse a cropped ISO calendar string."""
+
+    @staticmethod
+    def from_calendar(
+        year: int,
+        month: int,
+        day: int,
+        hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        millisecond: int = 0,
+        microsecond: int = 0,
+    ) -> Epoch:
+        """Construct from validated calendar components."""
+
+    @staticmethod
+    def now() -> Epoch:
+        """Return an epoch sampled from the current system clock."""
+
+    @property
+    def mjd2000(self) -> float:
+        """Modified Julian Date 2000, in days."""
+
+    @property
+    def mjd(self) -> float:
+        """Modified Julian Date, in days."""
+
+    @property
+    def jd(self) -> float:
+        """Julian Date, in days."""
+
+    @property
+    def microseconds_since_mjd2000(self) -> int:
+        """Signed internal microseconds from the MJD2000 origin."""
+
+    def to_iso(self) -> str:
+        """Return the canonical six-fractional-digit ISO representation."""
+
+    def add_days(self, days: float) -> Epoch:
+        """Return a new epoch offset by a finite number of days."""
+
+    def sub_days(self, days: float) -> Epoch:
+        """Return a new epoch offset backwards by a finite number of days."""
+
+    def add_seconds(self, seconds: float) -> Epoch:
+        """Return a new epoch offset by a finite number of seconds."""
+
+    def seconds_since(self, other: Epoch) -> float:
+        """Return self minus other in seconds."""
+
+    def __add__(self, days: float) -> Epoch: ...
+    def __sub__(self, days: float) -> Epoch: ...
+    def __lt__(self, other: Epoch) -> bool: ...
+    def __le__(self, other: Epoch) -> bool: ...
+    def __eq__(self, other: object) -> bool: ...
+    def __ne__(self, other: object) -> bool: ...
+    def __gt__(self, other: Epoch) -> bool: ...
+    def __ge__(self, other: Epoch) -> bool: ...
+
 def port_status() -> str:
     """Return the current implementation status of the native core."""
 
@@ -73,6 +140,74 @@ def stumpff_c_batch(values: Sequence[float]) -> list[float]:
 
 def stumpff_s_batch(values: Sequence[float]) -> list[float]:
     """Evaluate Stumpff S for a sequence in input order."""
+
+def mean_to_eccentric_anomaly(mean_anomaly: float, eccentricity: float) -> float:
+    """Convert elliptic mean anomaly to principal eccentric anomaly."""
+
+def eccentric_to_mean_anomaly(
+    eccentric_anomaly: float, eccentricity: float
+) -> float:
+    """Convert eccentric anomaly to elliptic mean anomaly."""
+
+def eccentric_to_true_anomaly(
+    eccentric_anomaly: float, eccentricity: float
+) -> float:
+    """Convert eccentric anomaly to principal true anomaly."""
+
+def true_to_eccentric_anomaly(true_anomaly: float, eccentricity: float) -> float:
+    """Convert true anomaly to principal eccentric anomaly."""
+
+def mean_to_true_anomaly(mean_anomaly: float, eccentricity: float) -> float:
+    """Convert elliptic mean anomaly to principal true anomaly."""
+
+def true_to_mean_anomaly(true_anomaly: float, eccentricity: float) -> float:
+    """Convert true anomaly to elliptic mean anomaly."""
+
+def gudermannian_to_true_anomaly(
+    gudermannian_anomaly: float, eccentricity: float
+) -> float:
+    """Convert Gudermannian anomaly to hyperbolic true anomaly."""
+
+def true_to_gudermannian_anomaly(
+    true_anomaly: float, eccentricity: float
+) -> float:
+    """Convert hyperbolic true anomaly to Gudermannian anomaly."""
+
+def hyperbolic_mean_to_anomaly(
+    mean_anomaly: float, eccentricity: float
+) -> float:
+    """Convert hyperbolic mean anomaly to hyperbolic anomaly."""
+
+def hyperbolic_anomaly_to_mean(
+    hyperbolic_anomaly: float, eccentricity: float
+) -> float:
+    """Convert hyperbolic anomaly to hyperbolic mean anomaly."""
+
+def hyperbolic_anomaly_to_true(
+    hyperbolic_anomaly: float, eccentricity: float
+) -> float:
+    """Convert hyperbolic anomaly to principal true anomaly."""
+
+def true_to_hyperbolic_anomaly(
+    true_anomaly: float, eccentricity: float
+) -> float:
+    """Convert true anomaly to hyperbolic anomaly."""
+
+def hyperbolic_mean_to_true(mean_anomaly: float, eccentricity: float) -> float:
+    """Convert hyperbolic mean anomaly to principal true anomaly."""
+
+def true_to_hyperbolic_mean(true_anomaly: float, eccentricity: float) -> float:
+    """Convert true anomaly to hyperbolic mean anomaly."""
+
+def mean_to_eccentric_anomaly_batch(
+    mean_anomalies: Sequence[float], eccentricity: float
+) -> list[float]:
+    """Convert elliptic mean anomalies in input order."""
+
+def hyperbolic_mean_to_anomaly_batch(
+    mean_anomalies: Sequence[float], eccentricity: float
+) -> list[float]:
+    """Convert hyperbolic mean anomalies in input order."""
 
 def elliptic_kepler_residual(
     eccentric_anomaly: float, mean_anomaly: float, eccentricity: float

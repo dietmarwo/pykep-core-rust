@@ -5,6 +5,8 @@
 #![warn(clippy::missing_errors_doc)]
 #![warn(clippy::missing_panics_doc)]
 
+/// Orbital-mechanics algorithms and coordinate conversions.
+pub mod astro;
 /// Physical and astrodynamical constants.
 pub mod constants;
 /// Stable error categories returned by numerical APIs.
@@ -21,14 +23,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 2: numerical foundations implemented";
+pub const PORT_STATUS: &str = "phase 3: epoch and anomaly conversion implemented";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_foundations() {
-        assert!(PORT_STATUS.contains("foundations"));
+    fn status_reports_epoch_and_anomalies() {
+        assert!(PORT_STATUS.contains("epoch"));
+        assert!(PORT_STATUS.contains("anomaly"));
     }
 }
