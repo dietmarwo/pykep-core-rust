@@ -41,9 +41,9 @@ documentation required by the definition of done are complete.
 - [x] `src/udpla/vsop2013.cpp` → `ephemeris::vsop2013` (Phase 9)
 - [x] heyoka integration requirements → `integration` facade and ADR 0004
       (Phase 10; infrastructure rather than a source translation)
-- [ ] `src/ta/kep.cpp` → `dynamics::kepler` (Phase 11)
-- [ ] `src/ta/cr3bp.cpp` → `dynamics::cr3bp` (Phase 11)
-- [ ] `src/ta/bcp.cpp` → `dynamics::bcp` (Phase 11)
+- [x] `src/ta/kep.cpp` → `dynamics::KeplerDynamics` (Phase 11)
+- [x] `src/ta/cr3bp.cpp` → `dynamics::Cr3bpDynamics` (Phase 11)
+- [x] `src/ta/bcp.cpp` → `dynamics::BcpDynamics` (Phase 11)
 - [ ] `src/ta/zoh_kep.cpp` → `dynamics::zoh::kepler` (Phase 12)
 - [ ] `src/ta/zoh_cr3bp.cpp` → `dynamics::zoh::cr3bp` (Phase 12)
 - [ ] `src/ta/zoh_eq.cpp` → `dynamics::zoh::equinoctial` (Phase 12)

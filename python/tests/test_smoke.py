@@ -15,7 +15,7 @@ import pykep_rust as pk
 
 def test_status_probe_reports_vsop_ephemerides() -> None:
     """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 10: adaptive integration backend selected"
+    assert pk.port_status() == "phase 11: Kepler, CR3BP, and BCP dynamics"
 
 
 def test_constants_and_julian_conversions() -> None:
@@ -241,6 +241,65 @@ def test_propagation_stms_and_gil_releasing_batches() -> None:
     assert grid[0] == pytest.approx(initial)
     with pytest.raises(ValueError, match="expected 32"):
         pk.propagate_lagrangian_batch(states, times[:-1], 1.0)
+
+
+def test_evaluated_kepler_cr3bp_and_bcp_dynamics() -> None:
+    """Phase 11 models expose RHS, invariants, propagation, and STMs."""
+    assert pk.kepler_rhs([1.0, 2.0, 2.0, 4.0, 5.0, 6.0], 9.0) == pytest.approx(
+        [4.0, 5.0, 6.0, -1.0 / 3.0, -2.0 / 3.0, -2.0 / 3.0]
+    )
+    initial = [
+        1.01238082345234,
+        -0.0423523523454,
+        0.22634376321,
+        -0.1232623614,
+        0.123462698209365,
+        0.123667064622,
+    ]
+    mu = 0.01215058560962404
+    potential = pk.cr3bp_effective_potential(initial, mu)
+    jacobi = pk.cr3bp_jacobi_constant(initial, mu)
+    assert jacobi == pytest.approx(
+        2.0 * potential - sum(value * value for value in initial[3:])
+    )
+    propagated = pk.propagate_cr3bp(
+        initial,
+        5.7856656782589234,
+        mu,
+        relative_tolerance=2e-13,
+        absolute_tolerance=2e-13,
+        maximum_step=0.01,
+    )
+    assert propagated == pytest.approx(
+        [
+            0.43038358727124,
+            -1.64650668902846,
+            0.10271923139472,
+            -0.9315629872575,
+            -0.42680151362818,
+            0.22257221768767,
+        ],
+        rel=2e-9,
+        abs=2e-9,
+    )
+    final_state, stm = pk.propagate_cr3bp_with_stm(
+        initial,
+        0.25,
+        mu,
+        maximum_step=0.01,
+    )
+    assert len(final_state) == 6
+    assert np.asarray(stm).shape == (6, 6)
+    assert pk.bcp_rhs(
+        0.4,
+        initial,
+        mu,
+        0.0,
+        pk.BCP_SUN_DISTANCE,
+        pk.BCP_SUN_ANGULAR_VELOCITY,
+    ) == pytest.approx(pk.cr3bp_rhs(initial, mu))
+    with pytest.raises(pk.SingularGeometryError):
+        pk.kepler_rhs([0.0] * 6, 1.0)
 
 
 def test_transfers_encodings_flyby_lambert_and_mima() -> None:

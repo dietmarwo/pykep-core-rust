@@ -2,6 +2,7 @@
 
 use pyo3::prelude::*;
 
+mod dynamics;
 mod elements;
 mod ephemeris;
 mod error;
@@ -22,6 +23,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(port_status, module)?)?;
     error::register(module)?;
     foundations::register(module)?;
+    dynamics::register(module)?;
     elements::register(module)?;
     ephemeris::register(module)?;
     mission::register(module)?;

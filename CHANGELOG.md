@@ -51,5 +51,9 @@ once the public API is ready to stabilize.
   model contracts, exact final-time and backward propagation, dense output,
   terminal events, step diagnostics, and allocation-free first-order
   sensitivity states, plus a reproducible candidate decision benchmark.
+- Stateless evaluated Kepler, CR3BP, and bicircular dynamics with explicit
+  rotating-frame conventions, CR3BP effective potential and Jacobi constant,
+  analytic state/parameter Jacobians, adaptive propagation and STMs, Python
+  wrappers, C++ Taylor-reference trajectories, and Criterion benchmarks.
 
-Production dynamics and low-thrust APIs are not yet implemented.
+ZOH, Pontryagin, and low-thrust leg APIs are not yet implemented.

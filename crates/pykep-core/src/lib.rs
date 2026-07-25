@@ -9,6 +9,8 @@
 pub mod astro;
 /// Physical and astrodynamical constants.
 pub mod constants;
+/// Evaluated Kepler, CR3BP, and bicircular dynamics models.
+pub mod dynamics;
 /// Ephemeris providers and the object-safe planet interface.
 pub mod ephemeris;
 /// Stable error categories returned by numerical APIs.
@@ -27,15 +29,15 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 10: adaptive integration backend selected";
+pub const PORT_STATUS: &str = "phase 11: Kepler, CR3BP, and BCP dynamics";
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_integration_backend() {
-        assert!(PORT_STATUS.contains("phase 10"));
-        assert!(PORT_STATUS.contains("integration"));
+    fn status_reports_evaluated_dynamics() {
+        assert!(PORT_STATUS.contains("phase 11"));
+        assert!(PORT_STATUS.contains("CR3BP"));
     }
 }

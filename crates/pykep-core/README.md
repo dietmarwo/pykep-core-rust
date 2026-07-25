@@ -17,11 +17,13 @@ over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
 evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
 An adaptive pure-Rust DOP853 facade now defines evaluated model, parameter,
 dense-output, terminal-event, and first-order sensitivity contracts for the
-next dynamics phases.
+remaining dynamics phases. Stateless evaluated Kepler, CR3BP, and bicircular
+models provide direct right-hand sides, adaptive propagation, analytic
+Jacobians and STMs; CR3BP also provides its effective potential and Jacobi
+constant.
 
-The crate has no C or C++ runtime dependency. Production Kepler, CR3BP, BCP,
-low-thrust dynamics, and leg APIs remain planned and are not represented by
-the completed integration decision gate.
+The crate has no C or C++ runtime dependency. ZOH and Pontryagin dynamics and
+low-thrust leg APIs remain planned.
 
 ## Example
 
@@ -32,6 +34,8 @@ use pykep_core::astro::anomalies::mean_to_eccentric_anomaly;
 use pykep_core::astro::elements::{ClassicalElements, classical_to_cartesian};
 use pykep_core::time::epoch::Epoch;
 use pykep_core::astro::propagation::propagate_lagrangian;
+use pykep_core::dynamics::Cr3bpDynamics;
+use pykep_core::integration::IntegratorOptions;
 
 assert_eq!(Epoch::from_iso("2000-01")?.mjd2000(), 0.0);
 assert_eq!(cross(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0])?, [0.0, 0.0, 1.0]);
@@ -41,6 +45,11 @@ let elements = ClassicalElements::new(7.0e6, 0.01, 0.4, 1.0, 0.5, 0.2);
 assert!(classical_to_cartesian(elements, 3.986_004_418e14)?[0].is_finite());
 let state = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
 assert!(propagate_lagrangian(&state, 0.5, 1.0)?[1] > 0.0);
+let rotating = [0.8, -0.2, 0.1, 0.03, -0.04, 0.02];
+let propagated = Cr3bpDynamics.propagate(
+    0.0, rotating, 0.5, 0.012150585609624, IntegratorOptions::default()
+)?;
+assert!(propagated.state.iter().all(|value| value.is_finite()));
 # Ok::<(), pykep_core::PykepError>(())
 ```
 

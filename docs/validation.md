@@ -97,5 +97,17 @@ and performs no per-step heap allocation for fixed-size model states.
 The candidate harness and matching C++ benchmark use the same six-state
 Kepler initial condition, final time, and `1e-12` scalar tolerances. Nominal
 and variational timings, allocation limitations, and the dense-output
-maximum-step caveat are recorded in ADR 0004. This phase validates integration
-machinery only; the production dynamics models remain Phase 11 work.
+maximum-step caveat are recorded in ADR 0004. Those tests validate integration
+machinery independently of the production models added in Phase 11.
+
+Phase 11 adds five sampled states and the final 6 by 6 STM for each of
+Kepler, CR3BP, and BCP in `phase11-v1.json`. The BCP case uses a nonzero Sun
+mass and a nonzero initial epoch, while the CR3BP case reproduces the
+representative upstream trajectory. The file has SHA-256
+`1c2b67eb203da62baf921db9f811b0ad0f763cbaa03f0ca80d6319870b0da807`.
+The oracle uses pykep 3.0.1 and heyoka 7.10.0 at a requested tolerance of
+`1e-16`; Rust comparison settings and achieved tolerances are documented in
+`dynamics.md`. Separate tests evaluate the source equations directly, verify
+the triangular equilibrium, preserve the Jacobi constant, make zero-Sun BCP
+reduce to CR3BP, check every state/parameter Jacobian column by central
+differences, and distinguish body singularities from solver failures.

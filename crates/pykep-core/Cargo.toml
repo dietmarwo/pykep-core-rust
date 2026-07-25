@@ -43,3 +43,7 @@ harness = false
 [[bench]]
 name = "integration"
 harness = false
+
+[[bench]]
+name = "dynamics"
+harness = false

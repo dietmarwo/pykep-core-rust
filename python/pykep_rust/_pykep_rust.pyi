@@ -215,6 +215,28 @@ class Planet:
 def port_status() -> str:
     """Return the current implementation status of the native core."""
 
+def kepler_rhs(state: Sequence[float], mu: float) -> list[float]:
+    """Evaluate two-body Cartesian dynamics."""
+
+def cr3bp_rhs(state: Sequence[float], mu: float) -> list[float]:
+    """Evaluate CR3BP dynamics in the synodic frame."""
+
+def bcp_rhs(
+    time: float,
+    state: Sequence[float],
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+) -> list[float]:
+    """Evaluate time-dependent bicircular dynamics."""
+
+def cr3bp_effective_potential(state: Sequence[float], mu: float) -> float:
+    """Evaluate the positive CR3BP effective potential."""
+
+def cr3bp_jacobi_constant(state: Sequence[float], mu: float) -> float:
+    """Evaluate the CR3BP Jacobi constant."""
+
 def jd_to_mjd(value: float) -> float:
     """Convert Julian date to modified Julian date, in days."""
 
@@ -528,6 +550,78 @@ def propagate_keplerian(
     state: Sequence[float], time: float, mu: float
 ) -> list[float]:
     """Propagate a Cartesian state by advancing its mean anomaly."""
+
+def propagate_kepler_dynamics(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Adaptively propagate evaluated two-body dynamics."""
+
+def propagate_cr3bp(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Adaptively propagate CR3BP dynamics."""
+
+def propagate_bcp(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> list[float]:
+    """Adaptively propagate time-dependent bicircular dynamics."""
+
+def propagate_kepler_dynamics_with_stm(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> tuple[list[float], list[list[float]]]:
+    """Propagate evaluated two-body dynamics with a 6 by 6 STM."""
+
+def propagate_cr3bp_with_stm(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> tuple[list[float], list[list[float]]]:
+    """Propagate CR3BP dynamics with a 6 by 6 STM."""
+
+def propagate_bcp_with_stm(
+    state: Sequence[float],
+    final_time: float,
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+) -> tuple[list[float], list[list[float]]]:
+    """Propagate bicircular dynamics with a 6 by 6 STM."""
 
 def propagate_lagrangian_with_stm(
     state: Sequence[float], time: float, mu: float

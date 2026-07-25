@@ -55,6 +55,12 @@ the state plus 6 by 6 STM. The equivalent warmed C++/heyoka solves measured
 facade and 7.369 µs for `ode_solvers`, whose missing root/sensitivity
 facilities and per-step allocations outweighed the nominal timing advantage.
 See ADR 0004 for configuration, ranges, and risks.
+The Phase 11 evaluated-model orientation measured Kepler, CR3BP, and BCP
+right-hand sides at 10.828 ns, 32.833 ns, and 63.386 ns. A representative
+CR3BP propagation measured 7.808 µs and its state-plus-STM propagation
+measured 45.368 µs. The same initial state, final time, parameter, and
+`1e-12` tolerance in warmed C++/heyoka measured 2.885 µs and 95.017 µs
+median, respectively.
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -72,6 +78,7 @@ cargo bench -p pykep-core --bench elements
 cargo bench -p pykep-core --bench propagation
 cargo bench -p pykep-core --bench mission
 cargo bench -p pykep-core --bench integration
+cargo bench -p pykep-core --bench dynamics
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -91,6 +98,8 @@ and batch paths.
 Integration benchmarks separate nominal six-state DOP853 propagation from an
 augmented state plus STM solve. The final-state output callback does not retain
 internal steps.
+Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
+nominal and variational propagation.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization
