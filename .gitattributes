@@ -1,0 +1,3 @@
+# Keep text checkouts identical across platforms. In particular, rustfmt.toml
+# requires Unix newlines and Windows runners must not rewrite Rust sources.
+* text=auto eol=lf
