@@ -512,13 +512,23 @@ mod tests {
 
     #[test]
     fn difference_equations_have_consistent_derivatives() {
+        // Central differences subtract nearby residuals. This scale-aware
+        // bound covers final-bit variation in native and Miri transcendental
+        // evaluation while still detecting an incorrect analytic derivative.
+        const RELATIVE_TOLERANCE: f64 = 1e-10;
+
         let numerical = central_first_derivative(
             |value| elliptic_difference_residual(value, 0.3, 0.2, 2.0, 4.0, 3.0),
             0.4,
             1e-5,
         );
         let analytic = elliptic_difference_derivative(0.4, 0.2, 2.0, 4.0, 3.0).unwrap();
-        assert!((numerical - analytic).abs() < 5e-11);
+        let error = (numerical - analytic).abs();
+        let tolerance = RELATIVE_TOLERANCE * analytic.abs().max(1.0);
+        assert!(
+            error < tolerance,
+            "elliptic finite-difference error {error:e} exceeds {tolerance:e}: numerical={numerical:e}, analytic={analytic:e}"
+        );
 
         let numerical = central_first_derivative(
             |value| hyperbolic_difference_residual(value, 0.3, 0.2, 2.0, -4.0, 3.0),
@@ -526,7 +536,12 @@ mod tests {
             1e-5,
         );
         let analytic = hyperbolic_difference_derivative(0.4, 0.2, 2.0, -4.0, 3.0).unwrap();
-        assert!((numerical - analytic).abs() < 5e-11);
+        let error = (numerical - analytic).abs();
+        let tolerance = RELATIVE_TOLERANCE * analytic.abs().max(1.0);
+        assert!(
+            error < tolerance,
+            "hyperbolic finite-difference error {error:e} exceeds {tolerance:e}: numerical={numerical:e}, analytic={analytic:e}"
+        );
     }
 
     #[test]
