@@ -28,6 +28,8 @@ pykep parity from the current API.
 - `python/pykep_rust`: typed Python package and extension stub.
 - `examples`: runnable deterministic Rust examples.
 - `docs`: Rust-specific design and usage documentation.
+- `ai-context.md`: operational model-selection, convention, implementation,
+  and validation guidance for AI-assisted user problems.
 - `tools/release-benchmark`: fixed-protocol release regression benchmark.
 - `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
   `fcmaes-core` optimization benchmark.

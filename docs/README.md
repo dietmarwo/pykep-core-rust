@@ -3,6 +3,9 @@
 The documentation describes the implemented native Rust core and its thin
 Python interface:
 
+- [AI problem-solving context](https://github.com/dietmarwo/pykep-core-rust/blob/main/ai-context.md):
+  selecting physical models, APIs, units, frames, solver settings, and
+  validation for a user problem;
 - [examples.md](examples.md): Rust/Python quick starts and runnable examples;
 - [conventions.md](conventions.md): units, epochs, frames, array layouts, and
   numerical behavior;
