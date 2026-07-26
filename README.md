@@ -4,6 +4,10 @@ This repository contains an independent native Rust port of the numerical C++
 library in pykep version 3 (`kep3`), together with a thin Python API built with
 PyO3.
 
+The [narrative documentation](https://dietmarwo.github.io/pykep-core-rust/)
+is configured to publish from `main`. crates.io releases generate the Rust API
+reference on [docs.rs](https://docs.rs/pykep-core).
+
 The numerical foundations, epochs, anomalies, element conversions, two-body
 propagation, state-transition matrices, Lambert solutions, impulsive
 transfers, flybys, encodings, MIMA approximations, the planet interface, and

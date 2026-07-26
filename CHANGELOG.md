@@ -78,6 +78,11 @@ once the public API is ready to stabilize.
   tests for the crate and wheel.
 - A Reynolds-STM overflow fuzz target, reusable Markdown link checker, and
   executable Rustdoc examples on every major module landing page.
+- An mdBook documentation site and GitHub Pages deployment workflow.
+- Tag-gated crates.io and PyPI release workflows using protected environments,
+  short-lived OIDC credentials, installed-artifact tests, and attestations.
+- Registry bootstrap instructions and installed-package smoke utilities for
+  synchronized `pykep-core` and `pykep-rust` releases.
 
 ### Changed
 
@@ -102,6 +107,6 @@ once the public API is ready to stabilize.
 
 ### Known release blockers
 
-- Permanent repository ownership, private security contact, trusted publisher
-  configuration, external API review, registry publication, registry-download
-  smoke tests, and the release tag require release-owner action.
+- Private security contact, registry-side trusted publisher configuration,
+  external API review, registry publication, registry-download smoke tests,
+  and the release tag require release-owner action.

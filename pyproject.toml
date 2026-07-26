@@ -7,12 +7,18 @@ name = "pykep-rust"
 dynamic = ["version"]
 description = "Native Rust astrodynamics algorithms with a Python API."
 readme = "python/README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = ["numpy>=1.26"]
 license = "MPL-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Dietmar Wolz" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
     "Topic :: Scientific/Engineering :: Physics",
@@ -24,11 +30,21 @@ test = [
     "pytest>=8,<10",
 ]
 
+[project.urls]
+Repository = "https://github.com/dietmarwo/pykep-core-rust"
+Documentation = "https://dietmarwo.github.io/pykep-core-rust/"
+Issues = "https://github.com/dietmarwo/pykep-core-rust/issues"
+Changelog = "https://github.com/dietmarwo/pykep-core-rust/blob/main/CHANGELOG.md"
+
 [tool.maturin]
 manifest-path = "crates/pykep-py/Cargo.toml"
 python-source = "python"
 module-name = "pykep_rust._pykep_rust"
 strip = true
+
+[tool.maturin.generate-ci.github]
+trusted-publishing = true
+publishing-environment = "release"
 
 [tool.mypy]
 files = ["python/typecheck"]

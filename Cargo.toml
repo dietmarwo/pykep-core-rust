@@ -13,6 +13,9 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MPL-2.0"
+authors = ["Dietmar Wolz"]
+repository = "https://github.com/dietmarwo/pykep-core-rust"
+homepage = "https://dietmarwo.github.io/pykep-core-rust/"
 
 [workspace.dependencies]
 pykep-core = { version = "=0.1.0", path = "crates/pykep-core" }

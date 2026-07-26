@@ -4,11 +4,18 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
 description = "Native Rust astrodynamics core for the pykep-rust port."
 readme = "README.md"
 documentation = "https://docs.rs/pykep-core"
 keywords = ["astrodynamics", "orbital-mechanics", "spaceflight", "kepler"]
 categories = ["aerospace", "mathematics", "science"]
+publish = ["crates-io"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [features]
 default = ["vsop2013"]

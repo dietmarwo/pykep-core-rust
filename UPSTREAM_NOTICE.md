@@ -27,9 +27,12 @@ Rust crates do not link to or call the C++ implementation.
 
 ## Names and ownership
 
-The working names are `pykep-core`, `pykep-rust`, and `pykep_rust`. They remain
-provisional until the repository owner and permanent public repository URL are
-chosen. Cargo metadata deliberately omits an upstream ESA repository URL.
+The independent repository is
+<https://github.com/dietmarwo/pykep-core-rust>, owned by `dietmarwo`. Cargo and
+Python package metadata point there rather than to the upstream ESA
+repository. The package names `pykep-core`, `pykep-rust`, and `pykep_rust`
+remain provisional until the external API review approves the public-name
+freeze.
 
 ## Deliberate differences
 

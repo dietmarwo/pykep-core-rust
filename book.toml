@@ -1,0 +1,18 @@
+[book]
+title = "pykep-rust"
+authors = ["Dietmar Wolz"]
+description = "Native Rust astrodynamics: API guides, conventions, validation, and Python migration"
+language = "en"
+src = "docs"
+
+[build]
+build-dir = "target/book"
+create-missing = false
+
+[output.html]
+site-url = "/pykep-core-rust/"
+git-repository-url = "https://github.com/dietmarwo/pykep-core-rust"
+
+[output.html.fold]
+enable = true
+level = 1

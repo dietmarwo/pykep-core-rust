@@ -10,6 +10,14 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
 cargo +1.88.0 check --workspace --locked
 ```
 
+Build the GitHub Pages documentation with the same mdBook 0.5.4 release used
+by `.github/workflows/docs.yml`:
+
+```bash
+python tools/check_markdown_links.py
+mdbook build
+```
+
 Run benchmarks separately so timing work is never hidden in the test suite:
 
 ```bash

@@ -131,7 +131,7 @@ run.
 ## External blockers
 
 Public names are documented but not declared permanently frozen: external API
-review is still required. Permanent repository/owner/security metadata,
-trusted registry publishers, registry uploads, downloads of published
-artifacts, and the release tag all require release-owner authority. See
-`RELEASE.md` for the exact boundary.
+review is still required. The independent repository URL and owner are now
+recorded, while private security contact, registry-side trusted publishers,
+registry uploads, downloads of published artifacts, and the release tag all
+require release-owner authority. See `RELEASE.md` for the exact boundary.
