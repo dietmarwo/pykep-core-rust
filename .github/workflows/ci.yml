@@ -61,7 +61,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install "maturin[patchelf]>=1.7,<2"
+      - name: Install Maturin
+        run: python -m pip install "maturin>=1.7,<2"
+      - name: Install Linux wheel-repair support
+        if: runner.os == 'Linux'
+        run: python -m pip install patchelf
       - run: maturin build --release --locked --manifest-path crates/pykep-py/Cargo.toml
       - run: python -m pip install --find-links target/wheels "pykep-rust[test]==0.1.0"
       - run: python -c "import pykep_rust as pk; print(pk.port_status())"
