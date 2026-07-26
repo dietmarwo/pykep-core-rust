@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "criterion",
  "differential-equations",
@@ -488,14 +488,14 @@ dependencies = [
 
 [[package]]
 name = "pykep-examples"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pykep-core",
 ]
 
 [[package]]
 name = "pykep-lambert-optimization-benchmark"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fcmaes-core",
  "pykep-core",
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-py"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "numpy",
  "pykep-core",
@@ -512,7 +512,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-release-benchmark"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pykep-core",
 ]

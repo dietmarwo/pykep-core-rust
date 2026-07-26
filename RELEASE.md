@@ -94,10 +94,11 @@ short-lived test credential or a dedicated trusted workflow. Install with
 production PyPI available only for dependencies:
 
 ```bash
+version="$(python scripts/package_version.py)"
 python -m pip install \
   --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple/ \
-  pykep-rust==0.1.0
+  "pykep-rust==$version"
 ```
 
 If testing requires changing an artifact, increment the version. Registry
@@ -110,8 +111,9 @@ is complete, external API review approves the public-name freeze, and all
 pre-release checks pass:
 
 ```bash
-git tag -a v0.1.0 -m "Release pykep-rust 0.1.0"
-git push origin v0.1.0
+version="$(python scripts/package_version.py)"
+git tag -a "v$version" -m "Release pykep-rust $version"
+git push origin "v$version"
 ```
 
 The tag must exactly equal `v` plus the Cargo package version. The Python

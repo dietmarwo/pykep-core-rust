@@ -6,6 +6,17 @@ once the public API is ready to stabilize.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-26
+
+### Changed
+
+- Bumped the synchronized Rust and Python distribution version for the first
+  fully automated Trusted Publishing release.
+- Made Python wheel and source-distribution CI checks derive their expected
+  version from the Cargo workspace instead of hard-coding `0.1.0`.
+
+## [0.1.0] - 2026-07-26
+
 ### Added
 
 - Independent Rust workspace and private PyO3 extension scaffold.
@@ -104,9 +115,3 @@ once the public API is ready to stabilize.
   same epoch.
 - Lambert solution properties now expose runtime docstrings, and anomaly
   wrapper parameter names match the shipped stub.
-
-### Known release blockers
-
-- Private security contact, registry-side trusted publisher configuration,
-  external API review, registry publication, registry-download smoke tests,
-  and the release tag require release-owner action.
