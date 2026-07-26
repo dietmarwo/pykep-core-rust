@@ -76,11 +76,29 @@ once the public API is ready to stabilize.
 - Release-candidate packaging, performance regression tooling, bounded fuzz
   targets, memory/cache profiling procedure, and local empty-project smoke
   tests for the crate and wheel.
+- A Reynolds-STM overflow fuzz target, reusable Markdown link checker, and
+  executable Rustdoc examples on every major module landing page.
 
 ### Changed
 
 - Enabled independent packaging of `pykep-core`; the PyO3 implementation crate
   remains unpublished and the Python distribution remains a separate wheel.
+- ZOH state histories use one dense-output solve per segment. Backward
+  histories use an equivalent increasing-time coordinate to avoid the
+  selected backend's decreasing-time interpolation boundary defect.
+- Python stub audits now compare runtime parameter names, order, defaults,
+  return-annotation presence, and documented class members.
+
+### Fixed
+
+- Reynolds state-transition matrices now return a typed overflow error instead
+  of panicking when finite inputs overflow intermediate products.
+- `alpha_to_direct` rejects both zero and one with the documented invalid-input
+  error class.
+- Extended signed-year ISO strings emitted by `Epoch` now parse back to the
+  same epoch.
+- Lambert solution properties now expose runtime docstrings, and anomaly
+  wrapper parameter names match the shipped stub.
 
 ### Known release blockers
 

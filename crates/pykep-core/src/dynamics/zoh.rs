@@ -7,6 +7,9 @@
 //!
 //! This file adapts `src/ta/zoh_kep.cpp`, `zoh_cr3bp.cpp`, `zoh_eq.cpp`, and
 //! `zoh_ss.cpp` from the pinned pykep/kep3 source into evaluated models.
+//! The four built-in models evaluate sensitivity Jacobians with fixed-size
+//! centered differences using a relative step of `3e-6`. Integrator tolerances
+//! therefore do not imply the same accuracy for returned sensitivities.
 
 use crate::error::ensure_finite;
 use crate::integration::{
@@ -428,7 +431,8 @@ fn add_statistics(total: &mut IntegrationStats, segment: IntegrationStats) {
 /// Seven-state Cartesian low-thrust Kepler dynamics with normalized `mu = 1`.
 ///
 /// State order is `[x, y, z, vx, vy, vz, mass]`; parameters are
-/// `[thrust, ix, iy, iz, c]`.
+/// `[thrust, ix, iy, iz, c]`. Its [`DifferentiableDynamicsModel`] Jacobians
+/// use the centered-difference contract documented by this module.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohKeplerDynamics;
 
@@ -502,7 +506,9 @@ impl ZeroOrderHoldModel<7, 4, 1, 5> for ZohKeplerDynamics {
 
 /// Seven-state low-thrust CR3BP dynamics in the synodic frame.
 ///
-/// Parameters are `[thrust, ix, iy, iz, c, mu]`.
+/// Parameters are `[thrust, ix, iy, iz, c, mu]`. Its
+/// [`DifferentiableDynamicsModel`] Jacobians use the centered-difference
+/// contract documented by this module.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohCr3bpDynamics;
 
@@ -607,7 +613,8 @@ impl ZeroOrderHoldModel<7, 4, 2, 6> for ZohCr3bpDynamics {
 ///
 /// State order is `[p, f, g, h, k, L, mass]`; control is
 /// `[thrust, i_r, i_t, i_n]` and the sole constant is mass-flow coefficient
-/// `c`.
+/// `c`. Its [`DifferentiableDynamicsModel`] Jacobians use the
+/// centered-difference contract documented by this module.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohEquinoctialDynamics;
 
@@ -704,7 +711,8 @@ impl ZeroOrderHoldModel<7, 4, 1, 5> for ZohEquinoctialDynamics {
 /// angles.
 ///
 /// Parameters are `[alpha, beta, c]`, where `c/r²` scales sail acceleration
-/// in normalized heliocentric units.
+/// in normalized heliocentric units. Its [`DifferentiableDynamicsModel`]
+/// Jacobians use the centered-difference contract documented by this module.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohSolarSailDynamics;
 

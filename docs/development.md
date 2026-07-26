@@ -40,7 +40,7 @@ env -u CONDA_PREFIX VIRTUAL_ENV="$PWD/.venv" \
 Coverage:
 
 ```bash
-cargo llvm-cov -p pykep-core --all-targets --summary-only
+cargo llvm-cov -p pykep-core --all-features --all-targets --summary-only
 cargo llvm-cov --workspace --all-targets --summary-only
 ```
 
@@ -51,6 +51,7 @@ cargo +nightly miri test -p pykep-core --lib --no-default-features fixed_matrix_
 cargo +nightly fuzz run epoch_parser -- -max_total_time=30
 cargo +nightly fuzz run element_conversions -- -max_total_time=30
 cargo +nightly fuzz run lambert_inputs -- -max_total_time=30
+cargo +nightly fuzz run reynolds_stm -- -max_total_time=30
 valgrind --error-exitcode=1 --leak-check=full \
   target/release/pykep-release-benchmark --quick
 ```

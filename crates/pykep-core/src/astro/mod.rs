@@ -2,6 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Orbital-mechanics algorithms.
+//!
+//! ```
+//! use pykep_core::astro::transfers::hohmann;
+//!
+//! let transfer = hohmann(7.0e6, 42.0e6, 3.986_004_418e14)?;
+//! assert!(transfer.delta_v > 0.0);
+//! assert_eq!(transfer.impulses.len(), 2);
+//! # Ok::<(), pykep_core::PykepError>(())
+//! ```
 
 /// Elliptic and hyperbolic anomaly conversions.
 pub mod anomalies;

@@ -171,7 +171,12 @@ class ZohLeg:
         list[list[float]],
         list[list[float]],
         list[list[float]],
-    ]: ...
+    ]:
+        """Return finite-difference-based sensitivities in output-by-input order.
+
+        Integrator tolerances are not derivative-accuracy guarantees; pinned
+        validation uses scaled bounds up to 3e-5.
+        """
     def state_history(
         self, samples_per_segment: int = 2
     ) -> tuple[list[list[list[float]]], list[list[list[float]]]]: ...
@@ -191,7 +196,11 @@ class ZohLeg:
     def backward_segment_count(self) -> int: ...
 
 class Epoch:
-    """A microsecond-resolution proleptic-Gregorian epoch."""
+    """A microsecond-resolution proleptic-Gregorian epoch.
+
+    Binary64 JD input near J2000 has roughly 40-microsecond spacing; use
+    MJD2000 or calendar construction for single-microsecond input resolution.
+    """
 
     def __init__(
         self, value: float = 0.0, scale: EpochScale = "mjd2000"
@@ -200,7 +209,7 @@ class Epoch:
 
     @staticmethod
     def from_iso(text: str) -> Epoch:
-        """Parse a cropped ISO calendar string."""
+        """Parse a cropped ISO calendar string, including extended signed years."""
 
     @staticmethod
     def from_calendar(
@@ -263,17 +272,28 @@ class LambertSolution:
     """One branch in a deterministic Lambert solution family."""
 
     @property
-    def departure_velocity(self) -> list[float]: ...
+    def departure_velocity(self) -> list[float]:
+        """Departure velocity at the initial position."""
+
     @property
-    def arrival_velocity(self) -> list[float]: ...
+    def arrival_velocity(self) -> list[float]:
+        """Arrival velocity at the final position."""
+
     @property
-    def x(self) -> float: ...
+    def x(self) -> float:
+        """Izzo solver variable for this branch."""
+
     @property
-    def iterations(self) -> int: ...
+    def iterations(self) -> int:
+        """Householder iterations used for this branch."""
+
     @property
-    def revolutions(self) -> int: ...
+    def revolutions(self) -> int:
+        """Number of complete revolutions."""
+
     @property
-    def path(self) -> str: ...
+    def path(self) -> str:
+        """Deterministic branch name: zero, left, or right."""
 
 class LambertProblem:
     """Solved single- or multi-revolution Lambert problem."""

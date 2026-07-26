@@ -548,6 +548,10 @@ impl PyZohLeg {
     }
 
     /// Return initial, final, control, and time-grid Jacobian rows.
+    ///
+    /// Built-in model Jacobians use centered differences with a relative
+    /// step of `3e-6`; integrator tolerances are not derivative-accuracy
+    /// guarantees, and pinned validation uses scaled bounds up to `3e-5`.
     fn mismatch_jacobian(&self, python: Python<'_>) -> PyResult<PythonZohJacobian> {
         let inner = self.inner.clone();
         python

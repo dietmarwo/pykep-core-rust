@@ -23,15 +23,24 @@ cmake --build .oracle-build
 .oracle-build/phase7_oracle
 .oracle-build/phase8_oracle
 .oracle-build/phase9_oracle
+.oracle-build/phase11_oracle
+.oracle-build/phase12_oracle
 .oracle-build/phase13_oracle
 .oracle-build/phase14_oracle
 .oracle-build/phase15_oracle
 ```
 
-Compare the output byte-for-byte with `foundations-v1.json` and
-`phase3-v1.json`, `phase4-v1.json`, `phase5-v1.json`, `phase6-v1.json`, and
-`phase7-v1.json`, `phase8-v1.json`, and `phase9-v1.json`. Generation must be
+Compare every command's output byte-for-byte with its corresponding
+`foundations-v1.json` or `phaseN-v1.json` file. Generation must be
 deterministic.
+
+`phase11-v1.json` covers sampled Kepler, CR3BP, and BCP trajectories and
+their final state-transition matrices. It has SHA-256
+`1c2b67eb203da62baf921db9f811b0ad0f763cbaa03f0ca80d6319870b0da807`.
+
+`phase12-v1.json` covers final states and state/control sensitivities for all
+four built-in ZOH dynamics models. It has SHA-256
+`294bab93355628cd22991b83563c6f93deefc19dd93911dfc4b654a101764f22`.
 
 `phase13-v1.json` covers Cartesian and modified-equinoctial Pontryagin
 trajectories in mass- and time-optimal modes, the upstream dimensional

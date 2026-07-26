@@ -31,3 +31,10 @@ path = "fuzz_targets/lambert_inputs.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "reynolds_stm"
+path = "fuzz_targets/reynolds_stm.rs"
+test = false
+doc = false
+bench = false

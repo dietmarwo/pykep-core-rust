@@ -57,7 +57,7 @@ documentation required by the definition of done are complete.
 - [x] `src/leg/sf_checks.cpp` → `leg::sims_flanagan` validation (Phase 14)
 - [x] `src/leg/sims_flanagan.cpp` → `leg::sims_flanagan` (Phase 14)
 - [x] `src/leg/sims_flanagan_alpha.cpp` →
-      `leg::sims_flanagan_alpha` (Phase 14)
+      `leg::sims_flanagan::SimsFlanaganAlphaLeg` (Phase 14)
 - [x] `src/leg/zoh.cpp` → `leg::zoh` (Phase 15)
 
 The C++-specific visibility, serialization, and type-erasure support headers
@@ -80,6 +80,10 @@ native numerical-core product and have stable internal tracking identifiers:
 - `MIMA-HOP-001`: `mima_from_hop` and `mima2_from_hop` depend on an upstream
   higher-order-propagation object that the native API intentionally does not
   expose.
+- `PY-ANOMALY-BATCH-001`: the 12 upstream vectorized anomaly conversions
+  other than `m2e_v` and `n2h_v` have scalar equivalents but no native batch
+  wrapper yet; new batch entry points require a measured throughput use case
+  and explicit shape/ownership contract.
 
 The Python migration matrix gives user-visible alternatives. A future change
 must resolve the corresponding tracking item and add a source-map row before

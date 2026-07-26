@@ -6,6 +6,23 @@
 // 53b1ca3ce5f8c223f96819b2ea9ba16c3719e63e.
 
 //! Object-safe ephemeris interface and built-in providers.
+//!
+//! ```
+//! use pykep_core::ephemeris::{Ephemeris, KeplerianEphemeris};
+//! use pykep_core::time::epoch::Epoch;
+//!
+//! let provider = KeplerianEphemeris::from_state(
+//!     Epoch::new(),
+//!     [1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+//!     1.0,
+//!     "unit orbit",
+//!     None,
+//!     None,
+//!     None,
+//! )?;
+//! assert_eq!(provider.state(0.0)?, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+//! # Ok::<(), pykep_core::PykepError>(())
+//! ```
 
 mod jpl_lp;
 mod keplerian;
@@ -171,22 +188,75 @@ pub trait Ephemeris: Send + Sync {
 mod tests {
     use super::*;
 
-    struct Minimal;
+    struct Minimal {
+        state: CartesianState,
+        central_mu: Option<f64>,
+    }
 
     impl Ephemeris for Minimal {
         fn state(&self, _: f64) -> Result<CartesianState> {
-            Ok([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+            Ok(self.state)
         }
 
         fn name(&self) -> &'static str {
             "minimal"
         }
+
+        fn metadata(&self) -> EphemerisMetadata {
+            EphemerisMetadata {
+                central_mu: self.central_mu,
+                ..EphemerisMetadata::default()
+            }
+        }
     }
 
     #[test]
     fn optional_capabilities_are_explicit() {
-        let minimal = Minimal;
+        let minimal = Minimal {
+            state: [1.0, 0.0, 0.0, 0.0, 0.8, 0.1],
+            central_mu: None,
+        };
         assert!(minimal.acceleration(0.0).is_err());
         assert!(minimal.period(0.0).is_err());
+        assert!(
+            minimal
+                .elements(0.0, ElementRepresentation::ClassicalTrue)
+                .is_err()
+        );
+        assert_eq!(minimal.states(&[0.0, 1.0]).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn derived_periods_and_every_element_representation_are_available() {
+        let elliptic = Minimal {
+            state: [1.0, 0.0, 0.0, 0.0, 0.8, 0.1],
+            central_mu: Some(1.0),
+        };
+        assert!(elliptic.period(0.0).unwrap().unwrap().is_finite());
+        for representation in [
+            ElementRepresentation::ClassicalTrue,
+            ElementRepresentation::ClassicalMean,
+            ElementRepresentation::ModifiedEquinoctial,
+            ElementRepresentation::ModifiedEquinoctialRetrograde,
+        ] {
+            assert!(
+                elliptic
+                    .elements(0.0, representation)
+                    .unwrap()
+                    .iter()
+                    .all(|value| value.is_finite())
+            );
+        }
+
+        let hyperbolic = Minimal {
+            state: [1.0, 0.0, 0.0, 0.0, 2.0, 0.1],
+            central_mu: Some(1.0),
+        };
+        assert_eq!(hyperbolic.period(0.0).unwrap(), None);
+        assert!(
+            hyperbolic
+                .elements(0.0, ElementRepresentation::ClassicalMean)
+                .is_err()
+        );
     }
 }

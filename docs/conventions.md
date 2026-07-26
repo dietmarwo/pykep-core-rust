@@ -7,7 +7,7 @@ Unless an API states otherwise:
 - gravitational parameters are in cubic metres per square second;
 - durations are in seconds, while Julian-date conversions operate in days;
 - angles are in radians;
-- scalar ephemeris epochs will use MJD2000;
+- scalar ephemeris epochs use MJD2000;
 - Cartesian state ordering is `[x, y, z, vx, vy, vz]`;
 - classical element ordering is `[a, e, i, Ω, ω, ν]`;
 - modified equinoctial ordering is `[p, f, g, h, k, L]`;

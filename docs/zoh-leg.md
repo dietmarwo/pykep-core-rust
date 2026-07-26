@@ -56,6 +56,13 @@ The leg composes those matrices from each side of the cut and includes the
 dynamics jump at every switching time. Constant model parameters are fixed
 leg configuration and therefore are not a returned derivative group.
 
+The four built-in models compute their local RHS Jacobians with fixed-size
+centered differences using a relative step of `3e-6`. Consequently,
+integrator tolerances such as `1e-12` do not imply `1e-12` derivative
+accuracy: the pinned end-to-end validation uses scaled tolerances up to
+`3e-5`. See [zero-order-hold.md](zero-order-hold.md#sensitivities) for the
+model-level contract and validation evidence.
+
 ## Integration and failures
 
 `IntegratorOptions` applies independently to every segment, including
@@ -64,10 +71,14 @@ maximum steps, and maximum rejections. A propagation failure is reported as
 an `IntegrationFailure` containing the direction, chronological segment
 index, and attempted time interval.
 
-`state_history(samples_per_segment)` returns uniformly spaced states including
-both endpoints of every propagated segment. At least two samples are required.
-Backward histories list the final segment first, matching propagation order.
-`evaluate_zoh_mismatch_batch()` evaluates validated Rust legs in input order.
+`state_history(samples_per_segment)` uses one DOP853 dense solve per segment
+for uniformly spaced states including both endpoints. The selected backend's
+decreasing-time dense interpolation can panic on a rounded step boundary, so
+backward segments are evaluated through the equivalent increasing coordinate
+`tau = segment_start - time` rather than handed to that backend path. At least
+two samples are required. Backward histories list the final segment first,
+matching propagation order. `evaluate_zoh_mismatch_batch()` evaluates
+validated Rust legs in input order.
 
 ## Python
 

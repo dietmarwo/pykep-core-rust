@@ -20,6 +20,11 @@ use crate::integration::{
 use crate::{PykepError, Result};
 
 /// Mismatch derivatives in output-by-input row order.
+///
+/// These derivatives compose segment sensitivities whose built-in model
+/// Jacobians use centered differences. Validation against the pinned oracle
+/// therefore uses scaled tolerances up to `3e-5`, independently of the
+/// integrator tolerance.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ZohLegMismatchJacobian<const N: usize> {
     /// Derivative with respect to the initial state, shape `N × N`.
@@ -50,6 +55,26 @@ pub struct ZohLegHistory<const N: usize> {
 ///
 /// `W` is the local variational width and must equal `N + C`. The public
 /// aliases for the four built-in ZOH models select the correct dimensions.
+///
+/// ```
+/// use pykep_core::dynamics::zoh::ZohKeplerDynamics;
+/// use pykep_core::integration::IntegratorOptions;
+/// use pykep_core::leg::ZohKeplerLeg;
+///
+/// let state = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0];
+/// let leg = ZohKeplerLeg::new(
+///     ZohKeplerDynamics,
+///     state,
+///     vec![[0.0; 4]],
+///     state,
+///     vec![0.0, 0.1],
+///     [0.0],
+///     0.5,
+///     IntegratorOptions::default(),
+/// )?;
+/// assert!(leg.mismatch_constraints()?.iter().all(|value| value.is_finite()));
+/// # Ok::<(), pykep_core::PykepError>(())
+/// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct ZohLeg<M, const N: usize, const C: usize, const K: usize, const P: usize, const W: usize>
 {
@@ -72,6 +97,37 @@ pub type ZohCr3bpLeg = ZohLeg<ZohCr3bpDynamics, 7, 4, 2, 6, 11>;
 pub type ZohEquinoctialLeg = ZohLeg<ZohEquinoctialDynamics, 7, 4, 1, 5, 11>;
 /// Six-state, two-control ideal solar-sail ZOH leg.
 pub type ZohSolarSailLeg = ZohLeg<ZohSolarSailDynamics, 6, 2, 1, 3, 8>;
+
+struct ReverseTimeModel<'a, M> {
+    model: &'a M,
+    origin: f64,
+}
+
+impl<M, const N: usize, const P: usize> DynamicsModel<N, P> for ReverseTimeModel<'_, M>
+where
+    M: DynamicsModel<N, P>,
+{
+    const NAME: &'static str = M::NAME;
+
+    fn validate(&self, time: f64, state: &[f64; N], parameters: &[f64; P]) -> Result<()> {
+        self.model.validate(self.origin - time, state, parameters)
+    }
+
+    fn rhs(
+        &self,
+        time: f64,
+        state: &[f64; N],
+        parameters: &[f64; P],
+        derivative: &mut [f64; N],
+    ) -> Result<()> {
+        self.model
+            .rhs(self.origin - time, state, parameters, derivative)?;
+        for value in derivative {
+            *value = -*value;
+        }
+        Ok(())
+    }
+}
 
 impl<M, const N: usize, const C: usize, const K: usize, const P: usize, const W: usize>
     ZohLeg<M, N, C, K, P, W>
@@ -197,7 +253,10 @@ where
     /// Evaluates all four first-order mismatch derivative groups.
     ///
     /// The matrices use output-by-input rows and chronological control
-    /// blocks, matching the upstream ZOH-leg contract.
+    /// blocks, matching the upstream ZOH-leg contract. Built-in model
+    /// Jacobians are centered finite differences with a relative step of
+    /// `3e-6`; the validation ceiling is a scaled `3e-5`, even when the
+    /// propagation tolerance is tighter.
     ///
     /// # Errors
     ///
@@ -428,22 +487,50 @@ where
                 })
                 .collect::<Vec<_>>();
             let parameters = M::parameters(self.schedule.controls()[index], self.constants);
-            let mut sample_states = Vec::with_capacity(samples);
-            let mut current_time = start;
-            for &sample_time in &times {
-                let propagation = Dop853
-                    .propagate(
+            let sample_states = if forward {
+                Dop853
+                    .propagate_dense(
                         &self.model,
-                        InitialValueProblem::new(current_time, state, sample_time, parameters),
+                        InitialValueProblem::new(start, state, end, parameters),
+                        &times,
                         self.options,
                     )
-                    .map_err(|error| {
-                        segment_error::<M, N, P>(forward, index, current_time, sample_time, error)
-                    })?;
-                state = propagation.state;
-                current_time = sample_time;
-                sample_states.push(state);
-            }
+                    .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))?
+                    .states
+            } else {
+                // differential-equations 0.6.1 can panic when a decreasing
+                // dense-output request rounds just outside the completed step,
+                // so integrate the equivalent dx/dtau = -f(start - tau, x)
+                // problem on an increasing interval.
+                let evaluation_times = times
+                    .iter()
+                    .map(|&sample_time| start - sample_time)
+                    .collect::<Vec<_>>();
+                Dop853
+                    .propagate_dense(
+                        &ReverseTimeModel {
+                            model: &self.model,
+                            origin: start,
+                        },
+                        InitialValueProblem::new(0.0, state, start - end, parameters),
+                        &evaluation_times,
+                        self.options,
+                    )
+                    .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))?
+                    .states
+            };
+            state = sample_states.last().copied().ok_or_else(|| {
+                segment_error::<M, N, P>(
+                    forward,
+                    index,
+                    start,
+                    end,
+                    PykepError::IntegrationFailure {
+                        model: M::NAME,
+                        reason: "dense propagation returned no samples".into(),
+                    },
+                )
+            })?;
             result.push(sample_states);
         }
         Ok(result)

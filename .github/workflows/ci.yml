@@ -25,6 +25,8 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features --locked
+      - run: cargo test --workspace --all-features --locked --release
+      - run: cargo test -p pykep-core --no-default-features --locked
       - run: cargo run -p pykep-examples --bin port-status
       - run: cmp LICENSE crates/pykep-core/LICENSE
         if: runner.os != 'Windows'
@@ -80,11 +82,21 @@ jobs:
         with:
           components: llvm-tools-preview
       - uses: taiki-e/install-action@cargo-llvm-cov
-      - run: cargo llvm-cov --workspace --all-targets --lcov --output-path lcov.info
+      - run: cargo llvm-cov -p pykep-core --all-features --all-targets --lcov --output-path lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: rust-coverage
           path: lcov.info
+
+  documentation:
+    name: Documentation links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python tools/check_markdown_links.py
 
   supply-chain:
     name: Dependency policy
@@ -129,6 +141,7 @@ jobs:
       - run: cargo fuzz run epoch_parser -- -max_total_time=5
       - run: cargo fuzz run element_conversions -- -max_total_time=5
       - run: cargo fuzz run lambert_inputs -- -max_total_time=5
+      - run: cargo fuzz run reynolds_stm -- -max_total_time=5
 
   valgrind:
     name: Valgrind release smoke

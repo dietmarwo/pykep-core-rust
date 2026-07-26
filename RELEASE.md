@@ -22,7 +22,7 @@ maturin build --release --locked --manifest-path crates/pykep-py/Cargo.toml
 maturin sdist --manifest-path crates/pykep-py/Cargo.toml
 ```
 
-Inspect the crate list, `.crate`, wheel, sdist, licenses, SBOM, type stub, and
+Inspect the crate list, `.crate`, wheel, sdist, licenses, type stub, and
 native wheel dependencies. Install the `.crate` through an empty path-only
 Cargo project and the wheel into a fresh CPython environment with
 `LD_LIBRARY_PATH`/`PYTHONPATH` unset. The CI matrix repeats wheel builds on

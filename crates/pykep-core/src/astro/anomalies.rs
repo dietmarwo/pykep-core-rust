@@ -8,6 +8,11 @@
 
 //! Conversions among mean, eccentric/hyperbolic, true, and Gudermannian
 //! anomalies.
+//!
+//! The hyperbolic mean-anomaly solver deliberately uses an `asinh(M/e)`
+//! initial estimate and an unrestricted Newton domain. This converges for
+//! finite cases outside the pinned C++ implementation's fixed `1 ± 20π`
+//! bracket; iteration exhaustion remains an explicit error.
 
 use crate::constants::PI;
 use crate::error::{ensure_finite_output, ensure_finite_values};
@@ -191,6 +196,10 @@ pub fn true_to_gudermannian_anomaly(true_anomaly: f64, eccentricity: f64) -> Res
 }
 
 /// Converts hyperbolic mean anomaly to hyperbolic anomaly.
+///
+/// Unlike the pinned C++ solver, this uses an `asinh(M/e)` initial estimate
+/// without a fixed anomaly bracket, so some large finite anomalies accepted
+/// here are rejected upstream.
 ///
 /// # Errors
 ///

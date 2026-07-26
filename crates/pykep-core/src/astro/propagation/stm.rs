@@ -260,7 +260,10 @@ fn compute_y(
     velocity: &[f64; 3],
     time: f64,
     mu: f64,
-) -> Matrix6 {
+) -> Result<Matrix6> {
+    let overflow = |_| PykepError::NumericalOverflow {
+        operation: "state_transition_matrix_reynolds",
+    };
     let angular_momentum = cross(position, velocity);
     let initial_radius = norm(initial_position);
     let radius = norm(position);
@@ -273,10 +276,10 @@ fn compute_y(
     let skew_position = skew(position);
     let skew_velocity = skew(velocity);
     let skew_angular = skew(&angular_momentum);
-    let product = matrix_multiply(&skew_position, &skew_velocity).expect("finite inputs");
+    let product = matrix_multiply(&skew_position, &skew_velocity).map_err(overflow)?;
     let top = scale3(&add3(&product, &skew_angular), -1.0);
-    let position_squared = matrix_multiply(&skew_position, &skew_position).expect("finite inputs");
-    let velocity_squared = matrix_multiply(&skew_velocity, &skew_velocity).expect("finite inputs");
+    let position_squared = matrix_multiply(&skew_position, &skew_position).map_err(overflow)?;
+    let velocity_squared = matrix_multiply(&skew_velocity, &skew_velocity).map_err(overflow)?;
     let bottom = subtract3(
         &scale3(&position_squared, mu / radius_cubed),
         &velocity_squared,
@@ -297,7 +300,13 @@ fn compute_y(
         result[row][5] = -position[row] + 1.5 * velocity[row] * time;
         result[row + 3][5] = velocity[row] / 2.0 - 1.5 * mu / radius_cubed * position[row] * time;
     }
-    result
+    if result.iter().flatten().all(|value| value.is_finite()) {
+        Ok(result)
+    } else {
+        Err(PykepError::NumericalOverflow {
+            operation: "state_transition_matrix_reynolds",
+        })
+    }
 }
 
 pub(crate) fn invert6(mut matrix: Matrix6) -> Result<Matrix6> {
@@ -362,7 +371,7 @@ pub fn state_transition_matrix_reynolds(
         &final_velocity,
         time,
         mu,
-    );
+    )?;
     let initial_basis = compute_y(
         &initial_position,
         &initial_velocity,
@@ -370,6 +379,25 @@ pub fn state_transition_matrix_reynolds(
         &initial_velocity,
         0.0,
         mu,
-    );
-    matrix_multiply(&final_basis, &invert6(initial_basis)?)
+    )?;
+    matrix_multiply(&final_basis, &invert6(initial_basis)?).map_err(|_| {
+        PykepError::NumericalOverflow {
+            operation: "state_transition_matrix_reynolds",
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reynolds_reports_overflow_for_large_finite_states() {
+        assert!(matches!(
+            state_transition_matrix_reynolds(&[1e300; 6], &[1e300; 6], 1e300, 1e300),
+            Err(PykepError::NumericalOverflow {
+                operation: "state_transition_matrix_reynolds"
+            })
+        ));
+    }
 }

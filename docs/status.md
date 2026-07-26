@@ -1,6 +1,6 @@
 # Implementation status
 
-Evidence-backed status as of 2026-07-25:
+Evidence-backed status as of 2026-07-26:
 
 | Module | Rust core | Python API | Golden parity | Independent tests | Benchmarked | Docs |
 |---|---|---|---|---|---|---|

@@ -164,26 +164,29 @@ in the reported failure.
 Phase 16 audits the complete Python surface against the pinned upstream
 exports and records every equivalent, renamed, intentionally different,
 deferred, and unsupported area in `python-migration.md`. Pytest checks every
-runtime export against the shipped stub and documentation, then exercises
-strided/read-only arrays, wrong dtype and rank, wrong shape, NaN/infinity,
-typed exceptions, repeatability, copied constructor inputs, and concurrent
-reuse. Mypy checks representative code against the packaged stub. A clean
-wheel matrix installs and imports CPython 3.11–3.13 wheels on Linux, macOS,
-and Windows; local shared-library inspection verifies that the extension has
-no C++ runtime dependency.
+runtime export against the shipped stub, including parameter names/order,
+defaults, return-annotation presence, and class-member documentation, then
+exercises strided/read-only arrays, wrong dtype and rank, wrong shape,
+NaN/infinity, typed exceptions, repeatability, copied constructor inputs, and
+concurrent reuse. Mypy checks representative code against the packaged stub. A
+clean wheel matrix installs and imports CPython 3.11–3.13 wheels on Linux,
+macOS, and Windows; local shared-library inspection verifies that the
+extension has no C++ runtime dependency.
 
 Phase 17 adds deterministic Rust/Python pairs for epochs and anomalies,
 elements and propagation, Lambert branches, ephemerides, gravity assists,
 Sims–Flanagan gradients, and CR3BP/ZOH dynamics, plus a NumPy batch example.
 Every Rust binary is compiled under workspace test and clippy gates and run
 locally in release mode. Pytest discovers and runs every Python script against
-the installed release extension. The crate-level Rustdoc example is compiled
-with warnings denied.
+the installed release extension. Ten Rustdoc examples cover every major module
+landing page and representative Lambert/ZOH types and compile with warnings
+denied.
 
 Phase 18 adds a protocol-matched 100-sample Rust/C++ performance distribution,
 coarse CI regression thresholds, batch scaling, and allocation/cache/
 vectorization profiling before any optimization. Miri runs suitable structural
 and parser tests, Valgrind checks the release harness, and bounded
 libFuzzer/AddressSanitizer campaigns cover epoch parsing, element conversion,
-and Lambert inputs. `stabilization.md` records exact results, limits, tool
-constraints, and the absence of algorithm changes.
+Lambert inputs, and Reynolds-STM overflow boundaries. `stabilization.md`
+records exact results, limits, tool constraints, and the absence of algorithm
+changes.

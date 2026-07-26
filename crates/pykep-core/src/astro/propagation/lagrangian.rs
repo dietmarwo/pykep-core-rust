@@ -6,6 +6,12 @@
 // Adapted from src/core_astro/propagate_lagrangian.cpp at pykep commit
 // 53b1ca3ce5f8c223f96819b2ea9ba16c3719e63e.
 
+//! Lagrange-coefficient and universal-variable two-body propagation.
+//!
+//! The hyperbolic Lagrange solve halves the current iterate when a Newton step
+//! is non-finite or leaves `|ΔH| <= 50`, replacing the pinned C++ solver's
+//! fixed bracket while preserving its ordinary converged solutions.
+
 use core::f64::consts::PI;
 
 use super::{

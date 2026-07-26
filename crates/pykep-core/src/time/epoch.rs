@@ -93,6 +93,11 @@ impl Epoch {
 
     /// Constructs an epoch from Julian date days.
     ///
+    /// The internal epoch is microsecond-granular, but a binary64 Julian date
+    /// near J2000 has roughly 40 microseconds between adjacent representable
+    /// values. Use [`Self::from_mjd2000`] or [`Self::from_calendar`] when
+    /// single-microsecond construction is required.
+    ///
     /// # Errors
     ///
     /// Returns an error for NaN, infinity, or an out-of-range day count.
@@ -167,52 +172,68 @@ impl Epoch {
     ///
     /// Accepted forms are `YYYY-MM`, `YYYY-MM-DD`, and incremental suffixes
     /// through `YYYY-MM-DDTHH:MM:SS.ffffff`. Missing day/time components
-    /// default to the first day at midnight. Exactly four ASCII year digits
-    /// are accepted by this parser.
+    /// default to the first day at midnight. The year has four or five ASCII
+    /// digits and may have a leading minus sign, covering every year emitted
+    /// by [`Self::to_iso`].
     ///
     /// # Errors
     ///
     /// Returns an error for malformed text or an invalid calendar value.
     pub fn from_iso(text: &str) -> Result<Self> {
-        const LENGTHS: [usize; 11] = [7, 10, 13, 16, 19, 21, 22, 23, 24, 25, 26];
-        if !text.is_ascii() || !LENGTHS.contains(&text.len()) {
+        const SUFFIX_LENGTHS: [usize; 11] = [3, 6, 9, 12, 15, 17, 18, 19, 20, 21, 22];
+        if !text.is_ascii() {
             return Err(invalid_iso());
         }
-        let has = |index: usize, expected: u8| text.as_bytes().get(index) == Some(&expected);
-        if !has(4, b'-')
-            || (text.len() >= 10 && !has(7, b'-'))
-            || (text.len() >= 13 && !has(10, b'T'))
-            || (text.len() >= 16 && !has(13, b':'))
-            || (text.len() >= 19 && !has(16, b':'))
-            || (text.len() >= 21 && !has(19, b'.'))
+        let bytes = text.as_bytes();
+        let separator_search_start = usize::from(bytes.first() == Some(&b'-'));
+        let year_end = bytes[separator_search_start..]
+            .iter()
+            .position(|&byte| byte == b'-')
+            .map(|index| index + separator_search_start)
+            .ok_or_else(invalid_iso)?;
+        let year_digits = &text[separator_search_start..year_end];
+        let suffix = &text[year_end..];
+        if !(4..=5).contains(&year_digits.len())
+            || !year_digits.bytes().all(|byte| byte.is_ascii_digit())
+            || !SUFFIX_LENGTHS.contains(&suffix.len())
+        {
+            return Err(invalid_iso());
+        }
+        let has = |index: usize, expected: u8| suffix.as_bytes().get(index) == Some(&expected);
+        if !has(0, b'-')
+            || (suffix.len() >= 6 && !has(3, b'-'))
+            || (suffix.len() >= 9 && !has(6, b'T'))
+            || (suffix.len() >= 12 && !has(9, b':'))
+            || (suffix.len() >= 15 && !has(12, b':'))
+            || (suffix.len() >= 17 && !has(15, b'.'))
         {
             return Err(invalid_iso());
         }
 
-        let year = parse_component::<i32>(text, 0, 4)?;
-        let month = parse_component::<u32>(text, 5, 7)?;
-        let day = if text.len() >= 10 {
-            parse_component(text, 8, 10)?
+        let year = text[..year_end].parse::<i32>().map_err(|_| invalid_iso())?;
+        let month = parse_component::<u32>(suffix, 1, 3)?;
+        let day = if suffix.len() >= 6 {
+            parse_component(suffix, 4, 6)?
         } else {
             1
         };
-        let hour = if text.len() >= 13 {
-            parse_component(text, 11, 13)?
+        let hour = if suffix.len() >= 9 {
+            parse_component(suffix, 7, 9)?
         } else {
             0
         };
-        let minute = if text.len() >= 16 {
-            parse_component(text, 14, 16)?
+        let minute = if suffix.len() >= 12 {
+            parse_component(suffix, 10, 12)?
         } else {
             0
         };
-        let second = if text.len() >= 19 {
-            parse_component(text, 17, 19)?
+        let second = if suffix.len() >= 15 {
+            parse_component(suffix, 13, 15)?
         } else {
             0
         };
-        let fractional_microseconds = if text.len() >= 21 {
-            let fraction = &text[20..];
+        let fractional_microseconds = if suffix.len() >= 17 {
+            let fraction = &suffix[16..];
             if !fraction.bytes().all(|byte| byte.is_ascii_digit()) {
                 return Err(invalid_iso());
             }
@@ -258,6 +279,9 @@ impl Epoch {
     }
 
     /// Formats a proleptic-Gregorian ISO timestamp with six fractional digits.
+    ///
+    /// The result is accepted by [`Self::from_iso`] across the complete
+    /// supported year range.
     #[must_use]
     pub fn to_iso(self) -> String {
         let days = self.microseconds_mjd2000.div_euclid(MICROSECONDS_PER_DAY);
@@ -390,7 +414,7 @@ fn invalid_calendar(parameter: &'static str, reason: &str) -> PykepError {
 fn invalid_iso() -> PykepError {
     PykepError::InvalidInput {
         parameter: "iso",
-        reason: "expected YYYY-MM[-DD[THH[:MM[:SS[.ffffff]]]]]".into(),
+        reason: "expected YYYY-MM[-DD[THH[:MM[:SS[.ffffff]]]]] with an optional negative and four- or five-digit year".into(),
     }
 }
 
@@ -494,6 +518,14 @@ mod tests {
         );
         let complete = "2064-10-17T11:36:21.121834";
         assert_eq!(Epoch::from_iso(complete).unwrap().to_iso(), complete);
+        for &(year, expected) in &[
+            (-44, "-0044-03-15T00:00:00.000000"),
+            (12_345, "12345-03-15T00:00:00.000000"),
+        ] {
+            let epoch = Epoch::from_calendar(year, 3, 15, 0, 0, 0, 0, 0).unwrap();
+            assert_eq!(epoch.to_iso(), expected);
+            assert_eq!(Epoch::from_iso(expected).unwrap(), epoch);
+        }
     }
 
     #[test]

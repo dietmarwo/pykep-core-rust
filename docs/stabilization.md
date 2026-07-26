@@ -82,7 +82,9 @@ Release-wheel Lagrange batch scaling (median of 11) was:
 - Valgrind Memcheck passed the release benchmark with zero errors.
 - Ten-second libFuzzer/AddressSanitizer campaigns completed without a crash:
   13,016,052 epoch-parser inputs, 10,115,059 element-conversion inputs, and
-  4,588,894 Lambert inputs.
+  4,588,894 Lambert inputs. The 2026-07-26 review follow-up added a
+  Reynolds-STM overflow target, which completed 7,197,911 inputs without a
+  crash.
 - RustSec and cargo-deny pass. `paste 1.0.15` remains an allowed unmaintained
   transitive dependency under `RUSTSEC-2024-0436`, documented in ADR 0004.
 
@@ -94,10 +96,21 @@ sanitizer are development tools, not core build/runtime dependencies.
 The Rust core denies missing documentation for public items, and rustdoc builds
 with warnings denied. The Python audit inventories all 145 exported names;
 each is represented in the checked type stub and directly exercised by the
-integration suite. Public module and object docstrings are checked alongside
-that inventory. The migration matrix records every unavailable upstream name
-with a technical reason and tracking identifier. External review is still
-required before declaring these public names frozen.
+integration suite. Public module, object, method, and descriptor docstrings are
+checked alongside that inventory. The stub audit compares runtime parameter
+names, order, and defaults and requires return annotations.
+
+The 2026-07-26 review follow-up measured 376/376 documented Rust items
+(100.0%) and ten compiled examples, up from one. Rustdoc's per-item example
+metric is 5.5% because examples are intentionally placed on major module and
+type landing pages rather than repeated on every field and accessor. Core
+coverage is 91.01% regions, 92.26% functions, and 90.26% lines. The formerly
+weak Lambert module rose from 74.86% to 88.07% line coverage; `ephemeris/mod.rs`
+is 97.48% and `error.rs` is 100%.
+
+The migration matrix records every unavailable upstream name with a technical
+reason and tracking identifier. External review is still required before
+declaring these public names frozen.
 
 ## Local artifact consumption
 

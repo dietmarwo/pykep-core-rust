@@ -10,7 +10,9 @@ use pyo3::prelude::*;
 /// A microsecond-resolution proleptic-Gregorian epoch.
 ///
 /// The default numeric scale is MJD2000. Julian day values are arithmetic
-/// counts and do not model leap seconds, TT, or TDB.
+/// counts and do not model leap seconds, TT, or TDB. A binary64 JD value near
+/// J2000 has roughly 40-microsecond spacing; use MJD2000 or calendar
+/// construction when single-microsecond input resolution is required.
 #[pyclass(
     name = "Epoch",
     frozen,
@@ -42,7 +44,7 @@ impl PyEpoch {
         Ok(Self { inner })
     }
 
-    /// Parse a cropped ISO calendar string.
+    /// Parse a cropped ISO calendar string, including extended signed years.
     #[staticmethod]
     fn from_iso(text: &str) -> PyResult<Self> {
         Epoch::from_iso(text)
@@ -186,11 +188,11 @@ impl PyEpoch {
 }
 
 macro_rules! anomaly_wrapper {
-    ($python_name:ident, $core_name:ident, $doc:literal) => {
+    ($python_name:ident, $core_name:ident, $argument:ident, $doc:literal) => {
         #[doc = $doc]
         #[pyfunction]
-        fn $python_name(anomaly: f64, eccentricity: f64) -> PyResult<f64> {
-            anomalies::$core_name(anomaly, eccentricity).map_err(to_python)
+        fn $python_name($argument: f64, eccentricity: f64) -> PyResult<f64> {
+            anomalies::$core_name($argument, eccentricity).map_err(to_python)
         }
     };
 }
@@ -198,71 +200,85 @@ macro_rules! anomaly_wrapper {
 anomaly_wrapper!(
     mean_to_eccentric_anomaly,
     mean_to_eccentric_anomaly,
+    mean_anomaly,
     "Convert elliptic mean anomaly to principal eccentric anomaly, in radians."
 );
 anomaly_wrapper!(
     eccentric_to_mean_anomaly,
     eccentric_to_mean_anomaly,
+    eccentric_anomaly,
     "Convert eccentric anomaly to elliptic mean anomaly, in radians."
 );
 anomaly_wrapper!(
     eccentric_to_true_anomaly,
     eccentric_to_true_anomaly,
+    eccentric_anomaly,
     "Convert eccentric anomaly to principal true anomaly, in radians."
 );
 anomaly_wrapper!(
     true_to_eccentric_anomaly,
     true_to_eccentric_anomaly,
+    true_anomaly,
     "Convert true anomaly to principal eccentric anomaly, in radians."
 );
 anomaly_wrapper!(
     mean_to_true_anomaly,
     mean_to_true_anomaly,
+    mean_anomaly,
     "Convert elliptic mean anomaly to principal true anomaly, in radians."
 );
 anomaly_wrapper!(
     true_to_mean_anomaly,
     true_to_mean_anomaly,
+    true_anomaly,
     "Convert true anomaly to elliptic mean anomaly, in radians."
 );
 anomaly_wrapper!(
     gudermannian_to_true_anomaly,
     gudermannian_to_true_anomaly,
+    gudermannian_anomaly,
     "Convert Gudermannian anomaly to hyperbolic true anomaly, in radians."
 );
 anomaly_wrapper!(
     true_to_gudermannian_anomaly,
     true_to_gudermannian_anomaly,
+    true_anomaly,
     "Convert hyperbolic true anomaly to Gudermannian anomaly, in radians."
 );
 anomaly_wrapper!(
     hyperbolic_mean_to_anomaly,
     hyperbolic_mean_to_anomaly,
+    mean_anomaly,
     "Convert hyperbolic mean anomaly to hyperbolic anomaly, in radians."
 );
 anomaly_wrapper!(
     hyperbolic_anomaly_to_mean,
     hyperbolic_anomaly_to_mean,
+    hyperbolic_anomaly,
     "Convert hyperbolic anomaly to hyperbolic mean anomaly, in radians."
 );
 anomaly_wrapper!(
     hyperbolic_anomaly_to_true,
     hyperbolic_anomaly_to_true,
+    hyperbolic_anomaly,
     "Convert hyperbolic anomaly to principal true anomaly, in radians."
 );
 anomaly_wrapper!(
     true_to_hyperbolic_anomaly,
     true_to_hyperbolic_anomaly,
+    true_anomaly,
     "Convert true anomaly to hyperbolic anomaly, in radians."
 );
 anomaly_wrapper!(
     hyperbolic_mean_to_true,
     hyperbolic_mean_to_true,
+    mean_anomaly,
     "Convert hyperbolic mean anomaly to principal true anomaly, in radians."
 );
 anomaly_wrapper!(
     true_to_hyperbolic_mean,
     true_to_hyperbolic_mean,
+    true_anomaly,
     "Convert true anomaly to hyperbolic mean anomaly, in radians."
 );
 

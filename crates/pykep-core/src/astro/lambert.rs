@@ -6,6 +6,11 @@
 // 53b1ca3ce5f8c223f96819b2ea9ba16c3719e63e.
 
 //! Izzo single- and multi-revolution Lambert solver.
+//!
+//! Iteration exhaustion is an explicit [`crate::PykepError::ConvergenceFailure`]
+//! instead of returning the pinned C++ implementation's last unconverged
+//! iterate. At the measure-zero `|x - 1| = 0.01` boundary, Rust selects the
+//! Lagrange time-of-flight expression.
 
 use core::f64::consts::PI;
 
@@ -42,6 +47,21 @@ pub struct LambertSolution {
 }
 
 /// Solved Lambert boundary-value problem.
+///
+/// ```
+/// use pykep_core::astro::lambert::{LambertPath, LambertProblem};
+///
+/// let problem = LambertProblem::new(
+///     [1.0, 0.0, 0.0],
+///     [0.2, 1.1, 0.3],
+///     20.0,
+///     1.0,
+///     false,
+///     2,
+/// )?;
+/// assert_eq!(problem.solutions()[0].path, LambertPath::ZeroRevolution);
+/// # Ok::<(), pykep_core::PykepError>(())
+/// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct LambertProblem {
     initial_position: Vector3,
@@ -490,6 +510,49 @@ mod tests {
             for (actual, expected) in propagated[..3].iter().zip([0.2, 1.1, 0.3]) {
                 assert!((actual - expected).abs() < 2e-10);
             }
+        }
+    }
+
+    #[test]
+    fn time_of_flight_dispatches_cover_each_expression_family() {
+        for clockwise in [false, true] {
+            let problem =
+                LambertProblem::new([1.0, 0.0, 0.0], [0.2, 1.1, 0.3], 20.0, 1.0, clockwise, 0)
+                    .unwrap();
+            for x in [0.995, 0.9, 0.5, 1.1, 2.0] {
+                assert!(problem.time_of_flight(x, 0).unwrap().is_finite());
+            }
+            let target = problem.time_of_flight(0.2, 0).unwrap();
+            assert!(matches!(
+                problem.householder(target, 0.2, 0, -1.0),
+                Err(PykepError::ConvergenceFailure {
+                    operation: "LambertProblem::householder",
+                    iterations: 15
+                })
+            ));
+        }
+        assert!(matches!(
+            hypergeometric(f64::NAN),
+            Err(PykepError::ConvergenceFailure {
+                operation: "LambertProblem::hypergeometric",
+                iterations: 10_000
+            })
+        ));
+    }
+
+    #[test]
+    fn invalid_geometries_and_scales_are_typed_errors() {
+        let valid = [1.0, 0.0, 0.0];
+        for result in [
+            LambertProblem::new([f64::NAN, 0.0, 0.0], [0.0, 1.0, 0.0], 1.0, 1.0, false, 0),
+            LambertProblem::new(valid, [0.0, 1.0, 0.0], 0.0, 1.0, false, 0),
+            LambertProblem::new(valid, [0.0, 1.0, 0.0], 1.0, 0.0, false, 0),
+            LambertProblem::new([0.0; 3], [0.0, 1.0, 0.0], 1.0, 1.0, false, 0),
+            LambertProblem::new(valid, valid, 1.0, 1.0, false, 0),
+            LambertProblem::new(valid, [0.0, 0.0, 1.0], 1.0, 1.0, false, 0),
+            LambertProblem::new([1e308; 3], [-1e308; 3], 1.0, 1.0, false, 0),
+        ] {
+            assert!(result.is_err());
         }
     }
 }

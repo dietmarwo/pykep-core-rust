@@ -7,6 +7,36 @@
 //! than the implementation types of the selected solver crate. The numerical
 //! backend is DOP853: an explicit Runge-Kutta method of order 8 with embedded
 //! error estimates and seventh-order dense output.
+//!
+//! ```
+//! use pykep_core::integration::{
+//!     Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions,
+//! };
+//!
+//! struct Constant;
+//! impl DynamicsModel<1, 0> for Constant {
+//!     const NAME: &'static str = "constant";
+//!
+//!     fn rhs(
+//!         &self,
+//!         _time: f64,
+//!         _state: &[f64; 1],
+//!         _parameters: &[f64; 0],
+//!         derivative: &mut [f64; 1],
+//!     ) -> pykep_core::Result<()> {
+//!         *derivative = [2.0];
+//!         Ok(())
+//!     }
+//! }
+//!
+//! let result = Dop853.propagate(
+//!     &Constant,
+//!     InitialValueProblem::new(0.0, [1.0], 0.5, []),
+//!     IntegratorOptions::default(),
+//! )?;
+//! assert!((result.state[0] - 2.0).abs() < 1e-12);
+//! # Ok::<(), pykep_core::PykepError>(())
+//! ```
 
 use core::cell::RefCell;
 

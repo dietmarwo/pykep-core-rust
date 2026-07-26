@@ -130,6 +130,9 @@ def test_epoch_construction_formatting_comparison_and_arithmetic() -> None:
     assert repr(calendar) == "Epoch.from_iso('1980-10-17T11:36:21.121841')"
     cropped = pk.Epoch.from_iso("2064-10")
     assert cropped.to_iso() == "2064-10-01T00:00:00.000000"
+    for year in (-44, 12_345):
+        extended = pk.Epoch.from_calendar(year, 3, 15)
+        assert pk.Epoch.from_iso(extended.to_iso()) == extended
     tomorrow = origin + 1.0
     assert tomorrow > origin
     assert tomorrow.seconds_since(origin) == 86_400.0
@@ -305,6 +308,10 @@ def test_propagation_stms_and_gil_releasing_batches() -> None:
         initial, final_state, 0.4, 1.0
     )
     assert np.asarray(reynolds) == pytest.approx(np.asarray(stm), rel=2e-13)
+    with pytest.raises(OverflowError, match="state_transition_matrix_reynolds"):
+        pk.state_transition_matrix_reynolds(
+            [1e300] * 6, [1e300] * 6, 1e300, 1e300
+        )
 
     states = np.tile(np.asarray(initial), (32, 1))
     times = np.linspace(-1.0, 1.0, 32)
@@ -717,6 +724,9 @@ def test_transfers_encodings_flyby_lambert_and_mima() -> None:
     direct = [0.1, 0.2, 0.3]
     alpha, total = pk.direct_to_alpha(direct)
     assert pk.alpha_to_direct(alpha, total) == pytest.approx(direct)
+    for invalid_alpha in (0.0, 1.0):
+        with pytest.raises(ValueError, match="0 < alpha < 1"):
+            pk.alpha_to_direct([invalid_alpha, 0.5], 10.0)
     eta = pk.direct_to_eta(direct, 1.0)
     assert pk.eta_to_direct(eta, 1.0) == pytest.approx(direct)
 
@@ -904,13 +914,24 @@ def test_vsop2013_feature_names_thresholds_and_batches() -> None:
 
 
 def test_public_api_has_runtime_documentation() -> None:
-    """Every exported callable and exception has runtime documentation."""
+    """Every exported callable, method, and descriptor is documented."""
     missing: list[str] = []
     assert inspect.getdoc(pk)
     for name in pk.__all__:
         value = getattr(pk, name)
         if callable(value) and not inspect.getdoc(value):
             missing.append(name)
+        if inspect.isclass(value):
+            for member_name, member in vars(value).items():
+                if member_name.startswith("_"):
+                    continue
+                resolved = getattr(value, member_name)
+                if (
+                    callable(resolved)
+                    or inspect.ismethoddescriptor(member)
+                    or inspect.isdatadescriptor(member)
+                ) and not inspect.getdoc(resolved):
+                    missing.append(f"{name}.{member_name}")
     assert not missing
 
 
@@ -925,7 +946,7 @@ def test_public_exception_hierarchy_and_exports_are_reachable() -> None:
 
 
 def test_stub_and_runtime_exports_match() -> None:
-    """The native extension stub declares every runtime extension symbol."""
+    """The stub matches runtime names, signatures, defaults, and annotations."""
     stub_path = Path(pk.__file__).with_name("_pykep_rust.pyi")
     tree = ast.parse(stub_path.read_text(encoding="utf-8"))
     declared = {
@@ -939,3 +960,71 @@ def test_stub_and_runtime_exports_match() -> None:
         if isinstance(node, ast.AnnAssign) and isinstance((target := node.target), ast.Name)
     )
     assert set(pk.__all__) == declared
+
+    missing_default = object()
+
+    def stub_parameters(
+        function: ast.FunctionDef, *, drop_self: bool = False
+    ) -> list[tuple[str, object]]:
+        positional = [*function.args.posonlyargs, *function.args.args]
+        defaults: list[ast.expr | None] = [
+            None
+        ] * (len(positional) - len(function.args.defaults)) + list(
+            function.args.defaults
+        )
+        parameters = [
+            (
+                argument.arg,
+                missing_default if default is None else ast.literal_eval(default),
+            )
+            for argument, default in zip(positional, defaults, strict=True)
+            if not (drop_self and argument.arg == "self")
+        ]
+        parameters.extend(
+            (
+                argument.arg,
+                missing_default if default is None else ast.literal_eval(default),
+            )
+            for argument, default in zip(
+                function.args.kwonlyargs, function.args.kw_defaults, strict=True
+            )
+        )
+        return parameters
+
+    def runtime_parameters(value: object) -> list[tuple[str, object]]:
+        return [
+            (
+                parameter.name,
+                missing_default
+                if parameter.default is inspect.Parameter.empty
+                else parameter.default,
+            )
+            for parameter in inspect.signature(value).parameters.values()
+        ]
+
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            assert node.returns is not None, node.name
+            assert stub_parameters(node) == runtime_parameters(getattr(pk, node.name))
+        if not isinstance(node, ast.ClassDef):
+            continue
+        runtime_class = getattr(pk, node.name)
+        for function in (
+            member for member in node.body if isinstance(member, ast.FunctionDef)
+        ):
+            assert function.returns is not None, f"{node.name}.{function.name}"
+            if function.name == "__init__":
+                try:
+                    runtime = runtime_parameters(runtime_class)
+                except (TypeError, ValueError):
+                    continue
+                assert stub_parameters(function, drop_self=True) == runtime
+                continue
+            if function.name.startswith("__") or any(
+                isinstance(decorator, ast.Name) and decorator.id == "property"
+                for decorator in function.decorator_list
+            ):
+                continue
+            assert stub_parameters(function) == runtime_parameters(
+                getattr(runtime_class, function.name)
+            )

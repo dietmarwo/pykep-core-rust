@@ -84,7 +84,9 @@ struct PlanetSeries {
 /// The embedded dataset supports coefficient thresholds greater than or equal
 /// to [`VSOP2013_MINIMUM_THRESHOLD`]. The optional `vsop2013` Cargo feature is
 /// enabled by default and can be disabled to remove the 4.3 MiB coefficient
-/// asset while retaining the Keplerian and JPL low-precision providers.
+/// asset from compiled binaries while retaining the Keplerian and JPL
+/// low-precision providers. The source asset remains in the published crate
+/// so either feature selection can be compiled from one archive.
 #[derive(Clone, Debug)]
 pub struct Vsop2013 {
     name: String,

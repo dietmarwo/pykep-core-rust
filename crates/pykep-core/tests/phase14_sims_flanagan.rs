@@ -183,6 +183,35 @@ fn analytic_gradient_matches_scaled_central_differences() {
         }
     }
 
+    for column in 0..7 {
+        let original = base.arrival().extended_for_test();
+        let step = 2e-6 * original[column].abs().max(1.0);
+        let mut plus = original;
+        let mut minus = original;
+        plus[column] += step;
+        minus[column] -= step;
+        let plus_leg = SimsFlanaganLeg::new(
+            base.departure(),
+            base.throttles().to_vec(),
+            SpacecraftEndpoint::new(plus[..6].try_into().unwrap(), plus[6]).unwrap(),
+            base.settings(),
+        )
+        .unwrap();
+        let minus_leg = SimsFlanaganLeg::new(
+            base.departure(),
+            base.throttles().to_vec(),
+            SpacecraftEndpoint::new(minus[..6].try_into().unwrap(), minus[6]).unwrap(),
+            base.settings(),
+        )
+        .unwrap();
+        let plus = plus_leg.mismatch_constraints().unwrap();
+        let minus = minus_leg.mismatch_constraints().unwrap();
+        for row in 0..7 {
+            let finite = (plus[row] - minus[row]) / (2.0 * step);
+            assert!((analytic.arrival[row][column] - finite).abs() < 2e-6 * finite.abs().max(1.0));
+        }
+    }
+
     for control_column in 0..base.segment_count() * 3 {
         let segment = control_column / 3;
         let component = control_column % 3;

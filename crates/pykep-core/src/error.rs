@@ -142,10 +142,63 @@ mod tests {
 
     #[test]
     fn errors_have_stable_useful_messages() {
-        let error = PykepError::DimensionMismatch {
-            expected: 3,
-            actual: 2,
-        };
-        assert_eq!(error.to_string(), "dimension mismatch: expected 3, got 2");
+        let cases = [
+            (
+                PykepError::InvalidInput {
+                    parameter: "x",
+                    reason: "must be positive".into(),
+                },
+                "invalid x: must be positive",
+            ),
+            (
+                PykepError::NonFiniteInput { parameter: "x" },
+                "x must be finite",
+            ),
+            (
+                PykepError::SingularGeometry { operation: "orbit" },
+                "singular geometry in orbit",
+            ),
+            (
+                PykepError::ConvergenceFailure {
+                    operation: "solver",
+                    iterations: 10,
+                },
+                "solver did not converge after 10 iterations",
+            ),
+            (
+                PykepError::DimensionMismatch {
+                    expected: 3,
+                    actual: 2,
+                },
+                "dimension mismatch: expected 3, got 2",
+            ),
+            (
+                PykepError::UnsupportedCapability {
+                    provider: "minimal".into(),
+                    capability: "acceleration",
+                },
+                "minimal does not support acceleration",
+            ),
+            (
+                PykepError::NumericalOverflow {
+                    operation: "multiply",
+                },
+                "floating-point overflow in multiply",
+            ),
+            (
+                PykepError::IntegrationFailure {
+                    model: "model",
+                    reason: "step limit".into(),
+                },
+                "integration of model failed: step limit",
+            ),
+            (
+                PykepError::DataUnavailable { dataset: "series" },
+                "required dataset is unavailable: series",
+            ),
+        ];
+        for (error, expected) in cases {
+            assert_eq!(error.to_string(), expected);
+        }
     }
 }

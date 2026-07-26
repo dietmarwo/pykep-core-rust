@@ -29,18 +29,51 @@ fn fixed<const N: usize>(values: Vec<f64>) -> Result<[f64; N], PykepError> {
 #[pyclass(name = "LambertSolution", frozen, skip_from_py_object)]
 #[derive(Clone)]
 struct PyLambertSolution {
-    #[pyo3(get)]
     departure_velocity: Vector3,
-    #[pyo3(get)]
     arrival_velocity: Vector3,
-    #[pyo3(get)]
     x: f64,
-    #[pyo3(get)]
     iterations: usize,
-    #[pyo3(get)]
     revolutions: usize,
-    #[pyo3(get)]
     path: &'static str,
+}
+
+#[pymethods]
+impl PyLambertSolution {
+    /// Departure velocity at the initial position.
+    #[getter]
+    fn departure_velocity(&self) -> Vector3 {
+        self.departure_velocity
+    }
+
+    /// Arrival velocity at the final position.
+    #[getter]
+    fn arrival_velocity(&self) -> Vector3 {
+        self.arrival_velocity
+    }
+
+    /// Izzo solver variable for this branch.
+    #[getter]
+    fn x(&self) -> f64 {
+        self.x
+    }
+
+    /// Householder iterations used for this branch.
+    #[getter]
+    fn iterations(&self) -> usize {
+        self.iterations
+    }
+
+    /// Number of complete revolutions.
+    #[getter]
+    fn revolutions(&self) -> usize {
+        self.revolutions
+    }
+
+    /// Deterministic branch name: `zero`, `left`, or `right`.
+    #[getter]
+    fn path(&self) -> &'static str {
+        self.path
+    }
 }
 
 /// Solved single- or multi-revolution Lambert boundary-value problem.

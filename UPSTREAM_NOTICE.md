@@ -44,3 +44,10 @@ chosen. Cargo metadata deliberately omits an upstream ESA repository URL.
 
 Substantial algorithm-specific deviations are documented beside the affected
 module and in the architecture decision records.
+
+In particular, the hyperbolic anomaly and Lagrange propagators use wider
+convergence safeguards, Lambert iteration exhaustion is an error instead of
+an unchecked last iterate, direct Cartesian-to-equinoctial conversion uses
+`|h|² / mu`, and time-optimal Pontryagin fixes the upstream implicit
+`lambda0` to one. The Python migration matrix records the user-visible
+Pontryagin parameter difference.

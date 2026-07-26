@@ -26,13 +26,19 @@ modified-equinoctial, and ideal solar-sail models with deterministic switch
 ownership, backward propagation, and segment-local sensitivities.
 Cartesian and modified-equinoctial Pontryagin models provide mass- and
 time-optimal state/costate dynamics, evaluated controls and Hamiltonians, and
-first-order sensitivity Jacobians.
+first-order sensitivity Jacobians. Their full model Jacobians, and those of
+the four ZOH dynamics models, use fixed-size centered differences; the
+integrator tolerance is not a derivative-accuracy guarantee. Canonical
+Pontryagin costate rates themselves use forward-mode differentiation.
 Fixed- and variable-duration Sims–Flanagan legs provide validated
 forward/backward transcription, throttle constraints, and analytic fixed-leg
 mismatch gradients.
 The generic ZOH leg applies the same cut transcription to continuous
 piecewise-constant controls for all four built-in ZOH dynamics models and
-returns endpoint, control, and time-grid sensitivities.
+returns endpoint, control, and time-grid sensitivities. Pinned ZOH-leg
+derivative validation uses scaled tolerances up to `3e-5`; see the
+module-level sensitivity documentation before using those derivatives in a
+tightly converged optimizer.
 
 The crate has no C or C++ runtime dependency.
 

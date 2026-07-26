@@ -8,6 +8,10 @@
 //! This evaluated implementation adapts
 //! `src/ta/pontryagin_cartesian.cpp` and
 //! `src/ta/pontryagin_equinoctial.cpp` from the pinned pykep/kep3 source.
+//! Canonical costate rates use forward-mode differentiation. Full model
+//! Jacobians for propagated sensitivities use fixed-size centered differences
+//! with a relative step of `3e-6`; integrator tolerances do not imply the same
+//! accuracy for those sensitivities.
 
 use core::ops::{Add, Div, Mul, Neg, Sub};
 

@@ -32,7 +32,7 @@ fn validate_slice(parameter: &'static str, values: &[f64], nonempty: bool) -> Re
 pub fn alpha_to_direct(alphas: &[f64], total_time: f64) -> Result<Vec<f64>> {
     validate_slice("alphas", alphas, true)?;
     ensure_finite("total_time", total_time)?;
-    if total_time <= 0.0 || alphas.iter().any(|&alpha| !(0.0..1.0).contains(&alpha)) {
+    if total_time <= 0.0 || alphas.iter().any(|&alpha| alpha <= 0.0 || alpha >= 1.0) {
         return Err(PykepError::InvalidInput {
             parameter: "alphas",
             reason: "alphas must satisfy 0 < alpha < 1 and total_time must be positive".into(),
@@ -150,5 +150,18 @@ mod tests {
         }
         let eta = direct_to_eta(&direct, 1.0).unwrap();
         assert_eq!(eta_to_direct(&eta, 1.0).unwrap(), direct);
+    }
+
+    #[test]
+    fn alpha_bounds_are_invalid_inputs() {
+        for invalid in [0.0, 1.0] {
+            assert!(matches!(
+                alpha_to_direct(&[invalid, 0.5], 10.0),
+                Err(PykepError::InvalidInput {
+                    parameter: "alphas",
+                    ..
+                })
+            ));
+        }
     }
 }

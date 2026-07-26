@@ -13,6 +13,17 @@
 //! This file is an evaluated Rust adaptation of the symbolic systems in
 //! `src/ta/kep.cpp`, `src/ta/cr3bp.cpp`, and `src/ta/bcp.cpp` from the pinned
 //! pykep/kep3 upstream source.
+//!
+//! ```
+//! use pykep_core::dynamics::KeplerDynamics;
+//!
+//! let derivative = KeplerDynamics.evaluate(
+//!     &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+//!     1.0,
+//! )?;
+//! assert_eq!(derivative, [0.0, 1.0, 0.0, -1.0, -0.0, -0.0]);
+//! # Ok::<(), pykep_core::PykepError>(())
+//! ```
 
 /// Cartesian and modified-equinoctial Pontryagin dynamics.
 pub mod pontryagin;

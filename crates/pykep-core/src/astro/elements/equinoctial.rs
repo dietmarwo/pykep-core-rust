@@ -6,6 +6,12 @@
 // Adapted from src/core_astro/mee2par2mee.cpp and ic2mee2ic.cpp at pykep
 // commit 53b1ca3ce5f8c223f96819b2ea9ba16c3719e63e.
 
+//! Modified-equinoctial conversions and analytic Jacobians.
+//!
+//! Direct Cartesian conversion evaluates the semilatus rectum as `|h|² / mu`,
+//! the algebraically equivalent symbolic-upstream form. The pinned numeric C++
+//! path obtains it from `a * (1 - e²)`, which can differ in the last bits.
+
 use core::f64::consts::PI;
 
 use super::automatic_differentiation;
@@ -186,6 +192,8 @@ pub fn modified_equinoctial_to_classical(
 ///
 /// Unlike classical elements, this conversion remains defined for circular
 /// and equatorial states away from the selected convention's singular pole.
+/// Its semilatus rectum is evaluated as `|h|² / mu` for improved conditioning
+/// near the parabolic boundary.
 ///
 /// # Errors
 ///
