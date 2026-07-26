@@ -282,39 +282,93 @@ anomaly_wrapper!(
     "Convert true anomaly to hyperbolic mean anomaly, in radians."
 );
 
-/// Convert elliptic mean anomalies in input order at one eccentricity.
-#[pyfunction]
-fn mean_to_eccentric_anomaly_batch(
-    python: Python<'_>,
-    mean_anomalies: Vec<f64>,
-    eccentricity: f64,
-) -> PyResult<Vec<f64>> {
-    python
-        .detach(move || {
-            mean_anomalies
-                .into_iter()
-                .map(|mean| anomalies::mean_to_eccentric_anomaly(mean, eccentricity))
-                .collect::<pykep_core::Result<Vec<_>>>()
-        })
-        .map_err(to_python)
+macro_rules! anomaly_batch_wrapper {
+    ($python_name:ident, $core_name:ident, $doc:literal) => {
+        #[doc = $doc]
+        #[pyfunction(signature = (values, eccentricity, workers=0))]
+        fn $python_name(
+            python: Python<'_>,
+            values: Vec<f64>,
+            eccentricity: f64,
+            workers: usize,
+        ) -> PyResult<Vec<f64>> {
+            python
+                .detach(move || anomalies::$core_name(&values, eccentricity, workers))
+                .map_err(to_python)
+        }
+    };
 }
 
-/// Convert hyperbolic mean anomalies in input order at one eccentricity.
-#[pyfunction]
-fn hyperbolic_mean_to_anomaly_batch(
-    python: Python<'_>,
-    mean_anomalies: Vec<f64>,
-    eccentricity: f64,
-) -> PyResult<Vec<f64>> {
-    python
-        .detach(move || {
-            mean_anomalies
-                .into_iter()
-                .map(|mean| anomalies::hyperbolic_mean_to_anomaly(mean, eccentricity))
-                .collect::<pykep_core::Result<Vec<_>>>()
-        })
-        .map_err(to_python)
-}
+anomaly_batch_wrapper!(
+    mean_to_eccentric_anomaly_batch,
+    mean_to_eccentric_anomaly_batch,
+    "Batch-convert elliptic mean anomalies."
+);
+anomaly_batch_wrapper!(
+    eccentric_to_mean_anomaly_batch,
+    eccentric_to_mean_anomaly_batch,
+    "Batch-convert elliptic eccentric anomalies to mean anomalies."
+);
+anomaly_batch_wrapper!(
+    eccentric_to_true_anomaly_batch,
+    eccentric_to_true_anomaly_batch,
+    "Batch-convert elliptic eccentric anomalies to true anomalies."
+);
+anomaly_batch_wrapper!(
+    true_to_eccentric_anomaly_batch,
+    true_to_eccentric_anomaly_batch,
+    "Batch-convert elliptic true anomalies to eccentric anomalies."
+);
+anomaly_batch_wrapper!(
+    mean_to_true_anomaly_batch,
+    mean_to_true_anomaly_batch,
+    "Batch-convert elliptic mean anomalies to true anomalies."
+);
+anomaly_batch_wrapper!(
+    true_to_mean_anomaly_batch,
+    true_to_mean_anomaly_batch,
+    "Batch-convert elliptic true anomalies to mean anomalies."
+);
+anomaly_batch_wrapper!(
+    gudermannian_to_true_anomaly_batch,
+    gudermannian_to_true_anomaly_batch,
+    "Batch-convert hyperbolic Gudermannian anomalies."
+);
+anomaly_batch_wrapper!(
+    true_to_gudermannian_anomaly_batch,
+    true_to_gudermannian_anomaly_batch,
+    "Batch-convert hyperbolic true anomalies to Gudermannian anomalies."
+);
+anomaly_batch_wrapper!(
+    hyperbolic_mean_to_anomaly_batch,
+    hyperbolic_mean_to_anomaly_batch,
+    "Batch-convert hyperbolic mean anomalies."
+);
+anomaly_batch_wrapper!(
+    hyperbolic_anomaly_to_mean_batch,
+    hyperbolic_anomaly_to_mean_batch,
+    "Batch-convert hyperbolic anomalies to mean anomalies."
+);
+anomaly_batch_wrapper!(
+    hyperbolic_anomaly_to_true_batch,
+    hyperbolic_anomaly_to_true_batch,
+    "Batch-convert hyperbolic anomalies to true anomalies."
+);
+anomaly_batch_wrapper!(
+    true_to_hyperbolic_anomaly_batch,
+    true_to_hyperbolic_anomaly_batch,
+    "Batch-convert hyperbolic true anomalies."
+);
+anomaly_batch_wrapper!(
+    hyperbolic_mean_to_true_batch,
+    hyperbolic_mean_to_true_batch,
+    "Batch-convert hyperbolic mean anomalies to true anomalies."
+);
+anomaly_batch_wrapper!(
+    true_to_hyperbolic_mean_batch,
+    true_to_hyperbolic_mean_batch,
+    "Batch-convert hyperbolic true anomalies to mean anomalies."
+);
 
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<PyEpoch>()?;
@@ -333,6 +387,24 @@ pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(hyperbolic_mean_to_true, module)?)?;
     module.add_function(wrap_pyfunction!(true_to_hyperbolic_mean, module)?)?;
     module.add_function(wrap_pyfunction!(mean_to_eccentric_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(eccentric_to_mean_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(eccentric_to_true_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(true_to_eccentric_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(mean_to_true_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(true_to_mean_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        gudermannian_to_true_anomaly_batch,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        true_to_gudermannian_anomaly_batch,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(hyperbolic_mean_to_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(hyperbolic_anomaly_to_mean_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(hyperbolic_anomaly_to_true_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(true_to_hyperbolic_anomaly_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(hyperbolic_mean_to_true_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(true_to_hyperbolic_mean_batch, module)?)?;
     Ok(())
 }

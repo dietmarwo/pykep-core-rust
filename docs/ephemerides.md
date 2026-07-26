@@ -37,9 +37,10 @@ navigation. Use a high-precision integrated ephemeris when those error bounds
 are too large.
 
 The Rust provider exposes true-anomaly, mean-anomaly, and both modified
-equinoctial element forms. Python scalar and NumPy batch state evaluation call
-the same provider. Batch order is preserved and no implicit thread pool is
-created.
+equinoctial element forms. Python scalar and NumPy state, element, period, and
+optional-acceleration batches call the same provider. Batch order is
+preserved; `workers=0` uses the shared pool, one is serial, and larger values
+select an exact cached worker count.
 
 ## VSOP2013
 

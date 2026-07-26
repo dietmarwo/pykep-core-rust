@@ -17,7 +17,7 @@ states = np.tile(
     (count, 1),
 )
 times = np.linspace(0.0, 1.0, count, dtype=np.float64)
-propagated = pk.propagate_lagrangian_batch(states, times, 1.0)
+propagated = pk.propagate_lagrangian_batch(states, times, 1.0, workers=0)
 assert propagated.shape == (count, 6)
 assert np.isfinite(propagated).all()
 assert not np.shares_memory(propagated, states)

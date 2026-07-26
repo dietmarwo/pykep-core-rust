@@ -2,15 +2,24 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::error::to_python;
-use numpy::ndarray::Array2;
-use numpy::{IntoPyArray, PyArray2, PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods};
+use numpy::ndarray::{Array2, Array3};
+use numpy::{
+    IntoPyArray, PyArray2, PyArray3, PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods,
+};
 use pykep_core::astro::propagation::{
-    propagate_keplerian, propagate_lagrangian, propagate_lagrangian_grid,
-    propagate_lagrangian_with_stm, propagate_universal, state_transition_matrix_lagrangian,
-    state_transition_matrix_reynolds,
+    propagate_keplerian, propagate_keplerian_batch as core_propagate_keplerian_batch,
+    propagate_lagrangian, propagate_lagrangian_batch as core_propagate_lagrangian_batch,
+    propagate_lagrangian_grid_parallel, propagate_lagrangian_with_stm,
+    propagate_lagrangian_with_stm_batch as core_propagate_lagrangian_with_stm_batch,
+    propagate_universal, propagate_universal_batch as core_propagate_universal_batch,
+    state_transition_matrix_lagrangian, state_transition_matrix_reynolds,
 };
 use pykep_core::{CartesianState, Matrix6, PykepError};
 use pyo3::prelude::*;
+
+type PropagationBatchFn =
+    fn(&[CartesianState], &[f64], f64, usize) -> pykep_core::Result<Vec<CartesianState>>;
+type PyStateStmBatch<'py> = (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray3<f64>>);
 
 fn six(values: Vec<f64>) -> Result<CartesianState, PykepError> {
     values
@@ -68,17 +77,12 @@ fn propagate_batch<'py>(
     states: PyReadonlyArray2<'py, f64>,
     times: PyReadonlyArray1<'py, f64>,
     mu: f64,
-    operation: fn(&CartesianState, f64, f64) -> pykep_core::Result<CartesianState>,
+    workers: usize,
+    operation: PropagationBatchFn,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
     let (states, times) = batch_inputs(states, times)?;
     let output = python
-        .detach(move || {
-            states
-                .iter()
-                .zip(times)
-                .map(|(state, time)| operation(state, time, mu))
-                .collect::<pykep_core::Result<Vec<_>>>()
-        })
+        .detach(move || operation(&states, &times, mu, workers))
         .map_err(to_python)?;
     state_rows(python, output)
 }
@@ -144,39 +148,102 @@ fn state_transition_matrix_reynolds_py(
 }
 
 /// Propagate `N x 6` states for `N` durations, releasing the Python GIL.
-#[pyfunction]
+#[pyfunction(signature = (states, times, mu, workers=0))]
 fn propagate_lagrangian_batch<'py>(
     python: Python<'py>,
     states: PyReadonlyArray2<'py, f64>,
     times: PyReadonlyArray1<'py, f64>,
     mu: f64,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    propagate_batch(python, states, times, mu, propagate_lagrangian)
+    propagate_batch(
+        python,
+        states,
+        times,
+        mu,
+        workers,
+        core_propagate_lagrangian_batch,
+    )
 }
 
 /// Universally propagate `N x 6` states for `N` durations, releasing the GIL.
-#[pyfunction]
+#[pyfunction(signature = (states, times, mu, workers=0))]
 fn propagate_universal_batch<'py>(
     python: Python<'py>,
     states: PyReadonlyArray2<'py, f64>,
     times: PyReadonlyArray1<'py, f64>,
     mu: f64,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    propagate_batch(python, states, times, mu, propagate_universal)
+    propagate_batch(
+        python,
+        states,
+        times,
+        mu,
+        workers,
+        core_propagate_universal_batch,
+    )
+}
+
+/// Keplerian-propagate `N x 6` states for `N` durations, releasing the GIL.
+#[pyfunction(signature = (states, times, mu, workers=0))]
+fn propagate_keplerian_batch<'py>(
+    python: Python<'py>,
+    states: PyReadonlyArray2<'py, f64>,
+    times: PyReadonlyArray1<'py, f64>,
+    mu: f64,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    propagate_batch(
+        python,
+        states,
+        times,
+        mu,
+        workers,
+        core_propagate_keplerian_batch,
+    )
+}
+
+/// Propagate `N` states and analytic STMs, releasing the GIL.
+#[pyfunction(signature = (states, times, mu, workers=0))]
+fn propagate_lagrangian_with_stm_batch<'py>(
+    python: Python<'py>,
+    states: PyReadonlyArray2<'py, f64>,
+    times: PyReadonlyArray1<'py, f64>,
+    mu: f64,
+    workers: usize,
+) -> PyResult<PyStateStmBatch<'py>> {
+    let (states, times) = batch_inputs(states, times)?;
+    let output = python
+        .detach(move || core_propagate_lagrangian_with_stm_batch(&states, &times, mu, workers))
+        .map_err(to_python)?;
+    let count = output.len();
+    let mut propagated = Vec::with_capacity(count);
+    let mut matrices = Vec::with_capacity(count * 36);
+    for (state, matrix) in output {
+        propagated.push(state);
+        matrices.extend(matrix.into_iter().flatten());
+    }
+    let propagated = state_rows(python, propagated)?;
+    let matrices = Array3::from_shape_vec((count, 6, 6), matrices)
+        .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?
+        .into_pyarray(python);
+    Ok((propagated, matrices))
 }
 
 /// Propagate one state over a time grid relative to its first entry.
-#[pyfunction(name = "propagate_lagrangian_grid")]
+#[pyfunction(name = "propagate_lagrangian_grid", signature = (state, time_grid, mu, workers=0))]
 fn propagate_lagrangian_grid_py<'py>(
     python: Python<'py>,
     state: Vec<f64>,
     time_grid: PyReadonlyArray1<'py, f64>,
     mu: f64,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
     let state = six(state).map_err(to_python)?;
     let time_grid: Vec<_> = time_grid.as_array().iter().copied().collect();
     let output = python
-        .detach(move || propagate_lagrangian_grid(&state, &time_grid, mu))
+        .detach(move || propagate_lagrangian_grid_parallel(&state, &time_grid, mu, workers))
         .map_err(to_python)?;
     state_rows(python, output)
 }
@@ -196,6 +263,11 @@ pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     module.add_function(wrap_pyfunction!(propagate_lagrangian_batch, module)?)?;
     module.add_function(wrap_pyfunction!(propagate_universal_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(propagate_keplerian_batch, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        propagate_lagrangian_with_stm_batch,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(propagate_lagrangian_grid_py, module)?)?;
     Ok(())
 }

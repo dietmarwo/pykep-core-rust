@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::error::to_python;
+use numpy::ndarray::{Array1, Array2, Array3};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArray3, PyReadonlyArray2, PyUntypedArrayMethods};
 use pykep_core::constants;
 use pykep_core::math::{kepler_equations, linalg, stumpff};
 use pykep_core::time::julian;
@@ -16,6 +18,22 @@ fn vector3(values: Vec<f64>) -> Result<Vector3, PykepError> {
             actual: values.len(),
         }),
     }
+}
+
+fn vector3_rows(values: PyReadonlyArray2<'_, f64>) -> PyResult<Vec<Vector3>> {
+    let shape = values.shape();
+    if shape[1] != 3 {
+        return Err(to_python(PykepError::DimensionMismatch {
+            expected: 3,
+            actual: shape[1],
+        }));
+    }
+    Ok(values
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|row| [row[0], row[1], row[2]])
+        .collect())
 }
 
 /// Convert Julian date to modified Julian date, in days.
@@ -67,27 +85,21 @@ fn stumpff_s(value: f64) -> PyResult<f64> {
 }
 
 /// Evaluate the Stumpff C function for a sequence, preserving input order.
-#[pyfunction]
-fn stumpff_c_batch(python: Python<'_>, values: Vec<f64>) -> PyResult<Vec<f64>> {
+#[pyfunction(signature = (values, workers=0))]
+fn stumpff_c_batch(python: Python<'_>, values: Vec<f64>, workers: usize) -> PyResult<Vec<f64>> {
     python
         .detach(move || {
-            values
-                .into_iter()
-                .map(stumpff::stumpff_c)
-                .collect::<pykep_core::Result<Vec<_>>>()
+            pykep_core::batch::try_map(&values, workers, |value| stumpff::stumpff_c(*value))
         })
         .map_err(to_python)
 }
 
 /// Evaluate the Stumpff S function for a sequence, preserving input order.
-#[pyfunction]
-fn stumpff_s_batch(python: Python<'_>, values: Vec<f64>) -> PyResult<Vec<f64>> {
+#[pyfunction(signature = (values, workers=0))]
+fn stumpff_s_batch(python: Python<'_>, values: Vec<f64>, workers: usize) -> PyResult<Vec<f64>> {
     python
         .detach(move || {
-            values
-                .into_iter()
-                .map(stumpff::stumpff_s)
-                .collect::<pykep_core::Result<Vec<_>>>()
+            pykep_core::batch::try_map(&values, workers, |value| stumpff::stumpff_s(*value))
         })
         .map_err(to_python)
 }
@@ -360,6 +372,95 @@ fn skew(vector: Vec<f64>) -> PyResult<Vec<Vec<f64>>> {
     Ok(matrix.into_iter().map(Vec::from).collect())
 }
 
+/// Compute ordered dot products for two `N x 3` arrays.
+#[pyfunction(signature = (left, right, workers=0))]
+fn dot_batch<'py>(
+    python: Python<'py>,
+    left: PyReadonlyArray2<'py, f64>,
+    right: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    let left = vector3_rows(left)?;
+    let right = vector3_rows(right)?;
+    let values = python
+        .detach(move || linalg::dot_batch(&left, &right, workers))
+        .map_err(to_python)?;
+    Ok(Array1::from_vec(values).into_pyarray(python))
+}
+
+/// Compute ordered norms for an `N x 3` array.
+#[pyfunction(signature = (vectors, workers=0))]
+fn norm_batch<'py>(
+    python: Python<'py>,
+    vectors: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    let vectors = vector3_rows(vectors)?;
+    let values = python
+        .detach(move || linalg::norm_batch(&vectors, workers))
+        .map_err(to_python)?;
+    Ok(Array1::from_vec(values).into_pyarray(python))
+}
+
+/// Normalize an ordered `N x 3` vector array.
+#[pyfunction(signature = (vectors, workers=0))]
+fn normalize_batch<'py>(
+    python: Python<'py>,
+    vectors: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let vectors = vector3_rows(vectors)?;
+    let values = python
+        .detach(move || linalg::normalize_batch(&vectors, workers))
+        .map_err(to_python)?;
+    let count = values.len();
+    let array = Array2::from_shape_vec((count, 3), values.into_iter().flatten().collect())
+        .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+    Ok(array.into_pyarray(python))
+}
+
+/// Compute ordered cross products for two `N x 3` arrays.
+#[pyfunction(signature = (left, right, workers=0))]
+fn cross_batch<'py>(
+    python: Python<'py>,
+    left: PyReadonlyArray2<'py, f64>,
+    right: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let left = vector3_rows(left)?;
+    let right = vector3_rows(right)?;
+    let values = python
+        .detach(move || linalg::cross_batch(&left, &right, workers))
+        .map_err(to_python)?;
+    let count = values.len();
+    let array = Array2::from_shape_vec((count, 3), values.into_iter().flatten().collect())
+        .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+    Ok(array.into_pyarray(python))
+}
+
+/// Build ordered skew matrices for an `N x 3` vector array.
+#[pyfunction(signature = (vectors, workers=0))]
+fn skew_batch<'py>(
+    python: Python<'py>,
+    vectors: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray3<f64>>> {
+    let vectors = vector3_rows(vectors)?;
+    let values = python
+        .detach(move || linalg::skew_batch(&vectors, workers))
+        .map_err(to_python)?;
+    let count = values.len();
+    let array = Array3::from_shape_vec(
+        (count, 3, 3),
+        values
+            .into_iter()
+            .flat_map(|matrix| matrix.into_iter().flatten())
+            .collect(),
+    )
+    .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+    Ok(array.into_pyarray(python))
+}
+
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("PI", constants::PI)?;
     module.add("HALF_PI", constants::HALF_PI)?;
@@ -425,9 +526,14 @@ pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
         module
     )?)?;
     module.add_function(wrap_pyfunction!(dot, module)?)?;
+    module.add_function(wrap_pyfunction!(dot_batch, module)?)?;
     module.add_function(wrap_pyfunction!(norm, module)?)?;
+    module.add_function(wrap_pyfunction!(norm_batch, module)?)?;
     module.add_function(wrap_pyfunction!(normalize, module)?)?;
+    module.add_function(wrap_pyfunction!(normalize_batch, module)?)?;
     module.add_function(wrap_pyfunction!(cross, module)?)?;
+    module.add_function(wrap_pyfunction!(cross_batch, module)?)?;
     module.add_function(wrap_pyfunction!(skew, module)?)?;
+    module.add_function(wrap_pyfunction!(skew_batch, module)?)?;
     Ok(())
 }

@@ -11,7 +11,10 @@ analytic Lagrangian and Reynolds state-transition matrices.
 Mission-design utilities include impulsive transfers, time encodings, flybys,
 single/multi-revolution Lambert branches, and MIMA mass approximations.
 The object-safe ephemeris interface and analytic Keplerian provider support
-thread-safe scalar and ordered batch evaluation. The JPL low-precision
+thread-safe scalar and ordered parallel batch evaluation. Two-body
+propagation, Lambert problems, anomalies, vector operations, and generic
+fallible scalar computations expose the same deterministic worker contract.
+The JPL low-precision
 provider supplies approximate heliocentric states for Mercury through Neptune
 over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
 evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
@@ -67,6 +70,13 @@ let propagated = Cr3bpDynamics.propagate(
     0.0, rotating, 0.5, 0.012150585609624, IntegratorOptions::default()
 )?;
 assert!(propagated.state.iter().all(|value| value.is_finite()));
+
+let states = [state; 64];
+let times = [0.25; 64];
+let batch = pykep_core::astro::propagation::propagate_lagrangian_batch(
+    &states, &times, 1.0, 4
+)?;
+assert_eq!(batch.len(), states.len());
 # Ok::<(), pykep_core::PykepError>(())
 ```
 

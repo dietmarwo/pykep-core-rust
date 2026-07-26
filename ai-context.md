@@ -20,7 +20,7 @@ cargo add pykep-core                -> use pykep_core
 python -m pip install pykep-rust    -> import pykep_rust
 ```
 
-The current synchronized release is 0.1.1. Rust 1.88 is the tested minimum
+The current synchronized release is 0.1.2. Rust 1.88 is the tested minimum
 toolchain. Published wheels target CPython 3.11 through 3.13 and need neither a
 Rust toolchain nor a C/C++ compiler. Building the Python source distribution
 does require Rust. The default Rust feature embeds the VSOP2013 coefficient
@@ -162,9 +162,12 @@ ownership, error, and default contracts.
 
 Python batch APIs accept `float64` NumPy arrays with documented ranks, preserve
 input order, return newly owned output, and release the GIL around native work.
-They do not create an implicit thread pool. Strided and read-only input arrays
-are accepted. A Python loop around cheap scalar native calls can spend more
-time crossing the extension boundary than doing astrodynamics.
+Their `workers` contract is explicit: `0` uses Rayon's shared pool, `1` is
+serial, and `N > 1` uses a cached pool of exactly `N` workers. Strided and
+read-only input arrays are accepted. A Python loop around cheap scalar native
+calls can spend more time crossing the extension boundary than doing
+astrodynamics. See [`docs/batch-processing.md`](docs/batch-processing.md) for
+the complete API matrix and nested-parallelism guidance.
 
 Native ephemeris providers and validated leg objects are immutable or
 thread-safe and can be reused. Give each concurrent operation isolated output
@@ -199,19 +202,19 @@ numbers.
 | Capability | Primary Rust surface | Python surface | Main caution |
 |---|---|---|---|
 | Epochs and Julian arithmetic | `time::epoch::Epoch`, `time::julian` | `Epoch`, `*_to_*` functions | Arithmetic dates do not imply UTC/TT/TDB conversion. |
-| Elliptic/hyperbolic anomalies | `astro::anomalies` | descriptive scalar functions and selected batches | Respect elliptic versus hyperbolic eccentricity domains. |
-| Cartesian/classical/MEE conversion | `astro::elements` | scalar and `N × 6` batch functions | Classical angles are singular for circular/equatorial states. |
+| Elliptic/hyperbolic anomalies | `astro::anomalies` | descriptive scalar functions and a batch for every conversion | Respect elliptic versus hyperbolic eccentricity domains. |
+| Cartesian/classical/MEE conversion | `astro::elements` | scalar, `N × 6` conversion batches, and Jacobian batches | Classical angles are singular for circular/equatorial states. |
 | Two-body propagation | `astro::propagation` | scalar, grid, batch, and STM functions | Units must be consistent; the grid is relative to its first time. |
-| Basic impulsive transfers | `astro::transfers` | `hohmann`, `bielliptic` | Assumes coplanar circular-orbit transfer geometry. |
-| Time encodings and MIMA | `astro::encodings`, `astro::mima` | descriptive encoding functions, `mima`, `mima2` | Encodings have strict domains; MIMA is an approximation, not a propagated low-thrust solution. |
-| Lambert | `astro::lambert::LambertProblem` | `LambertProblem` | Direction, branch, and endpoint-velocity reduction are caller decisions. |
-| Flyby | `astro::flyby` | `flyby_*` functions | Enforce feasibility and periapsis/body conventions. |
-| Ephemerides | `ephemeris` providers and `Ephemeris` | `Planet` constructors | Provider frames, bodies, validity, and accuracy differ. |
-| Evaluated dynamics | `dynamics`, `integration` | RHS, propagation, and STM functions | CR3BP/BCP are normalized rotating-frame models. |
-| ZOH schedules | `dynamics::zoh` | `propagate_zoh_*` | Switch ownership, row widths, and model constants are explicit. |
-| Pontryagin dynamics | `dynamics::pontryagin` | `pontryagin_*`, `Optimality` | Costates and normalization belong to the user's indirect formulation. |
-| Sims–Flanagan legs | `leg::SimsFlanagan*` | matching immutable classes | Constraint and Jacobian ordering must match the optimizer. |
-| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel` | Numerical model Jacobians limit derivative accuracy. |
+| Basic impulsive transfers | `astro::transfers` | scalar and batch `hohmann`/`bielliptic` functions | Assumes coplanar circular-orbit transfer geometry. |
+| Time encodings and MIMA | `astro::encodings`, `astro::mima` | scalar and batch encoding/MIMA functions | Encodings have strict domains; MIMA is an approximation, not a propagated low-thrust solution. |
+| Lambert | `astro::lambert::LambertProblem` | `LambertProblem` and `lambert_problem_batch` | Direction, branch, and endpoint-velocity reduction are caller decisions. |
+| Flyby | `astro::flyby` | scalar and batch `flyby_*` functions | Enforce feasibility and periapsis/body conventions. |
+| Ephemerides | `ephemeris` providers and `Ephemeris` | `Planet` scalar and batch methods | Provider frames, bodies, validity, and accuracy differ. |
+| Evaluated dynamics | `dynamics`, `integration` | scalar and batch RHS, propagation, and STM functions | CR3BP/BCP are normalized rotating-frame models. |
+| ZOH schedules | `dynamics::zoh` | scalar and batch `propagate_zoh_*` | Switch ownership, row widths, and model constants are explicit. |
+| Pontryagin dynamics | `dynamics::pontryagin` | scalar and batch `pontryagin_*`, `Optimality` | Costates and normalization belong to the user's indirect formulation. |
+| Sims–Flanagan legs | `leg::SimsFlanagan*` | immutable classes with scalar and batch evaluations | Constraint and Jacobian ordering must match the optimizer. |
+| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel`, and batch evaluations | Numerical model Jacobians limit derivative accuracy. |
 
 ## Epochs, calendars, and anomalies
 
@@ -473,7 +476,7 @@ must not be reported as derivative accuracy.
 
 Leg objects validate and copy their configuration. Reuse them for repeated
 constraint evaluation. Use the explicit ordered batch mismatch API for Python
-throughput; it releases the GIL but does not create worker threads.
+throughput; it releases the GIL and follows the common `workers` contract.
 
 ## Batch performance and concurrency
 
@@ -481,19 +484,27 @@ Use scalar APIs for clarity and small calculations. Use explicit batches for
 large independent workloads:
 
 - anomaly and Stumpff batches for long scalar arrays;
-- `N × 6` element conversion batches;
-- `N × 6` two-body propagation batches with one time per row;
-- ordered ephemeris state batches;
-- ordered ZOH-leg mismatch batches.
+- vector, element-conversion, and element-Jacobian batches;
+- two-body, adaptive-dynamics, and STM propagation batches;
+- Lambert, transfer, flyby, encoding, and MIMA batches;
+- ephemeris state, acceleration, period, and element batches;
+- evaluated RHS, ZOH schedule, Pontryagin, and leg-object batches.
 
 The release-wheel benchmark measured substantial Python-boundary savings from
 batching, but those measurements are orientation, not a universal speed claim.
 Benchmark the user's real shape in release mode.
 
-Batch APIs preserve order and allocate output. They do not parallelize
-internally. In Rust, parallelize at the application or optimizer layer when
-each row is expensive enough. In Python, native batches release the GIL;
-multiple Python threads are useful only after measuring the actual workload.
+The ordered parallel extension was motivated by experience with large
+Lambert populations during SpOC 4; the companion
+[`dietmarwo/pykep-lambert`](https://github.com/dietmarwo/pykep-lambert)
+project contains the end-to-end comparison. It batches only computations
+already exposed by pykep; it does not add eclipse, access, conjunction, or
+other event physics.
+
+Batch APIs preserve order and allocate output. Pass `workers=0` for the
+process-wide shared pool, `workers=1` for serial native evaluation, or a
+positive explicit count for a cached pool of that exact size. In an already
+parallel Rust application or optimizer, use `workers=1` at the inner level.
 Avoid nested full-size thread pools.
 
 Do not benchmark debug Rust builds, first-time construction mixed with warm
@@ -611,7 +622,7 @@ import pykep_rust as pk
 
 states = np.tile([1.0, 0.0, 0.0, 0.0, 1.0, 0.0], (4096, 1))
 times = np.linspace(0.0, 1.0, len(states), dtype=np.float64)
-result = pk.propagate_lagrangian_batch(states, times, 1.0)
+result = pk.propagate_lagrangian_batch(states, times, 1.0, workers=8)
 assert result.shape == (4096, 6)
 ```
 

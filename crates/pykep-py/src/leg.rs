@@ -156,6 +156,84 @@ impl PySimsFlanaganLeg {
         self.inner.throttle_jacobian()
     }
 
+    /// Batch-evaluate mismatch constraints in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn mismatch_constraints_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<[f64; 7]>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, CoreLeg::mismatch_constraints)
+            })
+            .map_err(to_python)
+    }
+
+    /// Batch-evaluate throttle constraints in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn throttle_constraints_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<Vec<f64>>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| Ok(leg.throttle_constraints()))
+            })
+            .map_err(to_python)
+    }
+
+    /// Batch-evaluate mismatch Jacobians in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn mismatch_jacobian_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<PythonMismatchJacobian>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| {
+                    leg.mismatch_jacobian().map(jacobian_rows)
+                })
+            })
+            .map_err(to_python)
+    }
+
+    /// Batch-evaluate throttle Jacobians in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn throttle_jacobian_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<Vec<Vec<f64>>>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| Ok(leg.throttle_jacobian()))
+            })
+            .map_err(to_python)
+    }
+
     /// Total segment count.
     #[getter]
     fn segment_count(&self) -> usize {
@@ -292,6 +370,63 @@ impl PySimsFlanaganAlphaLeg {
     /// Return the throttle-constraint Jacobian.
     fn throttle_jacobian(&self) -> Vec<Vec<f64>> {
         self.inner.throttle_jacobian()
+    }
+
+    /// Batch-evaluate mismatch constraints in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn mismatch_constraints_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<[f64; 7]>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, CoreAlphaLeg::mismatch_constraints)
+            })
+            .map_err(to_python)
+    }
+
+    /// Batch-evaluate throttle constraints in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn throttle_constraints_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<Vec<f64>>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| Ok(leg.throttle_constraints()))
+            })
+            .map_err(to_python)
+    }
+
+    /// Batch-evaluate throttle Jacobians in input order.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn throttle_jacobian_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<Vec<Vec<f64>>>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| Ok(leg.throttle_jacobian()))
+            })
+            .map_err(to_python)
     }
 
     /// Direct segment durations.
@@ -574,9 +709,11 @@ impl PyZohLeg {
 
     /// Evaluate multiple legs in input order while releasing the GIL.
     #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
     fn mismatch_constraints_batch(
         python: Python<'_>,
         legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
     ) -> PyResult<Vec<Vec<f64>>> {
         let legs = legs
             .into_iter()
@@ -584,9 +721,48 @@ impl PyZohLeg {
             .collect::<Vec<_>>();
         python
             .detach(move || {
-                legs.iter()
-                    .map(CoreZohLeg::mismatch_constraints)
-                    .collect::<Result<Vec<_>, PykepError>>()
+                pykep_core::batch::try_map(&legs, workers, CoreZohLeg::mismatch_constraints)
+            })
+            .map_err(to_python)
+    }
+
+    /// Evaluate multiple leg Jacobians in input order while releasing the GIL.
+    #[staticmethod]
+    #[pyo3(signature = (legs, workers=0))]
+    fn mismatch_jacobian_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        workers: usize,
+    ) -> PyResult<Vec<PythonZohJacobian>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, CoreZohLeg::mismatch_jacobian)
+            })
+            .map_err(to_python)
+    }
+
+    /// Sample multiple leg histories in input order while releasing the GIL.
+    #[staticmethod]
+    #[pyo3(signature = (legs, samples_per_segment=2, workers=0))]
+    fn state_history_batch(
+        python: Python<'_>,
+        legs: Vec<PyRef<'_, Self>>,
+        samples_per_segment: usize,
+        workers: usize,
+    ) -> PyResult<Vec<PythonZohHistory>> {
+        let legs = legs
+            .into_iter()
+            .map(|leg| leg.inner.clone())
+            .collect::<Vec<_>>();
+        python
+            .detach(move || {
+                pykep_core::batch::try_map(&legs, workers, |leg| {
+                    leg.state_history(samples_per_segment)
+                })
             })
             .map_err(to_python)
     }

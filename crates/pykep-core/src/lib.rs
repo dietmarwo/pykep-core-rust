@@ -7,6 +7,8 @@
 
 /// Orbital-mechanics algorithms and coordinate conversions.
 pub mod astro;
+/// Ordered serial/parallel execution shared by batch APIs.
+pub mod batch;
 /// Physical and astrodynamical constants.
 pub mod constants;
 /// Evaluated Kepler, CR3BP, and bicircular dynamics models.

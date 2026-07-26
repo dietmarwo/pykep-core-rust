@@ -6,6 +6,19 @@ once the public API is ready to stabilize.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-26
+
+### Added
+
+- Added deterministic serial/parallel batches for the existing propagation,
+  Lambert, ephemeris, anomaly, vector, transfer, encoding, flyby, MIMA,
+  evaluated-dynamics, ZOH, Pontryagin, and trajectory-leg computations.
+- Exposed the complete batch surface through the typed Python API, with
+  scalar-parity and shape tests for every top-level batch export.
+- Documented the SpOC 4 and `pykep-lambert` motivation, worker selection,
+  nested-parallelism guidance, and the boundary that batching does not add new
+  physical models.
+
 ## [0.1.1] - 2026-07-26
 
 ### Changed

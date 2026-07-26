@@ -49,6 +49,9 @@ Sims–Flanagan endpoint, cut, impulse, constraint, and Jacobian conventions are
 documented in [docs/low-thrust-legs.md](docs/low-thrust-legs.md).
 Generic continuous-thrust ZOH leg models, grids, sensitivities, and integration
 settings are documented in [docs/zoh-leg.md](docs/zoh-leg.md).
+The SpOC 4–motivated ordered parallel batch extension, worker semantics,
+complete Python batch matrix, and nested-parallelism guidance are documented
+in [docs/batch-processing.md](docs/batch-processing.md).
 The typed Python contract and upstream migration matrix are documented in
 [docs/python-api.md](docs/python-api.md) and
 [docs/python-migration.md](docs/python-migration.md).
@@ -66,6 +69,7 @@ remaining external blockers are in
 - Numerical parity checked against the current `kep3` C++ tests and generated
   reference vectors.
 - Explicit units, shapes, branch ordering, error behavior, and tolerances.
+- Ordered serial/parallel batches that preserve scalar numerical semantics.
 - Rust and Python documentation and tests developed with each module.
 
 ## Current smoke checks

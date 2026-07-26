@@ -14,6 +14,7 @@
 - [Sims–Flanagan legs](low-thrust-legs.md)
 - [ZOH legs](zoh-leg.md)
 - [Python API](python-api.md)
+- [Ordered parallel batches](batch-processing.md)
 - [Python migration](python-migration.md)
 
 # Evidence and project information

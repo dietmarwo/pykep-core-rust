@@ -18,6 +18,7 @@ Evidence-backed status as of 2026-07-26:
 | Pontryagin dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | Hamiltonians, coordinate transform, finite differences, singular primer | Criterion + C++ harness | complete |
 | Sims–Flanagan legs | implemented | implemented | 3.0.1 | cuts, odd/even and one-segment cases, central differences, validation | Criterion + C++ harness | complete |
 | Generic ZOH leg | implemented | implemented | 3.0.1/heyoka 7.10.0 | four models, cuts, central differences, contextual failures | Criterion + C++ harness | complete |
+| Ordered parallel batches | shared executor plus named core batches | listed numerical families | same scalar entry points | scalar parity, shapes, ordering, worker modes, error order | companion Lambert benchmark | complete |
 | Python API audit | same native core | complete typed surface | same core entry points | exports, adversarial buffers, ownership, threads, clean wheels | wrapper/batch harness | complete |
 
 “Implemented” means the public contract is documented, validation is explicit,

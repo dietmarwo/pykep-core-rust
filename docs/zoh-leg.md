@@ -87,6 +87,7 @@ validated Rust legs in input order.
 control, and constant dimensions for that selection. Mismatch, Jacobian, and
 history evaluation release the Python GIL.
 
-`ZohLeg.mismatch_constraints_batch(legs)` clones the small immutable leg
-descriptors, releases the GIL once, and returns results in input order. It
-does not start an implicit thread pool.
+The ZOH-leg batch methods clone the small immutable leg descriptors, release
+the GIL once, and return results in input order. `workers=0` uses the shared
+pool, `workers=1` is serial, and a larger value selects a cached pool of that
+exact size.

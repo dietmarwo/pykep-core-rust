@@ -14,8 +14,9 @@ Unless an API states otherwise:
 - matrices use row-major nested arrays in Rust and C-contiguous row-major
   arrays at the Python boundary;
 - public functions reject NaN and positive or negative infinity;
-- deterministic batch APIs preserve input order and do not create an implicit
-  worker pool.
+- deterministic batch APIs preserve input order; `workers=0` uses Rayon's
+  shared pool, `workers=1` is serial, and `workers=N` uses a cached pool with
+  exactly `N` workers.
 
 Some upstream functions propagate non-finite values or use them as invalid
 domain sentinels. The Rust API reports explicit errors instead. Algorithm

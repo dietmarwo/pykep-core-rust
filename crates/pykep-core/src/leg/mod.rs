@@ -27,5 +27,5 @@ pub use sims_flanagan::{
 };
 pub use zoh::{
     ZohCr3bpLeg, ZohEquinoctialLeg, ZohKeplerLeg, ZohLeg, ZohLegHistory, ZohLegMismatchJacobian,
-    ZohSolarSailLeg, evaluate_zoh_mismatch_batch,
+    ZohSolarSailLeg, evaluate_zoh_mismatch_batch, evaluate_zoh_mismatch_batch_parallel,
 };

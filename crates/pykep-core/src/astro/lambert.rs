@@ -46,6 +46,72 @@ pub struct LambertSolution {
     pub path: LambertPath,
 }
 
+/// Inputs for one member of an ordered Lambert batch.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LambertRequest {
+    /// Initial position.
+    pub initial_position: Vector3,
+    /// Final position.
+    pub final_position: Vector3,
+    /// Positive time of flight.
+    pub time: f64,
+    /// Positive gravitational parameter.
+    pub mu: f64,
+    /// Whether clockwise/retrograde motion is requested.
+    pub clockwise: bool,
+    /// Largest requested complete-revolution count.
+    pub maximum_revolutions: usize,
+}
+
+impl LambertRequest {
+    /// Creates one Lambert batch request.
+    #[must_use]
+    pub const fn new(
+        initial_position: Vector3,
+        final_position: Vector3,
+        time: f64,
+        mu: f64,
+        clockwise: bool,
+        maximum_revolutions: usize,
+    ) -> Self {
+        Self {
+            initial_position,
+            final_position,
+            time,
+            mu,
+            clockwise,
+            maximum_revolutions,
+        }
+    }
+
+    fn solve(&self) -> Result<LambertProblem> {
+        LambertProblem::new(
+            self.initial_position,
+            self.final_position,
+            self.time,
+            self.mu,
+            self.clockwise,
+            self.maximum_revolutions,
+        )
+    }
+}
+
+/// Solves an ordered batch of independent Lambert problems.
+///
+/// Zero workers uses Rayon's shared global pool, one executes serially, and
+/// larger values use exactly that many cached worker threads. Both problem
+/// order and each problem's branch order are deterministic.
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first Lambert error in input order.
+pub fn solve_lambert_batch(
+    requests: &[LambertRequest],
+    workers: usize,
+) -> Result<Vec<LambertProblem>> {
+    crate::batch::try_map(requests, workers, LambertRequest::solve)
+}
+
 /// Solved Lambert boundary-value problem.
 ///
 /// ```
@@ -554,5 +620,31 @@ mod tests {
         ] {
             assert!(result.is_err());
         }
+    }
+
+    #[test]
+    fn ordered_parallel_batch_matches_scalar_problems_and_error_order() {
+        let requests = [
+            LambertRequest::new([1.0, 0.0, 0.0], [0.2, 1.1, 0.3], 20.0, 1.0, false, 2),
+            LambertRequest::new([1.1, 0.1, 0.0], [0.1, 1.2, 0.2], 22.0, 1.0, true, 1),
+        ];
+        let batch = solve_lambert_batch(&requests, 2).unwrap();
+        assert_eq!(
+            batch,
+            requests
+                .iter()
+                .map(LambertRequest::solve)
+                .collect::<Result<Vec<_>>>()
+                .unwrap()
+        );
+
+        let invalid = [
+            LambertRequest::new([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 0.0, 1.0, false, 0),
+            LambertRequest::new([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 1.0, 0.0, false, 0),
+        ];
+        assert_eq!(
+            solve_lambert_batch(&invalid, 2).unwrap_err(),
+            invalid[0].solve().unwrap_err()
+        );
     }
 }

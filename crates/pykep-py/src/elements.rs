@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::error::to_python;
-use numpy::ndarray::Array2;
-use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2, PyUntypedArrayMethods};
+use numpy::ndarray::{Array2, Array3};
+use numpy::{IntoPyArray, PyArray2, PyArray3, PyReadonlyArray2, PyUntypedArrayMethods};
 use pykep_core::astro::elements::{
     ClassicalElements, ModifiedEquinoctialElements, cartesian_to_classical,
     cartesian_to_modified_equinoctial, cartesian_to_modified_equinoctial_jacobian,
@@ -29,10 +29,11 @@ fn rows(matrix: Matrix6) -> Vec<Vec<f64>> {
 fn batch<'py, F>(
     python: Python<'py>,
     values: PyReadonlyArray2<'py, f64>,
+    workers: usize,
     operation: F,
 ) -> PyResult<Bound<'py, PyArray2<f64>>>
 where
-    F: Fn(Elements6) -> pykep_core::Result<Elements6> + Send + 'static,
+    F: Fn(Elements6) -> pykep_core::Result<Elements6> + Sync + Send + 'static,
 {
     let shape = values.shape();
     if shape[1] != 6 {
@@ -48,16 +49,46 @@ where
         .map(|row| [row[0], row[1], row[2], row[3], row[4], row[5]])
         .collect::<Vec<_>>();
     let output = python
-        .detach(move || {
-            let mut output = Vec::with_capacity(input.len() * 6);
-            for row in input {
-                output.extend(operation(row)?);
-            }
-            Ok::<_, PykepError>(output)
-        })
+        .detach(move || pykep_core::batch::try_map(&input, workers, |row| operation(*row)))
         .map_err(to_python)?;
-    let array = Array2::from_shape_vec((shape[0], 6), output)
+    let array = Array2::from_shape_vec((shape[0], 6), output.into_iter().flatten().collect())
         .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+    Ok(array.into_pyarray(python))
+}
+
+fn matrix_batch<'py, F>(
+    python: Python<'py>,
+    values: PyReadonlyArray2<'py, f64>,
+    workers: usize,
+    operation: F,
+) -> PyResult<Bound<'py, PyArray3<f64>>>
+where
+    F: Fn(Elements6) -> pykep_core::Result<Matrix6> + Sync + Send + 'static,
+{
+    let shape = values.shape();
+    if shape[1] != 6 {
+        return Err(to_python(PykepError::DimensionMismatch {
+            expected: 6,
+            actual: shape[1],
+        }));
+    }
+    let input = values
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|row| [row[0], row[1], row[2], row[3], row[4], row[5]])
+        .collect::<Vec<_>>();
+    let output = python
+        .detach(move || pykep_core::batch::try_map(&input, workers, |row| operation(*row)))
+        .map_err(to_python)?;
+    let array = Array3::from_shape_vec(
+        (shape[0], 6, 6),
+        output
+            .into_iter()
+            .flat_map(|matrix| matrix.into_iter().flatten())
+            .collect(),
+    )
+    .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
     Ok(array.into_pyarray(python))
 }
 
@@ -155,38 +186,41 @@ fn modified_equinoctial_to_cartesian_jacobian_py(
 }
 
 /// Batch-convert an `N x 6` NumPy array of Cartesian states to classical elements.
-#[pyfunction]
+#[pyfunction(signature = (states, mu, workers=0))]
 fn cartesian_to_classical_batch<'py>(
     python: Python<'py>,
     states: PyReadonlyArray2<'py, f64>,
     mu: f64,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, states, move |state| {
+    batch(python, states, workers, move |state| {
         cartesian_to_classical(&state, mu).map(ClassicalElements::to_array)
     })
 }
 
 /// Batch-convert an `N x 6` NumPy array of classical elements to Cartesian states.
-#[pyfunction]
+#[pyfunction(signature = (elements, mu, workers=0))]
 fn classical_to_cartesian_batch<'py>(
     python: Python<'py>,
     elements: PyReadonlyArray2<'py, f64>,
     mu: f64,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, move |elements| {
+    batch(python, elements, workers, move |elements| {
         classical_to_cartesian(elements.into(), mu)
     })
 }
 
 /// Batch-convert an `N x 6` NumPy array of classical elements to equinoctial elements.
 #[pyfunction]
-#[pyo3(signature = (elements, retrograde=false))]
+#[pyo3(signature = (elements, retrograde=false, workers=0))]
 fn classical_to_modified_equinoctial_batch<'py>(
     python: Python<'py>,
     elements: PyReadonlyArray2<'py, f64>,
     retrograde: bool,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, move |elements| {
+    batch(python, elements, workers, move |elements| {
         classical_to_modified_equinoctial(elements.into(), retrograde)
             .map(ModifiedEquinoctialElements::to_array)
     })
@@ -194,13 +228,14 @@ fn classical_to_modified_equinoctial_batch<'py>(
 
 /// Batch-convert an `N x 6` NumPy array of equinoctial elements to classical elements.
 #[pyfunction]
-#[pyo3(signature = (elements, retrograde=false))]
+#[pyo3(signature = (elements, retrograde=false, workers=0))]
 fn modified_equinoctial_to_classical_batch<'py>(
     python: Python<'py>,
     elements: PyReadonlyArray2<'py, f64>,
     retrograde: bool,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, move |elements| {
+    batch(python, elements, workers, move |elements| {
         modified_equinoctial_to_classical(elements.into(), retrograde)
             .map(ClassicalElements::to_array)
     })
@@ -208,14 +243,15 @@ fn modified_equinoctial_to_classical_batch<'py>(
 
 /// Batch-convert an `N x 6` NumPy array of Cartesian states to equinoctial elements.
 #[pyfunction]
-#[pyo3(signature = (states, mu, retrograde=false))]
+#[pyo3(signature = (states, mu, retrograde=false, workers=0))]
 fn cartesian_to_modified_equinoctial_batch<'py>(
     python: Python<'py>,
     states: PyReadonlyArray2<'py, f64>,
     mu: f64,
     retrograde: bool,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, states, move |state| {
+    batch(python, states, workers, move |state| {
         cartesian_to_modified_equinoctial(&state, mu, retrograde)
             .map(ModifiedEquinoctialElements::to_array)
     })
@@ -223,15 +259,46 @@ fn cartesian_to_modified_equinoctial_batch<'py>(
 
 /// Batch-convert an `N x 6` NumPy array of equinoctial elements to Cartesian states.
 #[pyfunction]
-#[pyo3(signature = (elements, mu, retrograde=false))]
+#[pyo3(signature = (elements, mu, retrograde=false, workers=0))]
 fn modified_equinoctial_to_cartesian_batch<'py>(
     python: Python<'py>,
     elements: PyReadonlyArray2<'py, f64>,
     mu: f64,
     retrograde: bool,
+    workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    batch(python, elements, move |elements| {
+    batch(python, elements, workers, move |elements| {
         modified_equinoctial_to_cartesian(elements.into(), mu, retrograde)
+    })
+}
+
+/// Batch-evaluate Cartesian-to-equinoctial analytic Jacobians.
+#[pyfunction]
+#[pyo3(signature = (states, mu, retrograde=false, workers=0))]
+fn cartesian_to_modified_equinoctial_jacobian_batch<'py>(
+    python: Python<'py>,
+    states: PyReadonlyArray2<'py, f64>,
+    mu: f64,
+    retrograde: bool,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray3<f64>>> {
+    matrix_batch(python, states, workers, move |state| {
+        cartesian_to_modified_equinoctial_jacobian(&state, mu, retrograde)
+    })
+}
+
+/// Batch-evaluate equinoctial-to-Cartesian analytic Jacobians.
+#[pyfunction]
+#[pyo3(signature = (elements, mu, retrograde=false, workers=0))]
+fn modified_equinoctial_to_cartesian_jacobian_batch<'py>(
+    python: Python<'py>,
+    elements: PyReadonlyArray2<'py, f64>,
+    mu: f64,
+    retrograde: bool,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray3<f64>>> {
+    matrix_batch(python, elements, workers, move |elements| {
+        modified_equinoctial_to_cartesian_jacobian(elements.into(), mu, retrograde)
     })
 }
 
@@ -278,6 +345,14 @@ pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     module.add_function(wrap_pyfunction!(
         modified_equinoctial_to_cartesian_batch,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        cartesian_to_modified_equinoctial_jacobian_batch,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        modified_equinoctial_to_cartesian_jacobian_batch,
         module
     )?)?;
     Ok(())

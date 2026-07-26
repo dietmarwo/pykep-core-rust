@@ -305,6 +305,95 @@ pub fn true_to_hyperbolic_mean(true_anomaly: f64, eccentricity: f64) -> Result<f
     )
 }
 
+macro_rules! anomaly_batch {
+    ($batch:ident, $scalar:ident, $summary:literal) => {
+        #[doc = $summary]
+        ///
+        /// Output order matches input order. Zero workers uses the shared
+        /// global pool, one executes serially, and larger values use exactly
+        /// that many cached worker threads.
+        ///
+        /// # Errors
+        ///
+        /// Returns an invalid worker count or the first conversion error in
+        /// input order.
+        pub fn $batch(values: &[f64], eccentricity: f64, workers: usize) -> Result<Vec<f64>> {
+            crate::batch::try_map(values, workers, |value| $scalar(*value, eccentricity))
+        }
+    };
+}
+
+anomaly_batch!(
+    mean_to_eccentric_anomaly_batch,
+    mean_to_eccentric_anomaly,
+    "Converts an ordered batch of elliptic mean anomalies."
+);
+anomaly_batch!(
+    eccentric_to_mean_anomaly_batch,
+    eccentric_to_mean_anomaly,
+    "Converts an ordered batch of elliptic eccentric anomalies to mean anomalies."
+);
+anomaly_batch!(
+    eccentric_to_true_anomaly_batch,
+    eccentric_to_true_anomaly,
+    "Converts an ordered batch of elliptic eccentric anomalies to true anomalies."
+);
+anomaly_batch!(
+    true_to_eccentric_anomaly_batch,
+    true_to_eccentric_anomaly,
+    "Converts an ordered batch of elliptic true anomalies to eccentric anomalies."
+);
+anomaly_batch!(
+    mean_to_true_anomaly_batch,
+    mean_to_true_anomaly,
+    "Converts an ordered batch of elliptic mean anomalies to true anomalies."
+);
+anomaly_batch!(
+    true_to_mean_anomaly_batch,
+    true_to_mean_anomaly,
+    "Converts an ordered batch of elliptic true anomalies to mean anomalies."
+);
+anomaly_batch!(
+    gudermannian_to_true_anomaly_batch,
+    gudermannian_to_true_anomaly,
+    "Converts an ordered batch of hyperbolic Gudermannian anomalies."
+);
+anomaly_batch!(
+    true_to_gudermannian_anomaly_batch,
+    true_to_gudermannian_anomaly,
+    "Converts an ordered batch of hyperbolic true anomalies to Gudermannian anomalies."
+);
+anomaly_batch!(
+    hyperbolic_mean_to_anomaly_batch,
+    hyperbolic_mean_to_anomaly,
+    "Converts an ordered batch of hyperbolic mean anomalies."
+);
+anomaly_batch!(
+    hyperbolic_anomaly_to_mean_batch,
+    hyperbolic_anomaly_to_mean,
+    "Converts an ordered batch of hyperbolic anomalies to mean anomalies."
+);
+anomaly_batch!(
+    hyperbolic_anomaly_to_true_batch,
+    hyperbolic_anomaly_to_true,
+    "Converts an ordered batch of hyperbolic anomalies to true anomalies."
+);
+anomaly_batch!(
+    true_to_hyperbolic_anomaly_batch,
+    true_to_hyperbolic_anomaly,
+    "Converts an ordered batch of hyperbolic true anomalies."
+);
+anomaly_batch!(
+    hyperbolic_mean_to_true_batch,
+    hyperbolic_mean_to_true,
+    "Converts an ordered batch of hyperbolic mean anomalies to true anomalies."
+);
+anomaly_batch!(
+    true_to_hyperbolic_mean_batch,
+    true_to_hyperbolic_mean,
+    "Converts an ordered batch of hyperbolic true anomalies to mean anomalies."
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -348,5 +437,76 @@ mod tests {
         assert!(hyperbolic_mean_to_anomaly(0.3, 1.0).is_err());
         assert!(mean_to_eccentric_anomaly(f64::NAN, 0.5).is_err());
         assert!(true_to_hyperbolic_anomaly(PI, 1.5).is_err());
+    }
+
+    #[test]
+    fn ordered_batches_match_all_scalar_anomaly_conversions() {
+        type Scalar = fn(f64, f64) -> Result<f64>;
+        type Batch = fn(&[f64], f64, usize) -> Result<Vec<f64>>;
+        let values = [0.1, 0.2];
+        for (batch, scalar, eccentricity) in [
+            (
+                mean_to_eccentric_anomaly_batch as Batch,
+                mean_to_eccentric_anomaly as Scalar,
+                0.4,
+            ),
+            (
+                eccentric_to_mean_anomaly_batch,
+                eccentric_to_mean_anomaly,
+                0.4,
+            ),
+            (
+                eccentric_to_true_anomaly_batch,
+                eccentric_to_true_anomaly,
+                0.4,
+            ),
+            (
+                true_to_eccentric_anomaly_batch,
+                true_to_eccentric_anomaly,
+                0.4,
+            ),
+            (mean_to_true_anomaly_batch, mean_to_true_anomaly, 0.4),
+            (true_to_mean_anomaly_batch, true_to_mean_anomaly, 0.4),
+            (
+                gudermannian_to_true_anomaly_batch,
+                gudermannian_to_true_anomaly,
+                1.5,
+            ),
+            (
+                true_to_gudermannian_anomaly_batch,
+                true_to_gudermannian_anomaly,
+                1.5,
+            ),
+            (
+                hyperbolic_mean_to_anomaly_batch,
+                hyperbolic_mean_to_anomaly,
+                1.5,
+            ),
+            (
+                hyperbolic_anomaly_to_mean_batch,
+                hyperbolic_anomaly_to_mean,
+                1.5,
+            ),
+            (
+                hyperbolic_anomaly_to_true_batch,
+                hyperbolic_anomaly_to_true,
+                1.5,
+            ),
+            (
+                true_to_hyperbolic_anomaly_batch,
+                true_to_hyperbolic_anomaly,
+                1.5,
+            ),
+            (hyperbolic_mean_to_true_batch, hyperbolic_mean_to_true, 1.5),
+            (true_to_hyperbolic_mean_batch, true_to_hyperbolic_mean, 1.5),
+        ] {
+            assert_eq!(
+                batch(&values, eccentricity, 2).unwrap(),
+                values
+                    .iter()
+                    .map(|value| scalar(*value, eccentricity).unwrap())
+                    .collect::<Vec<_>>()
+            );
+        }
     }
 }

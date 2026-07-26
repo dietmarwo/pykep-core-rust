@@ -108,6 +108,71 @@ pub trait Ephemeris: Send + Sync {
             .collect()
     }
 
+    /// Evaluate an ordered epoch batch, optionally in parallel.
+    ///
+    /// Zero workers uses Rayon's shared global pool, one executes serially,
+    /// and larger values use exactly that many cached worker threads. This is
+    /// available to every thread-safe ephemeris provider.
+    ///
+    /// # Errors
+    ///
+    /// Returns an invalid worker count or the first provider evaluation error
+    /// in input order.
+    fn states_parallel(
+        &self,
+        epochs_mjd2000: &[f64],
+        workers: usize,
+    ) -> Result<Vec<CartesianState>> {
+        crate::batch::try_map(epochs_mjd2000, workers, |epoch| self.state(*epoch))
+    }
+
+    /// Evaluate an ordered acceleration batch, optionally in parallel.
+    ///
+    /// Worker and ordering semantics match [`Ephemeris::states_parallel`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an invalid worker count or the first unsupported-capability or
+    /// provider evaluation error in input order.
+    fn accelerations_parallel(
+        &self,
+        epochs_mjd2000: &[f64],
+        workers: usize,
+    ) -> Result<Vec<Vector3>> {
+        crate::batch::try_map(epochs_mjd2000, workers, |epoch| self.acceleration(*epoch))
+    }
+
+    /// Derive an ordered orbital-period batch, optionally in parallel.
+    ///
+    /// Worker and ordering semantics match [`Ephemeris::states_parallel`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an invalid worker count or the first metadata/provider error in
+    /// input order.
+    fn periods_parallel(&self, epochs_mjd2000: &[f64], workers: usize) -> Result<Vec<Option<f64>>> {
+        crate::batch::try_map(epochs_mjd2000, workers, |epoch| self.period(*epoch))
+    }
+
+    /// Derive an ordered orbital-element batch, optionally in parallel.
+    ///
+    /// Worker and ordering semantics match [`Ephemeris::states_parallel`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an invalid worker count or the first metadata, geometry, or
+    /// provider error in input order.
+    fn elements_parallel(
+        &self,
+        epochs_mjd2000: &[f64],
+        representation: ElementRepresentation,
+        workers: usize,
+    ) -> Result<Vec<Elements6>> {
+        crate::batch::try_map(epochs_mjd2000, workers, |epoch| {
+            self.elements(*epoch, representation)
+        })
+    }
+
     /// Derive the orbital period from osculating energy.
     ///
     /// Hyperbolic states return `None`.
@@ -258,5 +323,39 @@ mod tests {
                 .elements(0.0, ElementRepresentation::ClassicalMean)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn parallel_derived_batches_match_scalar_order_and_errors() {
+        let minimal = Minimal {
+            state: [1.0, 0.0, 0.0, 0.0, 0.8, 0.1],
+            central_mu: Some(1.0),
+        };
+        let epochs = [2.0, -1.0, 0.5];
+        assert_eq!(
+            minimal.states_parallel(&epochs, 2).unwrap(),
+            minimal.states(&epochs).unwrap()
+        );
+        assert_eq!(
+            minimal.periods_parallel(&epochs, 2).unwrap(),
+            epochs
+                .iter()
+                .map(|epoch| minimal.period(*epoch))
+                .collect::<Result<Vec<_>>>()
+                .unwrap()
+        );
+        assert_eq!(
+            minimal
+                .elements_parallel(&epochs, ElementRepresentation::ModifiedEquinoctial, 2)
+                .unwrap(),
+            epochs
+                .iter()
+                .map(|epoch| {
+                    minimal.elements(*epoch, ElementRepresentation::ModifiedEquinoctial)
+                })
+                .collect::<Result<Vec<_>>>()
+                .unwrap()
+        );
+        assert!(minimal.accelerations_parallel(&epochs, 2).is_err());
     }
 }

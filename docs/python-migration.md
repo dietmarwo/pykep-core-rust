@@ -18,7 +18,8 @@ upstream version recorded in `UPSTREAM_NOTICE.md`.
 | `RAD2DEG`, `DEG2RAD`, `DAY2SEC`, `SEC2DAY` | `RADIANS_TO_DEGREES`, `DEGREES_TO_RADIANS`, `DAY_TO_SECONDS`, `SECONDS_TO_DAY` | Same conversion factors |
 | `m2e`, `e2m`, `m2f`, `f2m`, `e2f`, `f2e` | `mean_to_eccentric_anomaly`, `eccentric_to_mean_anomaly`, `mean_to_true_anomaly`, `true_to_mean_anomaly`, `eccentric_to_true_anomaly`, `true_to_eccentric_anomaly` | Scalar elliptic conversions |
 | `n2h`, `h2n`, `n2f`, `f2n`, `h2f`, `f2h` | Gudermannian/hyperbolic functions with full names | Scalar hyperbolic conversions |
-| `m2e_v`, `n2h_v` | `mean_to_eccentric_anomaly_batch`, `hyperbolic_mean_to_anomaly_batch` | Ordered native batches that release the GIL |
+| `m2e_v`, `e2m_v`, `m2f_v`, `f2m_v`, `e2f_v`, `f2e_v` | Corresponding descriptive elliptic `_batch` functions | Ordered native batches that release the GIL |
+| `n2h_v`, `h2n_v`, `n2f_v`, `f2n_v`, `h2f_v`, `f2h_v`, `zeta2f_v`, `f2zeta_v` | Corresponding descriptive hyperbolic/Gudermannian `_batch` functions | Ordered native batches that release the GIL |
 | `ic2par`, `par2ic`, `ic2mee`, `mee2ic`, `par2mee`, `mee2par` | Cartesian/classical/modified-equinoctial functions with full names | `N × 6` NumPy batches are explicit `_batch` APIs |
 | Lagrangian and Taylor propagation families | `propagate_lagrangian`, `propagate_lagrangian_grid`, evaluated model propagators | Native Rust numerical implementation |
 | `lambert_problem` | `LambertProblem`, `LambertSolution` | Deterministic branch objects |
@@ -51,10 +52,6 @@ core and are not emulated:
 - symbolic heyoka dynamics/integrator construction and arbitrary user-supplied
   expression graphs (`TA-SYMBOLIC-001`);
 - `mima_from_hop` and `mima2_from_hop` (`MIMA-HOP-001`);
-- the remaining vectorized anomaly aliases (`e2m_v`, `m2f_v`, `f2m_v`,
-  `e2f_v`, `f2e_v`, `h2n_v`, `n2f_v`, `f2n_v`, `h2f_v`, `f2h_v`,
-  `zeta2f_v`, and `f2zeta_v`), whose scalar equivalents are available
-  (`PY-ANOMALY-BATCH-001`);
 - deprecated compatibility aliases and nested namespace layouts.
 
 Use `has_acceleration()` and the VSOP2013 availability/threshold queries when

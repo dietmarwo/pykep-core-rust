@@ -572,6 +572,33 @@ where
     legs.iter().map(ZohLeg::mismatch_constraints).collect()
 }
 
+/// Evaluates independent generic ZOH-leg mismatches in parallel.
+///
+/// Output order matches input order. Zero workers uses the shared global
+/// pool, one executes serially, and larger values use exactly that many cached
+/// worker threads.
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first leg evaluation error in input
+/// order.
+pub fn evaluate_zoh_mismatch_batch_parallel<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+    const W: usize,
+>(
+    legs: &[ZohLeg<M, N, C, K, P, W>],
+    workers: usize,
+) -> Result<Vec<[f64; N]>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + Sync,
+{
+    crate::batch::try_map(legs, workers, ZohLeg::mismatch_constraints)
+}
+
 #[derive(Clone, Copy)]
 struct SegmentVariation<const N: usize, const C: usize> {
     transition: [[f64; N]; N],

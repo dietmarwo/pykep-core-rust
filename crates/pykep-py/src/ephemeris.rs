@@ -152,22 +152,79 @@ impl PyPlanet {
         self.inner.state(epoch_mjd2000).map_err(to_python)
     }
 
-    /// Evaluate an epoch array while releasing the Python GIL.
+    /// Evaluate an epoch array in parallel while releasing the Python GIL.
+    #[pyo3(signature = (epochs_mjd2000, workers=0))]
     fn states<'py>(
         &self,
         python: Python<'py>,
         epochs_mjd2000: PyReadonlyArray1<'py, f64>,
+        workers: usize,
     ) -> PyResult<Bound<'py, PyArray2<f64>>> {
         let epochs: Vec<_> = epochs_mjd2000.as_array().iter().copied().collect();
         let provider = Arc::clone(&self.inner);
         let states = python
-            .detach(move || provider.states(&epochs))
+            .detach(move || provider.states_parallel(&epochs, workers))
             .map_err(to_python)?;
         let count = states.len();
         let flat = states.into_iter().flatten().collect();
         let array = Array2::from_shape_vec((count, 6), flat)
             .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
         Ok(array.into_pyarray(python))
+    }
+
+    /// Evaluate an acceleration epoch batch while releasing the Python GIL.
+    #[pyo3(signature = (epochs_mjd2000, workers=0))]
+    fn acceleration_batch<'py>(
+        &self,
+        python: Python<'py>,
+        epochs_mjd2000: PyReadonlyArray1<'py, f64>,
+        workers: usize,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+        let epochs: Vec<_> = epochs_mjd2000.as_array().iter().copied().collect();
+        let provider = Arc::clone(&self.inner);
+        let values = python
+            .detach(move || provider.accelerations_parallel(&epochs, workers))
+            .map_err(to_python)?;
+        let count = values.len();
+        let array = Array2::from_shape_vec((count, 3), values.into_iter().flatten().collect())
+            .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+        Ok(array.into_pyarray(python))
+    }
+
+    /// Evaluate an orbital-element epoch batch while releasing the GIL.
+    #[pyo3(signature = (epochs_mjd2000, representation="classical_true", workers=0))]
+    fn elements_batch<'py>(
+        &self,
+        python: Python<'py>,
+        epochs_mjd2000: PyReadonlyArray1<'py, f64>,
+        representation: &str,
+        workers: usize,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+        let epochs: Vec<_> = epochs_mjd2000.as_array().iter().copied().collect();
+        let representation = parse_representation(representation)?;
+        let provider = Arc::clone(&self.inner);
+        let values = python
+            .detach(move || provider.elements_parallel(&epochs, representation, workers))
+            .map_err(to_python)?;
+        let count = values.len();
+        let array = Array2::from_shape_vec((count, 6), values.into_iter().flatten().collect())
+            .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
+        Ok(array.into_pyarray(python))
+    }
+
+    /// Evaluate an orbital-period epoch batch while releasing the GIL.
+    #[pyo3(signature = (epochs_mjd2000, workers=0))]
+    fn period_batch(
+        &self,
+        python: Python<'_>,
+        epochs_mjd2000: PyReadonlyArray1<'_, f64>,
+        workers: usize,
+    ) -> PyResult<Vec<Option<f64>>> {
+        let epochs: Vec<_> = epochs_mjd2000.as_array().iter().copied().collect();
+        let provider = Arc::clone(&self.inner);
+        python
+            .detach(move || provider.periods_parallel(&epochs, workers))
+            .map_err(to_python)
     }
 
     /// Evaluate optional Cartesian acceleration.

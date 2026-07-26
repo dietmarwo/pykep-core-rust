@@ -80,6 +80,24 @@ class SimsFlanaganLeg:
         self,
     ) -> tuple[list[list[float]], list[list[float]], list[list[float]]]: ...
     def throttle_jacobian(self) -> list[list[float]]: ...
+    @staticmethod
+    def mismatch_constraints_batch(
+        legs: Sequence[SimsFlanaganLeg], workers: int = 0
+    ) -> list[list[float]]: ...
+    @staticmethod
+    def throttle_constraints_batch(
+        legs: Sequence[SimsFlanaganLeg], workers: int = 0
+    ) -> list[list[float]]: ...
+    @staticmethod
+    def mismatch_jacobian_batch(
+        legs: Sequence[SimsFlanaganLeg], workers: int = 0
+    ) -> list[
+        tuple[list[list[float]], list[list[float]], list[list[float]]]
+    ]: ...
+    @staticmethod
+    def throttle_jacobian_batch(
+        legs: Sequence[SimsFlanaganLeg], workers: int = 0
+    ) -> list[list[list[float]]]: ...
     @property
     def segment_count(self) -> int: ...
     @property
@@ -125,6 +143,18 @@ class SimsFlanaganAlphaLeg:
     def mismatch_constraints(self) -> list[float]: ...
     def throttle_constraints(self) -> list[float]: ...
     def throttle_jacobian(self) -> list[list[float]]: ...
+    @staticmethod
+    def mismatch_constraints_batch(
+        legs: Sequence[SimsFlanaganAlphaLeg], workers: int = 0
+    ) -> list[list[float]]: ...
+    @staticmethod
+    def throttle_constraints_batch(
+        legs: Sequence[SimsFlanaganAlphaLeg], workers: int = 0
+    ) -> list[list[float]]: ...
+    @staticmethod
+    def throttle_jacobian_batch(
+        legs: Sequence[SimsFlanaganAlphaLeg], workers: int = 0
+    ) -> list[list[list[float]]]: ...
     @property
     def segment_durations(self) -> list[float]: ...
     @property
@@ -181,7 +211,28 @@ class ZohLeg:
         self, samples_per_segment: int = 2
     ) -> tuple[list[list[list[float]]], list[list[list[float]]]]: ...
     @staticmethod
-    def mismatch_constraints_batch(legs: Sequence[ZohLeg]) -> list[list[float]]: ...
+    def mismatch_constraints_batch(
+        legs: Sequence[ZohLeg], workers: int = 0
+    ) -> list[list[float]]: ...
+    @staticmethod
+    def mismatch_jacobian_batch(
+        legs: Sequence[ZohLeg], workers: int = 0
+    ) -> list[
+        tuple[
+            list[list[float]],
+            list[list[float]],
+            list[list[float]],
+            list[list[float]],
+        ]
+    ]: ...
+    @staticmethod
+    def state_history_batch(
+        legs: Sequence[ZohLeg],
+        samples_per_segment: int = 2,
+        workers: int = 0,
+    ) -> list[
+        tuple[list[list[list[float]]], list[list[list[float]]]]
+    ]: ...
     @property
     def model(self) -> ZohModel: ...
     @property
@@ -322,6 +373,17 @@ class LambertProblem:
     @property
     def clockwise(self) -> bool: ...
 
+def lambert_problem_batch(
+    initial_positions: npt.NDArray[np.float64],
+    final_positions: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    mu: float,
+    clockwise: bool = False,
+    maximum_revolutions: int = 1,
+    workers: int = 0,
+) -> list[LambertProblem]:
+    """Solve N independent Lambert problems in input order."""
+
 class Planet:
     """Thread-safe owner of an ephemeris provider."""
 
@@ -361,8 +423,20 @@ class Planet:
     ) -> Planet: ...
     def state(self, epoch_mjd2000: float) -> list[float]: ...
     def states(
-        self, epochs_mjd2000: npt.NDArray[np.float64]
+        self, epochs_mjd2000: npt.NDArray[np.float64], workers: int = 0
     ) -> npt.NDArray[np.float64]: ...
+    def acceleration_batch(
+        self, epochs_mjd2000: npt.NDArray[np.float64], workers: int = 0
+    ) -> npt.NDArray[np.float64]: ...
+    def elements_batch(
+        self,
+        epochs_mjd2000: npt.NDArray[np.float64],
+        representation: ElementRepresentation = "classical_true",
+        workers: int = 0,
+    ) -> npt.NDArray[np.float64]: ...
+    def period_batch(
+        self, epochs_mjd2000: npt.NDArray[np.float64], workers: int = 0
+    ) -> list[float | None]: ...
     def acceleration(self, epoch_mjd2000: float) -> list[float]: ...
     def elements(
         self,
@@ -555,6 +629,180 @@ def propagate_zoh_solar_sail(
 ) -> list[float]:
     """Propagate a piecewise-constant ideal solar-sail schedule."""
 
+def kepler_rhs_batch(
+    states: npt.NDArray[np.float64], mu: float, workers: int = 0
+) -> npt.NDArray[np.float64]: ...
+
+def cr3bp_rhs_batch(
+    states: npt.NDArray[np.float64], mu: float, workers: int = 0
+) -> npt.NDArray[np.float64]: ...
+
+def bcp_rhs_batch(
+    times: npt.NDArray[np.float64],
+    states: npt.NDArray[np.float64],
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def cr3bp_effective_potential_batch(
+    states: npt.NDArray[np.float64], mu: float, workers: int = 0
+) -> npt.NDArray[np.float64]: ...
+
+def cr3bp_jacobi_constant_batch(
+    states: npt.NDArray[np.float64], mu: float, workers: int = 0
+) -> npt.NDArray[np.float64]: ...
+
+def pontryagin_cartesian_rhs_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def pontryagin_equinoctial_rhs_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def pontryagin_cartesian_control_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> list[tuple[float, list[float], float]]: ...
+
+def pontryagin_equinoctial_control_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> list[tuple[float, list[float], float]]: ...
+
+def pontryagin_cartesian_hamiltonian_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def pontryagin_equinoctial_hamiltonian_batch(
+    states: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_pontryagin_cartesian_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_pontryagin_equinoctial_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    optimality: Optimality,
+    parameters: Sequence[float],
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def zoh_kepler_rhs_batch(
+    states: npt.NDArray[np.float64],
+    thrust: npt.NDArray[np.float64],
+    direction: npt.NDArray[np.float64],
+    mass_flow_coefficient: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def zoh_cr3bp_rhs_batch(
+    states: npt.NDArray[np.float64],
+    thrust: npt.NDArray[np.float64],
+    direction: npt.NDArray[np.float64],
+    mass_flow_coefficient: float,
+    mu: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def zoh_equinoctial_rhs_batch(
+    states: npt.NDArray[np.float64],
+    thrust: npt.NDArray[np.float64],
+    rtn_direction: npt.NDArray[np.float64],
+    mass_flow_coefficient: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def zoh_solar_sail_rhs_batch(
+    states: npt.NDArray[np.float64],
+    alpha: npt.NDArray[np.float64],
+    beta: npt.NDArray[np.float64],
+    lightness: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_zoh_kepler_batch(
+    states: npt.NDArray[np.float64],
+    boundaries: Sequence[Sequence[float]],
+    controls: Sequence[Sequence[Sequence[float]]],
+    mass_flow_coefficient: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_zoh_cr3bp_batch(
+    states: npt.NDArray[np.float64],
+    boundaries: Sequence[Sequence[float]],
+    controls: Sequence[Sequence[Sequence[float]]],
+    mass_flow_coefficient: float,
+    mu: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_zoh_equinoctial_batch(
+    states: npt.NDArray[np.float64],
+    boundaries: Sequence[Sequence[float]],
+    controls: Sequence[Sequence[Sequence[float]]],
+    mass_flow_coefficient: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_zoh_solar_sail_batch(
+    states: npt.NDArray[np.float64],
+    boundaries: Sequence[Sequence[float]],
+    controls: Sequence[Sequence[Sequence[float]]],
+    lightness: float,
+    backward: bool = False,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
 def jd_to_mjd(value: float) -> float:
     """Convert Julian date to modified Julian date, in days."""
 
@@ -579,10 +827,10 @@ def stumpff_c(value: float) -> float:
 def stumpff_s(value: float) -> float:
     """Evaluate the dimensionless Stumpff S function."""
 
-def stumpff_c_batch(values: Sequence[float]) -> list[float]:
+def stumpff_c_batch(values: Sequence[float], workers: int = 0) -> list[float]:
     """Evaluate Stumpff C for a sequence in input order."""
 
-def stumpff_s_batch(values: Sequence[float]) -> list[float]:
+def stumpff_s_batch(values: Sequence[float], workers: int = 0) -> list[float]:
     """Evaluate Stumpff S for a sequence in input order."""
 
 def mean_to_eccentric_anomaly(mean_anomaly: float, eccentricity: float) -> float:
@@ -644,14 +892,62 @@ def true_to_hyperbolic_mean(true_anomaly: float, eccentricity: float) -> float:
     """Convert true anomaly to hyperbolic mean anomaly."""
 
 def mean_to_eccentric_anomaly_batch(
-    mean_anomalies: Sequence[float], eccentricity: float
+    values: Sequence[float], eccentricity: float, workers: int = 0
 ) -> list[float]:
     """Convert elliptic mean anomalies in input order."""
 
+def eccentric_to_mean_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def eccentric_to_true_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def true_to_eccentric_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def mean_to_true_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def true_to_mean_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def gudermannian_to_true_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def true_to_gudermannian_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
 def hyperbolic_mean_to_anomaly_batch(
-    mean_anomalies: Sequence[float], eccentricity: float
+    values: Sequence[float], eccentricity: float, workers: int = 0
 ) -> list[float]:
     """Convert hyperbolic mean anomalies in input order."""
+
+def hyperbolic_anomaly_to_mean_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def hyperbolic_anomaly_to_true_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def true_to_hyperbolic_anomaly_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def hyperbolic_mean_to_true_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
+
+def true_to_hyperbolic_mean_batch(
+    values: Sequence[float], eccentricity: float, workers: int = 0
+) -> list[float]: ...
 
 def elliptic_kepler_residual(
     eccentric_anomaly: float, mean_anomaly: float, eccentricity: float
@@ -784,6 +1080,35 @@ def cross(
 def skew(vector: Sequence[float]) -> list[list[float]]:
     """Return a row-major 3 by 3 skew-symmetric matrix."""
 
+def dot_batch(
+    left: npt.NDArray[np.float64],
+    right: npt.NDArray[np.float64],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]:
+    """Compute ordered dot products for two N by 3 arrays."""
+
+def norm_batch(
+    vectors: npt.NDArray[np.float64], workers: int = 0
+) -> npt.NDArray[np.float64]:
+    """Compute ordered norms for an N by 3 array."""
+
+def normalize_batch(
+    vectors: npt.NDArray[np.float64], workers: int = 0
+) -> npt.NDArray[np.float64]:
+    """Normalize an ordered N by 3 array."""
+
+def cross_batch(
+    left: npt.NDArray[np.float64],
+    right: npt.NDArray[np.float64],
+    workers: int = 0,
+) -> npt.NDArray[np.float64]:
+    """Compute ordered cross products for two N by 3 arrays."""
+
+def skew_batch(
+    vectors: npt.NDArray[np.float64], workers: int = 0
+) -> npt.NDArray[np.float64]:
+    """Build ordered N by 3 by 3 skew matrices."""
+
 def cartesian_to_classical(state: Sequence[float], mu: float) -> list[float]:
     """Convert Cartesian state to classical [a,e,i,Omega,omega,nu] elements."""
 
@@ -821,22 +1146,26 @@ def modified_equinoctial_to_cartesian_jacobian(
     """Return the row-major equinoctial-to-Cartesian analytic Jacobian."""
 
 def cartesian_to_classical_batch(
-    states: npt.NDArray[np.float64], mu: float
+    states: npt.NDArray[np.float64], mu: float, workers: int = 0
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of Cartesian states."""
 
 def classical_to_cartesian_batch(
-    elements: npt.NDArray[np.float64], mu: float
+    elements: npt.NDArray[np.float64], mu: float, workers: int = 0
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of classical elements."""
 
 def classical_to_modified_equinoctial_batch(
-    elements: npt.NDArray[np.float64], retrograde: bool = False
+    elements: npt.NDArray[np.float64],
+    retrograde: bool = False,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of classical elements."""
 
 def modified_equinoctial_to_classical_batch(
-    elements: npt.NDArray[np.float64], retrograde: bool = False
+    elements: npt.NDArray[np.float64],
+    retrograde: bool = False,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of modified equinoctial elements."""
 
@@ -844,6 +1173,7 @@ def cartesian_to_modified_equinoctial_batch(
     states: npt.NDArray[np.float64],
     mu: float,
     retrograde: bool = False,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of Cartesian states."""
 
@@ -851,8 +1181,25 @@ def modified_equinoctial_to_cartesian_batch(
     elements: npt.NDArray[np.float64],
     mu: float,
     retrograde: bool = False,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Batch-convert an N by 6 array of modified equinoctial elements."""
+
+def cartesian_to_modified_equinoctial_jacobian_batch(
+    states: npt.NDArray[np.float64],
+    mu: float,
+    retrograde: bool = False,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]:
+    """Batch-evaluate N Cartesian-to-equinoctial Jacobians."""
+
+def modified_equinoctial_to_cartesian_jacobian_batch(
+    elements: npt.NDArray[np.float64],
+    mu: float,
+    retrograde: bool = False,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]:
+    """Batch-evaluate N equinoctial-to-Cartesian Jacobians."""
 
 def propagate_lagrangian(
     state: Sequence[float], time: float, mu: float
@@ -959,24 +1306,115 @@ def state_transition_matrix_reynolds(
 ) -> list[list[float]]:
     """Return the row-major Reynolds state-transition matrix."""
 
+def propagate_kepler_dynamics_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_cr3bp_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_bcp_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def propagate_kepler_dynamics_with_stm_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
+
+def propagate_cr3bp_with_stm_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
+
+def propagate_bcp_with_stm_batch(
+    states: npt.NDArray[np.float64],
+    final_times: npt.NDArray[np.float64],
+    mu: float,
+    mu_sun: float,
+    rho_sun: float,
+    omega_sun: float,
+    initial_time: float = 0.0,
+    relative_tolerance: float = 1e-12,
+    absolute_tolerance: float = 1e-12,
+    maximum_step: float | None = None,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
+
 def propagate_lagrangian_batch(
     states: npt.NDArray[np.float64],
     times: npt.NDArray[np.float64],
     mu: float,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
-    """Propagate N states for N durations while releasing the GIL."""
+    """Propagate N states for N durations in input order."""
 
 def propagate_universal_batch(
     states: npt.NDArray[np.float64],
     times: npt.NDArray[np.float64],
     mu: float,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
-    """Universally propagate N states for N durations while releasing the GIL."""
+    """Universally propagate N states for N durations in input order."""
+
+def propagate_keplerian_batch(
+    states: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    mu: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]:
+    """Keplerian-propagate N states for N durations in input order."""
+
+def propagate_lagrangian_with_stm_batch(
+    states: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    mu: float,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Propagate N states and return N analytic state-transition matrices."""
 
 def propagate_lagrangian_grid(
     state: Sequence[float],
     time_grid: npt.NDArray[np.float64],
     mu: float,
+    workers: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Propagate one state over a time grid relative to its first entry."""
 
@@ -1052,3 +1490,101 @@ def mima2(
     mu: float,
 ) -> tuple[float, float]:
     """Return the STM-based maximum mass and acceleration estimate."""
+
+def hohmann_batch(
+    r1: npt.NDArray[np.float64],
+    r2: npt.NDArray[np.float64],
+    mu: float,
+    workers: int = 0,
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]: ...
+
+def bielliptic_batch(
+    r1: npt.NDArray[np.float64],
+    r2: npt.NDArray[np.float64],
+    rb: npt.NDArray[np.float64],
+    mu: float,
+    workers: int = 0,
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]: ...
+
+def alpha_to_direct_batch(
+    alphas: Sequence[Sequence[float]],
+    total_time: float,
+    workers: int = 0,
+) -> list[list[float]]: ...
+
+def direct_to_alpha_batch(
+    times: Sequence[Sequence[float]], workers: int = 0
+) -> list[tuple[list[float], float]]: ...
+
+def eta_to_direct_batch(
+    etas: Sequence[Sequence[float]],
+    maximum_time: float,
+    workers: int = 0,
+) -> list[list[float]]: ...
+
+def direct_to_eta_batch(
+    times: Sequence[Sequence[float]],
+    maximum_time: float,
+    workers: int = 0,
+) -> list[list[float]]: ...
+
+def flyby_constraints_batch(
+    incoming: npt.NDArray[np.float64],
+    outgoing: npt.NDArray[np.float64],
+    mu: float,
+    safe_radius: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def flyby_constraints_jacobian_batch(
+    incoming: npt.NDArray[np.float64],
+    outgoing: npt.NDArray[np.float64],
+    mu: float,
+    safe_radius: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def flyby_delta_v_batch(
+    incoming: npt.NDArray[np.float64],
+    outgoing: npt.NDArray[np.float64],
+    mu: float,
+    safe_radius: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def flyby_outgoing_velocity_batch(
+    incoming: npt.NDArray[np.float64],
+    planet_velocity: npt.NDArray[np.float64],
+    periapsis_radius: npt.NDArray[np.float64],
+    beta: npt.NDArray[np.float64],
+    mu: float,
+    workers: int = 0,
+) -> npt.NDArray[np.float64]: ...
+
+def mima_batch(
+    departure_delta_v: npt.NDArray[np.float64],
+    arrival_delta_v: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    maximum_thrust: float,
+    effective_exhaust_velocity: float,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
+
+def mima2_batch(
+    initial_states: npt.NDArray[np.float64],
+    departure_delta_v: npt.NDArray[np.float64],
+    arrival_delta_v: npt.NDArray[np.float64],
+    times: npt.NDArray[np.float64],
+    maximum_thrust: float,
+    effective_exhaust_velocity: float,
+    mu: float,
+    workers: int = 0,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...

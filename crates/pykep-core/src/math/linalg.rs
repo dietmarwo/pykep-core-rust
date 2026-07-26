@@ -105,6 +105,75 @@ pub fn skew(vector: &Vector3) -> Result<Matrix3> {
     ])
 }
 
+fn paired_batch<R>(
+    left: &[Vector3],
+    right: &[Vector3],
+    workers: usize,
+    operation: fn(&Vector3, &Vector3) -> Result<R>,
+) -> Result<Vec<R>>
+where
+    R: Send,
+{
+    if left.len() != right.len() {
+        return Err(PykepError::DimensionMismatch {
+            expected: left.len(),
+            actual: right.len(),
+        });
+    }
+    let inputs: Vec<_> = left.iter().zip(right).collect();
+    crate::batch::try_map(&inputs, workers, |(left, right)| operation(left, right))
+}
+
+/// Evaluates ordered three-vector dot products.
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first vector
+/// validation error in input order.
+pub fn dot_batch(left: &[Vector3], right: &[Vector3], workers: usize) -> Result<Vec<f64>> {
+    paired_batch(left, right, workers, dot)
+}
+
+/// Evaluates ordered three-vector norms.
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first vector validation error in
+/// input order.
+pub fn norm_batch(vectors: &[Vector3], workers: usize) -> Result<Vec<f64>> {
+    crate::batch::try_map(vectors, workers, norm)
+}
+
+/// Normalizes an ordered batch of three-vectors.
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first vector validation/geometry
+/// error in input order.
+pub fn normalize_batch(vectors: &[Vector3], workers: usize) -> Result<Vec<Vector3>> {
+    crate::batch::try_map(vectors, workers, normalize)
+}
+
+/// Evaluates ordered right-handed cross products.
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first vector
+/// validation error in input order.
+pub fn cross_batch(left: &[Vector3], right: &[Vector3], workers: usize) -> Result<Vec<Vector3>> {
+    paired_batch(left, right, workers, cross)
+}
+
+/// Builds an ordered batch of skew-symmetric cross-product matrices.
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first vector validation error in
+/// input order.
+pub fn skew_batch(vectors: &[Vector3], workers: usize) -> Result<Vec<Matrix3>> {
+    crate::batch::try_map(vectors, workers, skew)
+}
+
 /// Returns an `N × N` row-major identity matrix.
 #[must_use]
 pub fn identity<const N: usize>() -> [[f64; N]; N] {
@@ -220,5 +289,44 @@ mod tests {
             identity::<3>(),
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         );
+    }
+
+    #[test]
+    fn ordered_vector_batches_match_scalar_operations() {
+        let left = [[1.0, 2.0, 3.0], [-2.0, 0.5, 4.0]];
+        let right = [[4.0, -1.0, 0.5], [1.0, 3.0, -2.0]];
+        assert_eq!(
+            dot_batch(&left, &right, 2).unwrap(),
+            left.iter()
+                .zip(&right)
+                .map(|(left, right)| dot(left, right).unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            norm_batch(&left, 2).unwrap(),
+            left.iter()
+                .map(|value| norm(value).unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            normalize_batch(&left, 2).unwrap(),
+            left.iter()
+                .map(|value| normalize(value).unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            cross_batch(&left, &right, 2).unwrap(),
+            left.iter()
+                .zip(&right)
+                .map(|(left, right)| cross(left, right).unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            skew_batch(&left, 2).unwrap(),
+            left.iter()
+                .map(|value| skew(value).unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert!(dot_batch(&left, &right[..1], 2).is_err());
     }
 }

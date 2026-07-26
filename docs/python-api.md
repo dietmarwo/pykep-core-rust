@@ -16,6 +16,11 @@ batch = np.asarray([state, future], dtype=np.float64)
 times = np.asarray([60.0, -60.0], dtype=np.float64)
 propagated = pk.propagate_lagrangian_batch(batch, times, pk.MU_EARTH)
 assert propagated.shape == (2, 6)
+
+parallel = pk.propagate_lagrangian_batch(
+    batch, times, pk.MU_EARTH, workers=4
+)
+assert np.array_equal(parallel, propagated)
 ```
 
 ## Units, shapes, and defaults
@@ -30,6 +35,9 @@ assert propagated.shape == (2, 6)
   batches require two-dimensional `float64` arrays with shape `N × 6`;
   one-dimensional epoch/time batches require `float64` arrays. Strided and
   read-only arrays are accepted and outputs are newly owned.
+- Every parallel batch accepts `workers=0` for the shared pool, `workers=1`
+  for a serial native loop, or an exact positive worker count. Results and the
+  first reported error retain input order.
 - Jacobians are row-major, output-by-input. State-transition matrices are
   `6 × 6`. Sims–Flanagan and ZOH leg matrix shapes are documented with their
   transcription in the low-thrust guides.
@@ -48,9 +56,14 @@ buffer). Numerical failures derive from `PykepError`:
 
 Objects copy constructor inputs and can outlive those Python sequences.
 `Planet` and immutable leg objects can be reused from multiple Python threads.
-Batch conversion, anomaly, Stumpff, ephemeris, propagation, and leg workloads
-release the GIL while executing the native loop. Python wrappers only validate
-and convert data; all astrodynamics formulas live in `pykep-core`.
+Batch conversion, anomaly, Stumpff, ephemeris, mission, propagation, dynamics,
+and leg workloads release the GIL while executing the native loop. Python
+wrappers only validate and convert data; all astrodynamics formulas live in
+`pykep-core`.
+
+See [batch-processing.md](batch-processing.md) for the complete batch matrix,
+array shapes, worker-pool contract, SpOC 4 motivation, and guidance for
+avoiding nested parallelism.
 
 The complete callable surface and defaults are statically described by the
 shipped `py.typed` marker and `_pykep_rust.pyi`. See

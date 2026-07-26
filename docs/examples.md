@@ -41,12 +41,13 @@ import pykep_rust as pk
 
 states = np.tile([1.0, 0.0, 0.0, 0.0, 1.0, 0.0], (4096, 1))
 times = np.linspace(0.0, 1.0, len(states))
-result = pk.propagate_lagrangian_batch(states, times, 1.0)
+result = pk.propagate_lagrangian_batch(states, times, 1.0, workers=8)
 assert result.shape == (4096, 6)
 ```
 
 The Python package ships type information and accepts NumPy batch arrays only
-at `float64`; see [python-api.md](python-api.md).
+at `float64`; see [python-api.md](python-api.md) and
+[batch-processing.md](batch-processing.md).
 
 ## Runnable matrix
 

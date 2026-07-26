@@ -15,9 +15,131 @@ pub use stm::{
 };
 
 use crate::error::{ensure_finite, ensure_finite_output};
-use crate::{CartesianState, PykepError, Result};
+use crate::{CartesianState, Matrix6, PykepError, Result};
 
 const MAX_ITERATIONS: usize = 100;
+
+fn propagate_batch(
+    states: &[CartesianState],
+    times: &[f64],
+    mu: f64,
+    workers: usize,
+    operation: fn(&CartesianState, f64, f64) -> Result<CartesianState>,
+) -> Result<Vec<CartesianState>> {
+    if states.len() != times.len() {
+        return Err(PykepError::DimensionMismatch {
+            expected: states.len(),
+            actual: times.len(),
+        });
+    }
+    let inputs: Vec<_> = states.iter().zip(times.iter().copied()).collect();
+    crate::batch::try_map(&inputs, workers, |(state, time)| {
+        operation(state, *time, mu)
+    })
+}
+
+/// Propagates an ordered batch with Lagrange coefficients.
+///
+/// `states[i]` is propagated for `times[i]`. Zero workers uses the shared
+/// global pool, one executes serially, and larger values use exactly that many
+/// cached worker threads. Output order always matches input order.
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first
+/// propagation error in input order.
+pub fn propagate_lagrangian_batch(
+    states: &[CartesianState],
+    times: &[f64],
+    mu: f64,
+    workers: usize,
+) -> Result<Vec<CartesianState>> {
+    propagate_batch(states, times, mu, workers, propagate_lagrangian)
+}
+
+/// Propagates an ordered batch with universal variables.
+///
+/// Worker and ordering semantics match [`propagate_lagrangian_batch`].
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first
+/// propagation error in input order.
+pub fn propagate_universal_batch(
+    states: &[CartesianState],
+    times: &[f64],
+    mu: f64,
+    workers: usize,
+) -> Result<Vec<CartesianState>> {
+    propagate_batch(states, times, mu, workers, propagate_universal)
+}
+
+/// Propagates an ordered batch by advancing classical mean anomaly.
+///
+/// Worker and ordering semantics match [`propagate_lagrangian_batch`].
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first
+/// propagation error in input order.
+pub fn propagate_keplerian_batch(
+    states: &[CartesianState],
+    times: &[f64],
+    mu: f64,
+    workers: usize,
+) -> Result<Vec<CartesianState>> {
+    propagate_batch(states, times, mu, workers, propagate_keplerian)
+}
+
+/// Propagates an ordered batch and returns each analytic Lagrangian STM.
+///
+/// Worker and ordering semantics match [`propagate_lagrangian_batch`].
+///
+/// # Errors
+///
+/// Returns a dimension mismatch, invalid worker count, or the first
+/// propagation/STM error in input order.
+pub fn propagate_lagrangian_with_stm_batch(
+    states: &[CartesianState],
+    times: &[f64],
+    mu: f64,
+    workers: usize,
+) -> Result<Vec<(CartesianState, Matrix6)>> {
+    if states.len() != times.len() {
+        return Err(PykepError::DimensionMismatch {
+            expected: states.len(),
+            actual: times.len(),
+        });
+    }
+    let inputs: Vec<_> = states.iter().zip(times.iter().copied()).collect();
+    crate::batch::try_map(&inputs, workers, |(state, time)| {
+        propagate_lagrangian_with_stm(state, *time, mu)
+    })
+}
+
+/// Propagates one initial state over a time grid in parallel.
+///
+/// Durations remain relative to the first grid entry, exactly as in
+/// [`propagate_lagrangian_grid`]. Worker semantics match
+/// [`propagate_lagrangian_batch`].
+///
+/// # Errors
+///
+/// Returns an invalid worker count or the first propagation error in input
+/// order.
+pub fn propagate_lagrangian_grid_parallel(
+    state: &CartesianState,
+    time_grid: &[f64],
+    mu: f64,
+    workers: usize,
+) -> Result<Vec<CartesianState>> {
+    let Some(&origin) = time_grid.first() else {
+        return Ok(Vec::new());
+    };
+    crate::batch::try_map(time_grid, workers, |time| {
+        propagate_lagrangian(state, *time - origin, mu)
+    })
+}
 
 fn validate(state: &CartesianState, time: f64, mu: f64) -> Result<()> {
     for &value in state {
@@ -219,5 +341,50 @@ mod tests {
                 assert!(relative_error(composed[row][column], analytic[row][column]) < 2e-11);
             }
         }
+    }
+
+    #[test]
+    fn ordered_parallel_batches_match_every_scalar_two_body_path() {
+        let states = [
+            [1.2, 0.3, -0.4, 0.06, 0.43, -0.87],
+            [1.3, -0.2, 0.4, 0.1, 0.7, 0.2],
+        ];
+        let times = [0.2, -0.3];
+        for (batch, scalar) in [
+            (
+                propagate_lagrangian_batch
+                    as fn(&[CartesianState], &[f64], f64, usize) -> Result<Vec<CartesianState>>,
+                propagate_lagrangian as fn(&CartesianState, f64, f64) -> Result<CartesianState>,
+            ),
+            (propagate_universal_batch, propagate_universal),
+            (propagate_keplerian_batch, propagate_keplerian),
+        ] {
+            let expected = states
+                .iter()
+                .zip(times)
+                .map(|(state, time)| scalar(state, time, 1.24))
+                .collect::<Result<Vec<_>>>()
+                .unwrap();
+            assert_eq!(batch(&states, &times, 1.24, 2).unwrap(), expected);
+        }
+        let stms = propagate_lagrangian_with_stm_batch(&states, &times, 1.24, 2).unwrap();
+        for (index, value) in stms.iter().enumerate() {
+            assert_eq!(
+                *value,
+                propagate_lagrangian_with_stm(&states[index], times[index], 1.24).unwrap()
+            );
+        }
+        let grid = [10.0, 10.2, 10.4];
+        assert_eq!(
+            propagate_lagrangian_grid_parallel(&states[0], &grid, 1.24, 2).unwrap(),
+            propagate_lagrangian_grid(&states[0], &grid, 1.24).unwrap()
+        );
+        assert!(matches!(
+            propagate_lagrangian_batch(&states, &[0.2], 1.24, 2),
+            Err(PykepError::DimensionMismatch {
+                expected: 2,
+                actual: 1
+            })
+        ));
     }
 }
