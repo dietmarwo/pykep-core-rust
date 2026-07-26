@@ -134,10 +134,27 @@ jobs:
   fuzz:
     name: Bounded fuzz smoke
     runs-on: ubuntu-latest
+    env:
+      CARGO_FUZZ_VERSION: "0.13.2"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - uses: taiki-e/install-action@cargo-fuzz
+      - name: Cache cargo-fuzz
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.tool_cache }}/cargo-fuzz
+          key: cargo-fuzz-bin-${{ env.CARGO_FUZZ_VERSION }}
+      - name: Add cargo-fuzz to PATH
+        run: echo "${{ runner.tool_cache }}/cargo-fuzz/bin" >> "$GITHUB_PATH"
+      - name: Install pinned cargo-fuzz
+        run: >-
+          cargo install
+          --root "${{ runner.tool_cache }}/cargo-fuzz"
+          --version "$CARGO_FUZZ_VERSION"
+          cargo-fuzz
+          --locked
+      - name: Verify cargo-fuzz installation
+        run: cargo fuzz --version
       - run: cargo fuzz run epoch_parser -- -max_total_time=5
       - run: cargo fuzz run element_conversions -- -max_total_time=5
       - run: cargo fuzz run lambert_inputs -- -max_total_time=5
