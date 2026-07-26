@@ -1,0 +1,15 @@
+[package]
+name = "pykep-lambert-optimization-benchmark"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "KTTSP Lambert-leg optimization benchmark using pykep-core and fcmaes-core."
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+fcmaes-core = "=0.1.3"
+pykep-core = { workspace = true }

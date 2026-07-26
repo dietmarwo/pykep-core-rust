@@ -114,6 +114,7 @@ cargo bench -p pykep-core --bench integration
 cargo bench -p pykep-core --bench dynamics
 cargo bench -p pykep-core --bench legs
 python python/benchmarks/wrapper_overhead.py
+cargo run --release -p pykep-lambert-optimization-benchmark
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -139,6 +140,14 @@ state/costate propagation.
 Leg benchmarks separate Sims–Flanagan mismatch and analytic-gradient
 evaluation and generic ZOH mismatch and sensitivity evaluation for the same
 configurations used by their C++ harnesses.
+
+The standalone Lambert optimization benchmark ports the fixed `easy.kttsp`
+leg from `pykep-lambert`. It measures deterministic objective throughput and
+then applies the native `fcmaes-core` CMA-ES and BiteOpt implementations to
+wait time and time of flight. Its source revision, physical constants,
+decision bounds, penalty, optimizer budget, and seed are printed with every
+run; see `tools/lambert-optimization-benchmark/README.md` for the complete
+protocol.
 
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization

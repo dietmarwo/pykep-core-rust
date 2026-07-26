@@ -25,6 +25,15 @@ Golden numerical data committed under
 development-only tools kept outside this standalone public tree. The released
 Rust crates do not link to or call the C++ implementation.
 
+The standalone Lambert optimization benchmark under
+`tools/lambert-optimization-benchmark/` is adapted from
+<https://github.com/dietmarwo/pykep-lambert> commit
+`e1e4bb36a9e26470e0f8268180cd3c3c77a48443`. It embeds the first two orbital
+rows from that repository's `problems/easy.kttsp` workload and records its
+objective conventions in the tool README. The benchmark uses the released
+Rust implementations in `pykep-core` and `fcmaes-core`; it does not execute
+the source Python or Numba code.
+
 ## Names and ownership
 
 The independent repository is

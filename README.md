@@ -28,8 +28,9 @@ pykep parity from the current API.
 - `python/pykep_rust`: typed Python package and extension stub.
 - `examples`: runnable deterministic Rust examples.
 - `docs`: Rust-specific design and usage documentation.
-- `tools/phase10-candidates`: reproducible standalone solver decision
-  benchmark.
+- `tools/release-benchmark`: fixed-protocol release regression benchmark.
+- `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
+  `fcmaes-core` optimization benchmark.
 
 The pinned upstream source and adaptation policy are recorded in
 [UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in

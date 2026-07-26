@@ -4,6 +4,7 @@ members = [
     "crates/pykep-core",
     "crates/pykep-py",
     "examples",
+    "tools/lambert-optimization-benchmark",
     "tools/release-benchmark",
 ]
 exclude = ["fuzz"]
