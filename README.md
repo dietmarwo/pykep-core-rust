@@ -34,6 +34,16 @@ pykep parity from the current API.
 - `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
   `fcmaes-core` optimization benchmark.
 
+## End-to-end mission tutorial
+
+The external
+[GTOC1 “Save the Earth” Rust tutorial](https://github.com/dietmarwo/fcmaes-rust/tree/main/tutorials/gtoc1)
+combines `pykep-core` ephemerides, Kepler propagation, multi-revolution
+Lambert arcs, gravity assists, and Sims–Flanagan low-thrust legs with
+`fcmaes-core` optimization. It develops a complete fixed-sequence trajectory,
+then explains multi-fidelity planet-order search, numerical validation, and
+the ephemeris limitations of the resulting model score.
+
 The pinned upstream source and adaptation policy are recorded in
 [UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in
 [docs/source-map.md](docs/source-map.md), and the evidence policy is in

@@ -67,6 +67,17 @@ Every Rust binary is compiled by the workspace test and clippy gates. Every
 Python script is executed by `python/tests/test_examples.py`, including from
 the clean-wheel CI matrix.
 
+## Complete trajectory-optimization tutorial
+
+For an end-to-end application, see the
+[GTOC1 “Save the Earth” Rust tutorial](https://github.com/dietmarwo/fcmaes-rust/tree/main/tutorials/gtoc1).
+It combines `pykep-core` ephemerides, propagation, multi-revolution Lambert
+solutions, gravity assists, and Sims–Flanagan legs with `fcmaes-core`
+optimization. The tutorial covers a reproducible fixed planet sequence,
+multi-fidelity sequence discovery, split-brain planet-order search, strict
+validation, and the distinction between a VSOP2013 model score and an official
+GTOC1 result.
+
 ## Documentation map
 
 - [conventions.md](conventions.md) defines units, epochs, frames, layout, and
