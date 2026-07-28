@@ -211,10 +211,41 @@ There was no maintained native heyoka Rust crate when this architecture was
 chosen. Calling the original implementation would therefore require a C++
 wrapper and a substantial native dependency stack.
 
+### Could Rust reproduce heyoka's LLVM approach?
+
+Yes, technically. A Rust implementation could construct the symbolic
+expression graph, decompose and simplify it, emit LLVM intermediate
+representation, and invoke LLVM's ORC JIT through the stable C API. Rust
+bindings such as `llvm-sys` or a higher-level wrapper can expose those entry
+points. The generated propagation kernel could then have the same essential
+specialization opportunity as heyoka's generated C++ path.
+
+That would be a Rust-hosted LLVM JIT, not a pure-Rust deployment. Users and
+wheel builders would still need a compatible native LLVM library. Reaching
+heyoka-like capability would also require much more than emitting arithmetic:
+
+- a symbolic expression system with canonicalization and common-subexpression
+  elimination;
+- Taylor decomposition and efficient coefficient code generation;
+- LLVM IR generation, optimization, linking, and ORC JIT lifecycle handling;
+- code and cache specialization by model, numeric type, tolerance, and target
+  CPU;
+- adaptive-order and step-size control plus dense output;
+- state, parameter, variational, event, batch, and SIMD interfaces;
+- thread-safe caches, diagnostics, serialization, and cross-platform tests.
+
+Implementing that stack is possible, but it would be a substantially larger
+project than the fixed-system Taylor backend in `pykep-core`. Binding the
+existing C++ heyoka library would reduce algorithm-development work but retain
+the C++ ABI and native packaging costs.
+
 The intended long-term performance answer is ahead-of-time generation of
 straight-line Rust coefficient kernels. Such kernels would let rustc/LLVM see
 the complete fixed expression graph, removing the runtime tape dispatch while
-preserving the pure-Rust deployment model.
+preserving the pure-Rust deployment model. Because `pykep-core` has eleven
+known systems rather than arbitrary user-defined ODEs, this narrower route
+targets the current performance gap without recreating heyoka's general JIT
+infrastructure.
 
 ## Decision guide
 
@@ -267,4 +298,3 @@ Before choosing a stack for a production campaign, benchmark the exact
 objective with the same trajectory representation, tolerance, segment count,
 evaluation budget, worker count, CPU affinity, and validation criteria. Report
 JIT setup and warmed throughput separately.
-
