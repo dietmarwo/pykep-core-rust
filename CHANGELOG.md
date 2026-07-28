@@ -6,11 +6,16 @@ once the public API is ready to stabilize.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-28
+
 ### Added
 
 - Added a contributor guide covering the complete evaluated-dynamics,
   Jacobian, Taylor, ZOH, batch, Python, validation, benchmark, documentation,
   and quality-gate workflow for a new ODE system.
+- Added method-selecting ZOH-leg mismatch and state-history APIs. Existing
+  methods retain their DOP853 behavior, while built-in legs can explicitly
+  select the accelerated Taylor backend.
 
 ### Changed
 

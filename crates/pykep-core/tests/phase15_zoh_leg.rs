@@ -8,7 +8,7 @@ use pykep_core::dynamics::zoh::{
     ZeroOrderHoldModel, ZohCr3bpDynamics, ZohEquinoctialDynamics, ZohKeplerDynamics,
     ZohSolarSailDynamics,
 };
-use pykep_core::integration::IntegratorOptions;
+use pykep_core::integration::{IntegrationMethod, IntegratorOptions};
 use pykep_core::leg::{ZohKeplerLeg, ZohLeg, ZohLegMismatchJacobian, evaluate_zoh_mismatch_batch};
 use serde_json::Value;
 
@@ -340,6 +340,41 @@ fn histories_cuts_and_batch_evaluation_preserve_order() {
     assert_eq!(batch[0], zero.mismatch_constraints().unwrap());
     assert_eq!(batch[1], base.mismatch_constraints().unwrap());
     assert_eq!(batch[2], one.mismatch_constraints().unwrap());
+}
+
+#[test]
+fn selected_taylor_zoh_leg_matches_dop853_constraints_and_history() {
+    let base = kepler_case();
+    let dop853 = base
+        .mismatch_constraints_with_method(IntegrationMethod::Dop853)
+        .unwrap();
+    let taylor = base
+        .mismatch_constraints_with_method(IntegrationMethod::Taylor)
+        .unwrap();
+    assert_eq!(dop853, base.mismatch_constraints().unwrap());
+    assert_scaled(&taylor, &dop853, 2e-10);
+
+    let taylor_history = base
+        .state_history_with_method(5, IntegrationMethod::Taylor)
+        .unwrap();
+    assert_eq!(taylor_history.forward.len(), 1);
+    assert_eq!(taylor_history.backward.len(), 2);
+    assert!(
+        taylor_history
+            .forward
+            .iter()
+            .chain(&taylor_history.backward)
+            .all(|segment| segment.len() == 5)
+    );
+    let from_history: [f64; 7] = core::array::from_fn(|row| {
+        taylor_history.forward.last().unwrap().last().unwrap()[row]
+            - taylor_history.backward.last().unwrap().last().unwrap()[row]
+    });
+    assert_scaled(&from_history, &taylor, 2e-12);
+    assert!(
+        base.state_history_with_method(1, IntegrationMethod::Taylor)
+            .is_err()
+    );
 }
 
 #[test]

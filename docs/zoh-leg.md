@@ -40,6 +40,12 @@ The leg is immutable after construction. It rejects invalid endpoint states,
 model constants, dimensions, grids, cuts, tolerances, maximum steps, and
 maximum-step magnitudes before evaluation.
 
+`mismatch_constraints()` preserves the established DOP853 propagation.
+Built-in models additionally provide
+`mismatch_constraints_with_method(IntegrationMethod)`, so repeated
+derivative-free objective evaluations can select the accelerated Taylor
+backend explicitly.
+
 ## Sensitivity layout
 
 `mismatch_jacobian()` returns four output-by-input matrices:
@@ -72,13 +78,15 @@ an `IntegrationFailure` containing the direction, chronological segment
 index, and attempted time interval.
 
 `state_history(samples_per_segment)` uses one DOP853 dense solve per segment
-for uniformly spaced states including both endpoints. The selected backend's
-decreasing-time dense interpolation can panic on a rounded step boundary, so
-backward segments are evaluated through the equivalent increasing coordinate
-`tau = segment_start - time` rather than handed to that backend path. At least
-two samples are required. Backward histories list the final segment first,
-matching propagation order. `evaluate_zoh_mismatch_batch()` evaluates
-validated Rust legs in input order.
+for uniformly spaced states including both endpoints.
+`state_history_with_method(samples_per_segment, IntegrationMethod)` selects
+DOP853 or Taylor for built-in models. DOP853 backward segments are evaluated
+through the equivalent increasing coordinate `tau = segment_start - time` to
+avoid a decreasing-time dense-output boundary issue in the numerical backend;
+Taylor supports the decreasing grid directly. At least two samples are
+required. Backward histories list the final segment first, matching
+propagation order. `evaluate_zoh_mismatch_batch()` evaluates validated Rust
+legs in input order.
 
 ## Python
 

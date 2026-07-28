@@ -15,7 +15,8 @@ use crate::dynamics::zoh::{
 };
 use crate::error::ensure_finite;
 use crate::integration::{
-    Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions, SensitivityProblem,
+    AdaptiveIntegrator, Dop853, DynamicsModel, InitialValueProblem, IntegrationMethod,
+    IntegratorOptions, SensitivityProblem, TaylorDynamicsModel,
 };
 use crate::{PykepError, Result};
 
@@ -250,6 +251,26 @@ where
         Ok(core::array::from_fn(|row| forward[row] - backward[row]))
     }
 
+    /// Evaluates `forward_state - backward_state` with the selected backend.
+    ///
+    /// This method is available for built-in ZOH models supported by the
+    /// adaptive Taylor backend. [`Self::mismatch_constraints`] retains the
+    /// established DOP853 default.
+    ///
+    /// # Errors
+    ///
+    /// Returns an integration error containing direction, segment index, and
+    /// segment time interval.
+    #[allow(private_bounds)]
+    pub fn mismatch_constraints_with_method(&self, method: IntegrationMethod) -> Result<[f64; N]>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        let forward = self.propagate_nominal_half_with_method(true, method)?;
+        let backward = self.propagate_nominal_half_with_method(false, method)?;
+        Ok(core::array::from_fn(|row| forward[row] - backward[row]))
+    }
+
     /// Evaluates all four first-order mismatch derivative groups.
     ///
     /// The matrices use output-by-input rows and chronological control
@@ -374,6 +395,37 @@ where
         })
     }
 
+    /// Samples every propagated segment with the selected backend.
+    ///
+    /// This method is available for built-in ZOH models supported by the
+    /// adaptive Taylor backend. [`Self::state_history`] retains the
+    /// established DOP853 default.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when fewer than two samples are requested or when a
+    /// segment cannot be integrated.
+    #[allow(private_bounds)]
+    pub fn state_history_with_method(
+        &self,
+        samples_per_segment: usize,
+        method: IntegrationMethod,
+    ) -> Result<ZohLegHistory<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        if samples_per_segment < 2 {
+            return Err(PykepError::InvalidInput {
+                parameter: "samples_per_segment",
+                reason: "must be at least two".into(),
+            });
+        }
+        Ok(ZohLegHistory {
+            forward: self.sample_half_with_method(true, samples_per_segment, method)?,
+            backward: self.sample_half_with_method(false, samples_per_segment, method)?,
+        })
+    }
+
     fn propagate_nominal_half(&self, forward: bool) -> Result<[f64; N]> {
         let mut state = if forward {
             self.initial_state
@@ -392,9 +444,62 @@ where
         Ok(state)
     }
 
+    #[allow(private_bounds)]
+    fn propagate_nominal_half_with_method(
+        &self,
+        forward: bool,
+        method: IntegrationMethod,
+    ) -> Result<[f64; N]>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        let mut state = if forward {
+            self.initial_state
+        } else {
+            self.final_state
+        };
+        if forward {
+            for index in 0..self.forward_segments {
+                state = self.propagate_segment_with_method(index, state, true, method)?;
+            }
+        } else {
+            for index in (self.forward_segments..self.segment_count()).rev() {
+                state = self.propagate_segment_with_method(index, state, false, method)?;
+            }
+        }
+        Ok(state)
+    }
+
     fn propagate_segment(&self, index: usize, state: [f64; N], forward: bool) -> Result<[f64; N]> {
         let (start, end) = self.segment_interval(index, forward);
         Dop853
+            .propagate(
+                &self.model,
+                InitialValueProblem::new(
+                    start,
+                    state,
+                    end,
+                    M::parameters(self.schedule.controls()[index], self.constants),
+                ),
+                self.options,
+            )
+            .map(|result| result.state)
+            .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))
+    }
+
+    #[allow(private_bounds)]
+    fn propagate_segment_with_method(
+        &self,
+        index: usize,
+        state: [f64; N],
+        forward: bool,
+        method: IntegrationMethod,
+    ) -> Result<[f64; N]>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        let (start, end) = self.segment_interval(index, forward);
+        AdaptiveIntegrator::new(method)
             .propagate(
                 &self.model,
                 InitialValueProblem::new(
@@ -530,6 +635,57 @@ where
                         reason: "dense propagation returned no samples".into(),
                     },
                 )
+            })?;
+            result.push(sample_states);
+        }
+        Ok(result)
+    }
+
+    #[allow(private_bounds)]
+    fn sample_half_with_method(
+        &self,
+        forward: bool,
+        samples: usize,
+        method: IntegrationMethod,
+    ) -> Result<Vec<Vec<[f64; N]>>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        if method == IntegrationMethod::Dop853 {
+            return self.sample_half(forward, samples);
+        }
+        let mut state = if forward {
+            self.initial_state
+        } else {
+            self.final_state
+        };
+        let indices: Box<dyn Iterator<Item = usize>> = if forward {
+            Box::new(0..self.forward_segments)
+        } else {
+            Box::new((self.forward_segments..self.segment_count()).rev())
+        };
+        let integrator = AdaptiveIntegrator::new(method);
+        let mut result = Vec::new();
+        for index in indices {
+            let (start, end) = self.segment_interval(index, forward);
+            let times = (0..samples)
+                .map(|sample| {
+                    start + (end - start) * sample as f64 / (samples.saturating_sub(1)) as f64
+                })
+                .collect::<Vec<_>>();
+            let parameters = M::parameters(self.schedule.controls()[index], self.constants);
+            let sample_states = integrator
+                .propagate_dense(
+                    &self.model,
+                    InitialValueProblem::new(start, state, end, parameters),
+                    &times,
+                    self.options,
+                )
+                .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))?
+                .states;
+            state = *sample_states.last().ok_or(PykepError::IntegrationFailure {
+                model: M::NAME,
+                reason: "backend returned no dense ZOH samples".into(),
             })?;
             result.push(sample_states);
         }
