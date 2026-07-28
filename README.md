@@ -14,6 +14,9 @@ PyO3.
 The [narrative documentation](https://dietmarwo.github.io/pykep-core-rust/)
 is configured to publish from `main`. crates.io releases generate the Rust API
 reference on [docs.rs](https://docs.rs/pykep-core).
+For a measurement-backed choice between the original Python/C++ fcmaes/pykep
+stack and the native Rust crates, see
+[PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md).
 
 The numerical foundations, epochs, anomalies, element conversions, two-body
 propagation, state-transition matrices, Lambert solutions, impulsive
@@ -39,6 +42,8 @@ pykep parity from the current API.
 - `python/pykep_rust`: typed Python package and extension stub.
 - `examples`: runnable deterministic Rust examples.
 - `docs`: Rust-specific design and usage documentation.
+- `PERFORMANCE_GUIDE.md`: warmed-kernel measurements, pure-Rust rationale,
+  and original-versus-Rust stack selection guidance.
 - `ai-context.md`: operational model-selection, convention, implementation,
   and validation guidance for AI-assisted user problems.
 - `tools/release-benchmark`: fixed-protocol release regression benchmark.

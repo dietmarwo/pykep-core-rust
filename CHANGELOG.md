@@ -6,6 +6,12 @@ once the public API is ready to stabilize.
 
 ## [Unreleased]
 
+### Added
+
+- Added a measurement-backed guide for choosing between the original
+  Python/C++ fcmaes/pykep stack and the native Rust crates, including warmed
+  Taylor, low-thrust, analytical-kernel, and JIT lifecycle results.
+
 ## [0.1.4] - 2026-07-28
 
 ### Added
