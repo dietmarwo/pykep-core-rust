@@ -5,7 +5,7 @@
 
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
-pub(crate) const MAX_ORDER: usize = 24;
+use super::MAX_ORDER;
 
 /// Coefficients of `sum(c[k] * t^k, k=0..order)`.
 #[derive(Clone, Copy, Debug, PartialEq)]

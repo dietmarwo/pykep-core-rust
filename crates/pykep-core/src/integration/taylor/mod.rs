@@ -3,8 +3,10 @@
 
 //! Internal implementation of adaptive Taylor integration.
 
+#[cfg(test)]
 mod series;
 mod systems;
+mod tape;
 
 use crate::integration::{
     DenseTrajectory, DynamicsModel, InitialValueProblem, IntegrationStats, IntegratorOptions,
@@ -13,8 +15,7 @@ use crate::integration::{
 };
 use crate::{PykepError, Result};
 
-use series::MAX_ORDER;
-
+const MAX_ORDER: usize = 24;
 const SAFETY_FACTOR: f64 = 0.75;
 const MIN_ORDER: usize = 8;
 

@@ -26,6 +26,7 @@
 - [Performance](performance.md)
 - [Stabilization evidence](stabilization.md)
 - [Development](development.md)
+- [Adding an ODE system](add-ode-system.md)
 
 # Architecture decisions
 

@@ -128,6 +128,37 @@ cargo run --release -p pykep-taylor-benchmark \
   > docs/data/taylor-kepler-benchmark.csv
 ```
 
+## Incremental coefficient evaluators
+
+All eleven built-in models advance only the next required Taylor coefficient.
+Kepler and ZOH Kepler use compact hand-written recurrences. The other nine
+models lazily build immutable scalar-expression tapes, eliminate structural
+common subexpressions, and then reuse those tapes for every propagation.
+Trigonometric, exponential, explicit-time, and real-power nodes all have
+incremental coefficient recurrences.
+
+The table records the eight final migrations against the previous repeated
+full-series evaluator at commit `c9ecd17`. Each row is an end-to-end
+propagation at `1e-12`, pinned to one core, with 1,000 iterations per sample
+and the median of seven warmed samples:
+
+| model | previous | incremental | speed-up |
+|---|---:|---:|---:|
+| CR3BP | 158.102 µs | 21.515 µs | 7.35× |
+| bicircular problem | 104.921 µs | 16.257 µs | 6.45× |
+| ZOH CR3BP | 51.266 µs | 6.791 µs | 7.55× |
+| ZOH equinoctial | 49.683 µs | 6.979 µs | 7.12× |
+| ZOH solar sail | 91.894 µs | 12.876 µs | 7.14× |
+| Cartesian time-optimal | 124.124 µs | 4.285 µs | 28.97× |
+| equinoctial mass-optimal | 7.696 ms | 377.991 µs | 20.36× |
+| equinoctial time-optimal | 7.797 ms | 333.640 µs | 23.37× |
+
+These development-host measurements establish that every migration cleared
+the significance gate; they are not portable latency guarantees. Matching
+final-state checksums and the validation layers below guard the optimization.
+Criterion entries under `taylor/*` keep all eight paths visible in routine
+performance runs.
+
 ## Sensitivities and validation boundaries
 
 `Taylor::propagate_with_sensitivities()` currently uses centered differences
@@ -161,6 +192,16 @@ JIT would add compilation latency and a large dependency surface without
 changing the set of systems this crate needs. Keeping the series engine
 private also avoids publishing an extension trait before it has a real
 external consumer.
+
+The four Pontryagin kernels use a smaller form of generation without LLVM.
+During lazy tape construction, the scalar Hamiltonian is differentiated in
+reverse graph order to generate the seven analytic costate expressions.
+Direction and throttle nodes are explicit stop-gradients, preserving the
+Pontryagin envelope convention used by the evaluated equations. For example,
+structural common-subexpression elimination reduces each Cartesian
+mass-optimal graph from 425–426 forward-dual operations to 153 operations.
+Runtime integration only evaluates immutable coefficient graphs; it does not
+repeat symbolic differentiation.
 
 If another project later needs the arithmetic and the internal model contract
 survives unchanged, the module can be extracted into a workspace crate. That

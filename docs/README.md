@@ -26,7 +26,10 @@ Python interface:
   [validation.md](validation.md): limitations, provenance, and validation
   evidence;
 - [development.md](development.md): contributor commands and repository
-  policy.
+  policy;
+- [add-ode-system.md](add-ode-system.md): complete implementation, Taylor,
+  test, benchmark, Python, and documentation checklist for a new dynamics
+  model.
 
 Documentation is updated only for implemented behavior. Explicitly deferred or
 unavailable functionality is labelled as such in the migration and status

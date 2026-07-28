@@ -71,3 +71,6 @@ clean-artifact consumption are documented in `RELEASE.md`.
 Build state belongs in `target/` or `.venv/` and is ignored. Development-only
 C++ oracle tools and internal planning notes are not part of this standalone
 repository.
+
+For the model contract and the complete definition of done for a new
+dynamics family, see [Adding an ODE system](add-ode-system.md).

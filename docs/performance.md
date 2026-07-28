@@ -64,6 +64,11 @@ state errors throughout. The interpretation is deliberately narrow: Taylor
 is a high-accuracy option, not a low-accuracy replacement. See
 [High-accuracy Taylor integration](taylor-integration.md) and the committed
 CSV for the 100- and 1,000-revolution rows.
+All eleven built-in Taylor models now use incremental coefficient evaluators.
+In the representative eight-model migration benchmark, replacing repeated
+full-series evaluation reduced warmed end-to-end propagation time by 6.45×
+to 28.97×. The per-model timings, protocol, and validation boundaries are in
+[High-accuracy Taylor integration](taylor-integration.md).
 The Phase 11 evaluated-model orientation measured Kepler, CR3BP, and BCP
 right-hand sides at 10.828 ns, 32.833 ns, and 63.386 ns. A representative
 CR3BP propagation measured 7.808 µs and its state-plus-STM propagation
