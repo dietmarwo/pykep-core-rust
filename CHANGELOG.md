@@ -6,6 +6,27 @@ once the public API is ready to stabilize.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-07-28
+
+### Added
+
+- Added a pure-Rust adaptive Taylor-series backend for all eleven built-in
+  dynamics types, with analytic, DOP853, upstream-fixture, and heyoka 7.10.1
+  cross-validation plus reproducible matched-accuracy benchmarks.
+- Added `Taylor`, `IntegrationMethod`, `AdaptiveIntegrator`, and explicit
+  method-selecting propagation APIs for the built-in dynamics and ZOH
+  schedules.
+
+### Changed
+
+- Changed `AdaptiveIntegrator::default()` and nominal
+  `KeplerDynamics`/`Cr3bpDynamics`/`BcpDynamics` propagation to Taylor. This
+  aligns the TA-derived Rust models with original pykep's heyoka
+  Taylor-adaptive families. Direct `Dop853` calls remain available for
+  arbitrary user dynamics and events; STM and ZOH sensitivity convenience
+  methods retain DOP853's direct variational propagation until native Taylor
+  variational recurrences are implemented.
+
 ## [0.1.2] - 2026-07-26
 
 ### Added

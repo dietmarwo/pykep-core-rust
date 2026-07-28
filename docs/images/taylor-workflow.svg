@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="310" viewBox="0 0 960 310" role="img" aria-labelledby="title desc">
+  <title id="title">Taylor integration workflow</title>
+  <desc id="desc">A built-in pykep dynamics model produces Taylor coefficients. A tolerance-scaled controller selects a step, Horner evaluation advances the state, and validation either accepts the state or reports an error.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#35556f"/>
+    </marker>
+    <style>
+      .box { fill:#f7fafc; stroke:#35556f; stroke-width:2; rx:12 }
+      .accent { fill:#e7f5ef; stroke:#18795b; stroke-width:2; rx:12 }
+      .warn { fill:#fff4dc; stroke:#a76200; stroke-width:2; rx:12 }
+      .label { font-family:sans-serif; font-size:17px; font-weight:600; fill:#172b3a; text-anchor:middle }
+      .small { font-family:sans-serif; font-size:14px; fill:#425b6b; text-anchor:middle }
+      .line { stroke:#35556f; stroke-width:2; fill:none; marker-end:url(#arrow) }
+    </style>
+  </defs>
+  <rect width="960" height="310" fill="white"/>
+  <rect class="box" x="25" y="80" width="175" height="105"/>
+  <text class="label" x="112" y="113">Built-in model</text>
+  <text class="small" x="112" y="141">state + parameters</text>
+  <text class="small" x="112" y="164">validated domain</text>
+  <path class="line" d="M200 132 H245"/>
+  <rect class="accent" x="245" y="65" width="200" height="135"/>
+  <text class="label" x="345" y="102">Series recurrence</text>
+  <text class="small" x="345" y="130">orders 8…24</text>
+  <text class="small" x="345" y="153">fixed arrays</text>
+  <text class="small" x="345" y="176">no JIT / no allocation</text>
+  <path class="line" d="M445 132 H490"/>
+  <rect class="box" x="490" y="65" width="200" height="135"/>
+  <text class="label" x="590" y="102">Step controller</text>
+  <text class="small" x="590" y="130">atol + rtol scaling</text>
+  <text class="small" x="590" y="153">last two coefficients</text>
+  <text class="small" x="590" y="176">caps + final clipping</text>
+  <path class="line" d="M690 132 H735"/>
+  <rect class="accent" x="735" y="80" width="200" height="105"/>
+  <text class="label" x="835" y="113">Horner advance</text>
+  <text class="small" x="835" y="141">finite-state check</text>
+  <text class="small" x="835" y="164">model revalidation</text>
+  <path class="line" d="M835 185 V250 H590 V204"/>
+  <text class="small" x="713" y="273">repeat until exact final time</text>
+  <rect class="warn" x="25" y="225" width="255" height="55"/>
+  <text class="small" x="152" y="249">singularity / underflow / step limit</text>
+  <text class="small" x="152" y="269">→ typed PykepError</text>
+  <path class="line" d="M112 185 V225"/>
+</svg>

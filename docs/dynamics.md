@@ -21,11 +21,15 @@ defaults.
 
 ## Evaluation and propagation
 
-Each model exposes `evaluate`, `propagate`, and `propagate_with_stm`. The
-propagators use the Phase 10 DOP853 facade. State-transition matrices are
-row-major, with output state components in rows and initial state components
-in columns. Analytic state and parameter Jacobians implement the generic
-sensitivity contract.
+Each model exposes `evaluate`, `propagate`, and `propagate_with_stm`. Nominal
+`propagate` uses the fixed-system Taylor backend, matching upstream pykep's
+`ta` families; `propagate_with_method` can select DOP853 explicitly.
+State-transition matrices are row-major, with output state components in rows
+and initial state components in columns. `propagate_with_stm` retains the
+generic DOP853 direct-variational sensitivity contract; Taylor sensitivities
+currently use centered complete propagations and remain available through
+`propagate_with_stm_method`. See
+[High-accuracy Taylor integration](taylor-integration.md).
 
 For comparisons with the pinned C++ Taylor-adaptive implementation, the test
 profile uses relative and absolute tolerances of `2e-13` and a maximum step

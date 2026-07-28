@@ -5,8 +5,10 @@
 //!
 //! This module deliberately exposes pykep-owned model and result types rather
 //! than the implementation types of the selected solver crate. The numerical
-//! backend is DOP853: an explicit Runge-Kutta method of order 8 with embedded
-//! error estimates and seventh-order dense output.
+//! general-purpose backend is DOP853: an explicit Runge-Kutta method of order
+//! 8 with embedded error estimates and seventh-order dense output. The
+//! default for built-in pykep dynamics is adaptive Taylor-series propagation,
+//! matching the upstream Taylor-adaptive model families.
 //!
 //! ```
 //! use pykep_core::integration::{
@@ -37,6 +39,9 @@
 //! assert!((result.state[0] - 2.0).abs() < 1e-12);
 //! # Ok::<(), pykep_core::PykepError>(())
 //! ```
+
+#[path = "integration/taylor/mod.rs"]
+mod taylor;
 
 use core::cell::RefCell;
 
@@ -86,6 +91,18 @@ pub trait DynamicsModel<const N: usize, const P: usize> {
         parameters: &[f64; P],
         derivative: &mut [f64; N],
     ) -> Result<()>;
+}
+
+/// A built-in pykep model supported by the adaptive Taylor backend.
+///
+/// This is a sealed marker implemented for the eleven fixed dynamics types.
+/// External models can implement [`DynamicsModel`] and use [`Dop853`], but
+/// the coefficient-generation contract intentionally remains private until a
+/// real third-party use case establishes a stable interface.
+#[allow(private_bounds)]
+pub trait TaylorDynamicsModel<const N: usize, const P: usize>:
+    DynamicsModel<N, P> + taylor::TaylorCoefficientModel<N, P>
+{
 }
 
 /// A dynamics model that provides the Jacobians required by sensitivities.
@@ -240,7 +257,8 @@ pub struct SensitivityProblem<const N: usize, const P: usize, const W: usize> {
 /// Work counters reported by a completed propagation.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct IntegrationStats {
-    /// Right-hand-side evaluations.
+    /// Backend work units: RHS evaluations for DOP853 and coefficient sweeps
+    /// for Taylor.
     pub rhs_evaluations: usize,
     /// Accepted integration steps.
     pub accepted_steps: usize,
@@ -558,6 +576,179 @@ impl Dop853 {
             sensitivities: final_state.sensitivities,
             stats: stats(&solution),
         })
+    }
+}
+
+/// Numerical backend selected by [`AdaptiveIntegrator`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum IntegrationMethod {
+    /// General-purpose eighth-order Dormand–Prince integration.
+    Dop853,
+    /// Adaptive Taylor-series integration for built-in pykep dynamics.
+    #[default]
+    Taylor,
+}
+
+/// Runtime-selectable integrator for the built-in pykep dynamics models.
+///
+/// Taylor is the default to match upstream pykep's Taylor-adaptive dynamics
+/// families. Direct [`Dop853`] calls remain explicit and available for
+/// arbitrary user models and event location.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AdaptiveIntegrator {
+    method: IntegrationMethod,
+}
+
+#[allow(private_bounds)]
+impl AdaptiveIntegrator {
+    /// Creates a facade for the requested backend.
+    pub const fn new(method: IntegrationMethod) -> Self {
+        Self { method }
+    }
+
+    /// Returns the selected backend.
+    pub const fn method(self) -> IntegrationMethod {
+        self.method
+    }
+
+    /// Propagates a built-in pykep dynamics model.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error under the selected backend's documented conditions.
+    pub fn propagate<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        options: IntegratorOptions,
+    ) -> Result<Propagation<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        match self.method {
+            IntegrationMethod::Dop853 => Dop853.propagate(model, problem, options),
+            IntegrationMethod::Taylor => Taylor.propagate(model, problem, options),
+        }
+    }
+
+    /// Propagates and samples a built-in model at requested times.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error under the selected backend's documented conditions.
+    pub fn propagate_dense<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        evaluation_times: &[f64],
+        options: IntegratorOptions,
+    ) -> Result<DenseTrajectory<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        match self.method {
+            IntegrationMethod::Dop853 => {
+                Dop853.propagate_dense(model, problem, evaluation_times, options)
+            }
+            IntegrationMethod::Taylor => {
+                Taylor.propagate_dense(model, problem, evaluation_times, options)
+            }
+        }
+    }
+
+    /// Propagates arbitrary first-order seed directions for a built-in model.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error under the selected backend's documented conditions.
+    pub fn propagate_with_sensitivities<M, const N: usize, const P: usize, const W: usize>(
+        &self,
+        model: &M,
+        problem: SensitivityProblem<N, P, W>,
+        options: IntegratorOptions,
+    ) -> Result<SensitivityPropagation<N, W>>
+    where
+        M: DifferentiableDynamicsModel<N, P> + TaylorDynamicsModel<N, P>,
+    {
+        match self.method {
+            IntegrationMethod::Dop853 => {
+                Dop853.propagate_with_sensitivities(model, problem, options)
+            }
+            IntegrationMethod::Taylor => {
+                Taylor.propagate_with_sensitivities(model, problem, options)
+            }
+        }
+    }
+}
+
+/// Pure-Rust adaptive Taylor-series integration for supported pykep models.
+///
+/// The backend is currently implemented for the built-in dynamics models,
+/// not arbitrary user implementations of [`DynamicsModel`]. DOP853 remains
+/// the general-purpose backend.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Taylor;
+
+#[allow(private_bounds)]
+impl Taylor {
+    /// Propagates a supported built-in model to the requested final time.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid options, model-domain failures, non-finite
+    /// coefficients, step-size underflow, or exhausted step limits.
+    pub fn propagate<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        options: IntegratorOptions,
+    ) -> Result<Propagation<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        taylor::propagate(model, problem, options)
+    }
+
+    /// Propagates a supported built-in model and samples requested times.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an invalid time grid or any error described by
+    /// [`Self::propagate`].
+    pub fn propagate_dense<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        evaluation_times: &[f64],
+        options: IntegratorOptions,
+    ) -> Result<DenseTrajectory<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        taylor::propagate_dense(model, problem, evaluation_times, options)
+    }
+
+    /// Propagates arbitrary first-order seed directions for a supported model.
+    ///
+    /// This first implementation obtains derivatives with centered
+    /// propagation differences. It is deterministic and useful for
+    /// cross-validation, but DOP853's direct variational equations are usually
+    /// cheaper for wide sensitivity matrices.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid seeds or any error described by
+    /// [`Self::propagate`].
+    pub fn propagate_with_sensitivities<M, const N: usize, const P: usize, const W: usize>(
+        &self,
+        model: &M,
+        problem: SensitivityProblem<N, P, W>,
+        options: IntegratorOptions,
+    ) -> Result<SensitivityPropagation<N, W>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        taylor::propagate_with_sensitivities(model, problem, options)
     }
 }
 

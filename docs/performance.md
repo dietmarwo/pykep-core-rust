@@ -55,6 +55,15 @@ the state plus 6 by 6 STM. The equivalent warmed C++/heyoka solves measured
 facade and 7.369 µs for `ode_solvers`, whose missing root/sensitivity
 facilities and per-step allocations outweighed the nominal timing advantage.
 See ADR 0004 for configuration, ranges, and risks.
+The later fixed-system Taylor backend uses a separate matched-accuracy
+protocol because coefficient sweeps are not comparable to DOP853 RHS calls.
+For one eccentric nondimensional revolution on the development host, Taylor
+was 0.87×, 1.18×, 1.61×, and 2.16× the DOP853 speed at `1e-9`, `1e-12`,
+`1e-14`, and machine epsilon, respectively, while producing smaller final
+state errors throughout. The interpretation is deliberately narrow: Taylor
+is a high-accuracy option, not a low-accuracy replacement. See
+[High-accuracy Taylor integration](taylor-integration.md) and the committed
+CSV for the 100- and 1,000-revolution rows.
 The Phase 11 evaluated-model orientation measured Kepler, CR3BP, and BCP
 right-hand sides at 10.828 ns, 32.833 ns, and 63.386 ns. A representative
 CR3BP propagation measured 7.808 µs and its state-plus-STM propagation
@@ -115,6 +124,7 @@ cargo bench -p pykep-core --bench dynamics
 cargo bench -p pykep-core --bench legs
 python python/benchmarks/wrapper_overhead.py
 cargo run --release -p pykep-lambert-optimization-benchmark
+cargo run --release -p pykep-taylor-benchmark
 ```
 
 The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
@@ -131,9 +141,9 @@ zero- and multi-revolution Lambert solution construction. The same harness
 measures scalar and 256-epoch Keplerian and JPL low-precision ephemeris
 evaluation separately, plus VSOP2013 initialization, scalar, high-precision,
 and batch paths.
-Integration benchmarks separate nominal six-state DOP853 propagation from an
-augmented state plus STM solve. The final-state output callback does not retain
-internal steps.
+Integration benchmarks separate nominal six-state DOP853 and Taylor
+propagation and their STM paths. The final-state output callback does not
+retain internal steps.
 Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
 nominal and variational propagation, ZOH schedules, and Pontryagin
 state/costate propagation.

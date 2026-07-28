@@ -61,6 +61,11 @@ and leg workloads release the GIL while executing the native loop. Python
 wrappers only validate and convert data; all astrodynamics formulas live in
 `pykep-core`.
 
+The evaluated model propagators currently keep their established DOP853
+backend in Python. Runtime selection of the new fixed-system Taylor backend is
+Rust-only in this release; Python does not expose an integrator object or a
+backend-name string whose compatibility would need to be frozen.
+
 See [batch-processing.md](batch-processing.md) for the complete batch matrix,
 array shapes, worker-pool contract, SpOC 4 motivation, and guidance for
 avoiding nested parallelism.

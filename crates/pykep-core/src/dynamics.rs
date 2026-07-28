@@ -32,8 +32,9 @@ pub mod zoh;
 
 use crate::error::ensure_finite;
 use crate::integration::{
-    DifferentiableDynamicsModel, Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions,
-    Propagation, SensitivityProblem, SensitivityPropagation,
+    AdaptiveIntegrator, DifferentiableDynamicsModel, DynamicsModel, InitialValueProblem,
+    IntegrationMethod, IntegratorOptions, Propagation, SensitivityProblem, SensitivityPropagation,
+    TaylorDynamicsModel,
 };
 use crate::{CartesianState, Matrix6, PykepError, Result};
 
@@ -57,7 +58,7 @@ impl KeplerDynamics {
         Ok(derivative)
     }
 
-    /// Propagates a Cartesian state with adaptive DOP853 integration.
+    /// Propagates a Cartesian state with adaptive Taylor integration.
     ///
     /// # Errors
     ///
@@ -70,7 +71,28 @@ impl KeplerDynamics {
         mu: f64,
         options: IntegratorOptions,
     ) -> Result<Propagation<6>> {
-        Dop853.propagate(
+        AdaptiveIntegrator::default().propagate(
+            self,
+            InitialValueProblem::new(initial_time, initial_state, final_time, [mu]),
+            options,
+        )
+    }
+
+    /// Propagates a Cartesian state with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain or integration error.
+    pub fn propagate_with_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        mu: f64,
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<Propagation<6>> {
+        AdaptiveIntegrator::new(method).propagate(
             self,
             InitialValueProblem::new(initial_time, initial_state, final_time, [mu]),
             options,
@@ -90,7 +112,40 @@ impl KeplerDynamics {
         mu: f64,
         options: IntegratorOptions,
     ) -> Result<SensitivityPropagation<6, 6>> {
-        propagate_stm(self, initial_time, initial_state, final_time, [mu], options)
+        propagate_stm(
+            self,
+            initial_time,
+            initial_state,
+            final_time,
+            [mu],
+            options,
+            IntegrationMethod::Dop853,
+        )
+    }
+
+    /// Propagates a state and STM with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain, sensitivity, or integration error.
+    pub fn propagate_with_stm_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        mu: f64,
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<SensitivityPropagation<6, 6>> {
+        propagate_stm(
+            self,
+            initial_time,
+            initial_state,
+            final_time,
+            [mu],
+            options,
+            method,
+        )
     }
 }
 
@@ -205,7 +260,7 @@ impl Cr3bpDynamics {
         finite_output(Self::NAME, 2.0 * potential - velocity_squared)
     }
 
-    /// Propagates a CR3BP state with adaptive DOP853 integration.
+    /// Propagates a CR3BP state with adaptive Taylor integration.
     ///
     /// # Errors
     ///
@@ -218,7 +273,28 @@ impl Cr3bpDynamics {
         mu: f64,
         options: IntegratorOptions,
     ) -> Result<Propagation<6>> {
-        Dop853.propagate(
+        AdaptiveIntegrator::default().propagate(
+            self,
+            InitialValueProblem::new(initial_time, initial_state, final_time, [mu]),
+            options,
+        )
+    }
+
+    /// Propagates a CR3BP state with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain or integration error.
+    pub fn propagate_with_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        mu: f64,
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<Propagation<6>> {
+        AdaptiveIntegrator::new(method).propagate(
             self,
             InitialValueProblem::new(initial_time, initial_state, final_time, [mu]),
             options,
@@ -238,7 +314,40 @@ impl Cr3bpDynamics {
         mu: f64,
         options: IntegratorOptions,
     ) -> Result<SensitivityPropagation<6, 6>> {
-        propagate_stm(self, initial_time, initial_state, final_time, [mu], options)
+        propagate_stm(
+            self,
+            initial_time,
+            initial_state,
+            final_time,
+            [mu],
+            options,
+            IntegrationMethod::Dop853,
+        )
+    }
+
+    /// Propagates a CR3BP state and STM with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain, sensitivity, or integration error.
+    pub fn propagate_with_stm_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        mu: f64,
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<SensitivityPropagation<6, 6>> {
+        propagate_stm(
+            self,
+            initial_time,
+            initial_state,
+            final_time,
+            [mu],
+            options,
+            method,
+        )
     }
 }
 
@@ -335,7 +444,7 @@ impl BcpDynamics {
         Ok(derivative)
     }
 
-    /// Propagates a BCP state with adaptive DOP853 integration.
+    /// Propagates a BCP state with adaptive Taylor integration.
     ///
     /// # Errors
     ///
@@ -348,7 +457,28 @@ impl BcpDynamics {
         parameters: [f64; 4],
         options: IntegratorOptions,
     ) -> Result<Propagation<6>> {
-        Dop853.propagate(
+        AdaptiveIntegrator::default().propagate(
+            self,
+            InitialValueProblem::new(initial_time, initial_state, final_time, parameters),
+            options,
+        )
+    }
+
+    /// Propagates a BCP state with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain or integration error.
+    pub fn propagate_with_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        parameters: [f64; 4],
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<Propagation<6>> {
+        AdaptiveIntegrator::new(method).propagate(
             self,
             InitialValueProblem::new(initial_time, initial_state, final_time, parameters),
             options,
@@ -375,6 +505,32 @@ impl BcpDynamics {
             final_time,
             parameters,
             options,
+            IntegrationMethod::Dop853,
+        )
+    }
+
+    /// Propagates a BCP state and STM with the selected adaptive backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns a model-domain, sensitivity, or integration error.
+    pub fn propagate_with_stm_method(
+        &self,
+        initial_time: f64,
+        initial_state: CartesianState,
+        final_time: f64,
+        parameters: [f64; 4],
+        options: IntegratorOptions,
+        method: IntegrationMethod,
+    ) -> Result<SensitivityPropagation<6, 6>> {
+        propagate_stm(
+            self,
+            initial_time,
+            initial_state,
+            final_time,
+            parameters,
+            options,
+            method,
         )
     }
 }
@@ -491,11 +647,12 @@ fn propagate_stm<M, const P: usize>(
     final_time: f64,
     parameters: [f64; P],
     options: IntegratorOptions,
+    method: IntegrationMethod,
 ) -> Result<SensitivityPropagation<6, 6>>
 where
-    M: DifferentiableDynamicsModel<6, P>,
+    M: DifferentiableDynamicsModel<6, P> + TaylorDynamicsModel<6, P>,
 {
-    Dop853.propagate_with_sensitivities(
+    AdaptiveIntegrator::new(method).propagate_with_sensitivities(
         model,
         SensitivityProblem {
             nominal: InitialValueProblem::new(initial_time, initial_state, final_time, parameters),

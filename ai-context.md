@@ -380,10 +380,22 @@ mathematical API accepts `[0, 1]`. BCP parameters are
 `[mu, mu_sun, rho_sun, omega_sun]`.
 
 Each model supports RHS evaluation, propagation, and propagation with an STM.
-The default DOP853 options use relative and absolute tolerances `1e-12`, no
-maximum step, a 100,000-step limit, and 100 consecutive rejections. These are
-defaults, not universal settings. Tighten or bound the step based on duration,
-scale, close approaches, switching behavior, and required invariant drift.
+Nominal Kepler/CR3BP/BCP propagation and `AdaptiveIntegrator::default()` use
+Taylor to match upstream pykep's `ta` families. The default integration
+options use relative and absolute tolerances `1e-12`, no maximum step, a
+100,000-step limit, and 100 consecutive rejections. These are defaults, not
+universal settings. Tighten or bound the step based on duration, scale, close
+approaches, switching behavior, and required invariant drift.
+
+Rust can select `IntegrationMethod::Taylor` or `IntegrationMethod::Dop853`
+for all eleven built-in dynamics types. Keep DOP853 for arbitrary user models
+and terminal events.
+Measured Kepler crossover is workload-dependent: Taylor was slower at `1e-9`,
+modestly faster at `1e-12`, and clearly faster at `1e-14` and machine
+epsilon while producing smaller errors. Taylor sensitivities currently use
+`2W + 1` centered propagations, so DOP853's direct variational solve is
+normally preferable for a wide STM. Python model propagators remain DOP853 in
+this release.
 
 Validate Kepler propagation with energy/angular momentum. Validate CR3BP with
 the Jacobi constant when the modeled trajectory avoids singular primaries.
@@ -678,6 +690,8 @@ rebuilding conventions from memory.
   frames, bodies, intervals, thresholds, and accuracy.
 - [`docs/dynamics.md`](docs/dynamics.md): Kepler, CR3BP, BCP, STMs, parameters,
   and validation tolerances.
+- [`docs/taylor-integration.md`](docs/taylor-integration.md): Taylor backend
+  selection, supported models, crossover evidence, and sensitivity limits.
 - [`docs/zero-order-hold.md`](docs/zero-order-hold.md): control layouts, switch
   ownership, schedule propagation, and sensitivities.
 - [`docs/pontryagin.md`](docs/pontryagin.md): augmented state, parameters,

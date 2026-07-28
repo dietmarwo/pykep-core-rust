@@ -9,7 +9,8 @@ Python interface:
 - [examples.md](examples.md): Rust/Python quick starts and runnable examples;
 - [conventions.md](conventions.md): units, epochs, frames, array layouts, and
   numerical behavior;
-- [dynamics.md](dynamics.md), [pontryagin.md](pontryagin.md),
+- [dynamics.md](dynamics.md), [taylor-integration.md](taylor-integration.md),
+  [pontryagin.md](pontryagin.md),
   [zero-order-hold.md](zero-order-hold.md), [ephemerides.md](ephemerides.md),
   [low-thrust-legs.md](low-thrust-legs.md), and [zoh-leg.md](zoh-leg.md):
   module guides;

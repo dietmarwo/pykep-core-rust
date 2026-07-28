@@ -34,6 +34,14 @@ objective conventions in the tool README. The benchmark uses the released
 Rust implementations in `pykep-core` and `fcmaes-core`; it does not execute
 the source Python or Numba code.
 
+The adaptive Taylor arithmetic and controller in
+`crates/pykep-core/src/integration/taylor/` are an independent implementation
+of the published high-order Taylor method described by Àngel Jorba and Maorong
+Zou, *A software package for the numerical integration of ODEs by means of
+high-order Taylor methods* (2005), <https://eudml.org/doc/53069>. The official
+`heyoka.py` package is used only by an optional development cross-validation
+harness; no heyoka source is copied, linked, or shipped.
+
 ## Names and ownership
 
 The independent repository is

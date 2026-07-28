@@ -1,6 +1,6 @@
 # Implementation status
 
-Evidence-backed status as of 2026-07-26:
+Evidence-backed status as of 2026-07-28:
 
 | Module | Rust core | Python API | Golden parity | Independent tests | Benchmarked | Docs |
 |---|---|---|---|---|---|---|
@@ -12,7 +12,7 @@ Evidence-backed status as of 2026-07-26:
 | Planet/Keplerian ephemeris | implemented | implemented | 3.0.1 | period, element round trips, thread stress | Criterion harness | complete |
 | JPL low-precision ephemerides | implemented | implemented | 3.0.1 | names, window boundaries, ordered batches | Criterion harness | complete |
 | VSOP2013 ephemerides | implemented (`>=1e-9` feature) | implemented | 3.0.1/heyoka 7.10.0 | expanded epoch grid, threshold selection, feature-off build | Criterion + C++ harness | complete |
-| Adaptive integration backend | implemented | intentionally deferred to model APIs | analytic/C++ orientation | drift, reversal, rejection, dense/event, sensitivities | Criterion + candidate + C++ harness | complete |
+| Adaptive integration backends | DOP853 general; Taylor for 11 built-ins | DOP853 model APIs | analytic/C++/heyoka 7.10.1 | drift, reversal, dense, events (DOP853), seeded sensitivities, closed-form series | Criterion + fixed Taylor protocol | complete |
 | Kepler/CR3BP/BCP dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | equilibria, invariants, finite differences, singularities | Criterion + C++ harness | complete |
 | ZOH dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | switches, reversal, zero control, sensitivity activation | Criterion + C++ harness | complete |
 | Pontryagin dynamics | implemented | implemented | 3.0.1/heyoka 7.10.0 | Hamiltonians, coordinate transform, finite differences, singular primer | Criterion + C++ harness | complete |

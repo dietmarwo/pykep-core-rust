@@ -41,6 +41,9 @@ documentation required by the definition of done are complete.
 - [x] `src/udpla/vsop2013.cpp` → `ephemeris::vsop2013` (Phase 9)
 - [x] heyoka integration requirements → `integration` facade and ADR 0004
       (Phase 10; infrastructure rather than a source translation)
+- [x] high-order Taylor recurrence/controller → `integration::Taylor`
+      (independent implementation for the eleven fixed model types; not a
+      symbolic-runtime translation)
 - [x] `src/ta/kep.cpp` → `dynamics::KeplerDynamics` (Phase 11)
 - [x] `src/ta/cr3bp.cpp` → `dynamics::Cr3bpDynamics` (Phase 11)
 - [x] `src/ta/bcp.cpp` → `dynamics::BcpDynamics` (Phase 11)
@@ -71,9 +74,10 @@ native numerical-core product and have stable internal tracking identifiers:
 - `PY-EXT-001`: SPICE kernels, TLE parsing, and Python-defined UDPLA providers
   require external data/runtime and dynamic Python callback contracts that are
   absent from the C/C++-free core.
-- `TA-SYMBOLIC-001`: arbitrary heyoka expression graphs and Taylor-integrator
-  objects cannot be reproduced without exposing a symbolic/JIT runtime; native
-  evaluated dynamics and DOP853 propagation are the supported contract.
+- `TA-SYMBOLIC-001`: arbitrary heyoka expression graphs and user-defined
+  Taylor-integrator objects remain out of scope. Native evaluated dynamics
+  support DOP853 and the eleven built-in types additionally support the
+  fixed-system Taylor backend.
 - `PY-ECOSYSTEM-001`: plotting, trajectory-optimization UDPs, gym utilities,
   and third-party integrations belong to their Python ecosystems rather than
   the numerical core.

@@ -33,6 +33,12 @@ fixed-size parameter array before the solve, so no allocation or schedule
 scan occurs in an RHS call. `control_at` uses binary search for occasional
 external lookup.
 
+The established `propagate_schedule*` functions continue to use DOP853.
+The corresponding `*_with_method` functions accept
+`IntegrationMethod::Taylor` for all four built-in models. Each segment still
+ends exactly at its switching boundary; backend selection does not change
+switch ownership.
+
 ## Sensitivities
 
 `ZohSensitivitySeeds` carries an arbitrary compile-time seed width through the
@@ -44,8 +50,13 @@ schedule in one augmented solve per segment. It contains:
 
 State sensitivities are continuous at switches. A control column for a future
 segment remains exactly zero until that segment becomes active. Runtime is
-linear in the segment count for a fixed seed width; the implementation does
-not repropagate every prior segment for every control.
+linear in the segment count for a fixed seed width; the DOP853 implementation
+does not repropagate every prior segment for every control.
+
+Taylor's current seeded-sensitivity implementation uses centered complete
+propagations and therefore costs `2W + 1` nominal solves per segment. Prefer
+DOP853 for wide ZOH Jacobians until direct Taylor variational recurrences are
+implemented.
 
 Model Jacobians use fixed-size, allocation-free central differentiation of
 the evaluated source equations. They are checked against C++ Taylor

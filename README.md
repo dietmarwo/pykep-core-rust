@@ -14,7 +14,11 @@ transfers, flybys, encodings, MIMA approximations, the planet interface, and
 the Keplerian, JPL low-precision, and feature-gated VSOP2013 ephemerides are
 implemented. The pure-Rust adaptive integration backend now drives evaluated
 Kepler, CR3BP, bicircular, four zero-order-hold dynamics families, and
-Cartesian/equinoctial Pontryagin models with first-order sensitivities.
+Cartesian/equinoctial Pontryagin models with first-order sensitivities. An
+adaptive Taylor backend is the default for nominal propagation of the
+TA-derived built-in dynamics, matching upstream pykep's algorithm family;
+the general-purpose DOP853 backend remains available for arbitrary models,
+events, and direct variational solves.
 Validated fixed- and variable-duration Sims–Flanagan legs provide mismatch
 and throttle constraints, with analytic fixed-leg gradients. The generic ZOH
 leg supports the four built-in controlled dynamics families, complete
@@ -31,6 +35,7 @@ pykep parity from the current API.
 - `ai-context.md`: operational model-selection, convention, implementation,
   and validation guidance for AI-assisted user problems.
 - `tools/release-benchmark`: fixed-protocol release regression benchmark.
+- `tools/taylor-benchmark`: matched-accuracy DOP853/Taylor benchmark.
 - `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
   `fcmaes-core` optimization benchmark.
 
@@ -51,6 +56,9 @@ The pinned upstream source and adaptation policy are recorded in
 accuracy are documented in [docs/ephemerides.md](docs/ephemerides.md).
 Dynamics frames, parameters, errors, and reference tolerances are documented
 in [docs/dynamics.md](docs/dynamics.md).
+Taylor selection, supported models, measured crossover, and current
+sensitivity limitations are documented in
+[docs/taylor-integration.md](docs/taylor-integration.md).
 Piecewise-constant controls, switching boundaries, and ZOH sensitivities are
 documented in [docs/zero-order-hold.md](docs/zero-order-hold.md).
 Indirect-control state, costate, control, and parameter conventions are

@@ -2,8 +2,10 @@
 
 Phase 13 provides evaluated Cartesian and modified-equinoctial canonical
 dynamics for indirect low-thrust optimization. The implementation is native
-Rust and uses the common DOP853 integration and sensitivity contracts; it does
-not expose or depend on a symbolic-expression runtime.
+Rust and uses the common integration and sensitivity contracts; it does not
+expose or depend on a symbolic-expression runtime. The four built-in types can
+be passed to the default Taylor `AdaptiveIntegrator`, to `Taylor` directly, or
+to `Dop853` when events or direct variational propagation are needed.
 
 ## Orders and units
 
@@ -78,6 +80,11 @@ derivatives of the minimized Hamiltonian. Full state and parameter Jacobians
 use centered fixed-size differences and are stored as
 `jacobian[output][input]`. This path performs no heap allocation in the model
 right-hand side.
+
+In the Taylor recurrence the minimizing control evolves with the complete
+state/costate series. When forming canonical costate rates, the control is
+held fixed with respect to the physical-state derivative, as required by the
+envelope theorem. Zero primer norm remains an explicit non-analytic error.
 
 Python requires the native `Optimality.Mass` or `Optimality.Time` enum.
 Unvalidated strings are not accepted. The `pontryagin_*_rhs`, control,

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "generated_on": "2026-07-28",
+  "generator": "cargo run --release -p pykep-taylor-benchmark",
+  "source": "docs/data/taylor-kepler-benchmark.csv",
+  "host_note": "Development x86_64 Linux host; timings are evidence, not portable limits.",
+  "protocol": {
+    "initial_state": [0.5, 0.0, 0.0, 0.0, 1.7320508075688772, 0.0],
+    "mu": 1.0,
+    "tolerances": [1e-9, 1e-12, 1e-14, 2.220446049250313e-16],
+    "revolutions": [1, 100, 1000],
+    "reference": "pykep_core::astro::propagation::propagate_lagrangian",
+    "statistic": "median wall time after one untimed warm-up"
+  },
+  "summary_one_revolution": [
+    {
+      "tolerance": 1e-9,
+      "taylor_over_dop853_speed": 0.869,
+      "observation": "Taylor is slower but markedly more accurate."
+    },
+    {
+      "tolerance": 1e-12,
+      "taylor_over_dop853_speed": 1.184,
+      "observation": "Taylor is modestly faster and markedly more accurate."
+    },
+    {
+      "tolerance": 1e-14,
+      "taylor_over_dop853_speed": 1.610,
+      "observation": "Taylor passes the 1.5x gate at better error."
+    },
+    {
+      "tolerance": 2.220446049250313e-16,
+      "taylor_over_dop853_speed": 2.159,
+      "observation": "Taylor is fastest in the machine-precision regime."
+    }
+  ]
+}

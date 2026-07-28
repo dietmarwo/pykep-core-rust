@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-labelledby="title desc">
+  <title id="title">Taylor speed-up and accuracy by tolerance</title>
+  <desc id="desc">Taylor is slower than DOP853 at one e minus nine, modestly faster at one e minus twelve, and increasingly faster at one e minus fourteen and machine epsilon. Taylor has smaller state error at every tolerance.</desc>
+  <style>
+    .axis { stroke:#304b5f; stroke-width:2 }
+    .grid { stroke:#d9e2e8; stroke-width:1 }
+    .bar { fill:#26886b }
+    .slow { fill:#c87822 }
+    .error-dop { fill:#557a95 }
+    .error-taylor { fill:#58a98e }
+    .text { font-family:sans-serif; font-size:14px; fill:#263b49 }
+    .heading { font-family:sans-serif; font-size:18px; font-weight:600; fill:#172b3a }
+    .value { font-family:sans-serif; font-size:14px; font-weight:600; fill:#172b3a; text-anchor:middle }
+  </style>
+  <rect width="960" height="430" fill="white"/>
+  <text class="heading" x="30" y="32">One revolution: wall-time speed-up (DOP853 time / Taylor time)</text>
+  <line class="axis" x1="80" y1="195" x2="900" y2="195"/>
+  <line class="grid" x1="80" y1="120" x2="900" y2="120"/>
+  <line class="grid" x1="80" y1="45" x2="900" y2="45"/>
+  <text class="text" x="46" y="200">0×</text>
+  <text class="text" x="46" y="125">1×</text>
+  <text class="text" x="46" y="50">2×</text>
+  <rect class="slow" x="125" y="130" width="110" height="65"/>
+  <rect class="bar" x="335" y="106" width="110" height="89"/>
+  <rect class="bar" x="545" y="74" width="110" height="121"/>
+  <rect class="bar" x="755" y="33" width="110" height="162"/>
+  <text class="value" x="180" y="122">0.87×</text>
+  <text class="value" x="390" y="98">1.18×</text>
+  <text class="value" x="600" y="66">1.61×</text>
+  <text class="value" x="810" y="25">2.16×</text>
+  <text class="text" x="147" y="219">1e−9</text>
+  <text class="text" x="352" y="219">1e−12</text>
+  <text class="text" x="562" y="219">1e−14</text>
+  <text class="text" x="772" y="219">epsilon</text>
+  <text class="heading" x="30" y="270">Maximum state error (log10 scale; lower is better)</text>
+  <line class="axis" x1="80" y1="390" x2="900" y2="390"/>
+  <rect class="error-dop" x="125" y="302" width="48" height="88"/>
+  <rect class="error-taylor" x="181" y="266" width="48" height="124"/>
+  <rect class="error-dop" x="335" y="329" width="48" height="61"/>
+  <rect class="error-taylor" x="391" y="245" width="48" height="145"/>
+  <rect class="error-dop" x="545" y="345" width="48" height="45"/>
+  <rect class="error-taylor" x="601" y="266" width="48" height="124"/>
+  <rect class="error-dop" x="755" y="363" width="48" height="27"/>
+  <rect class="error-taylor" x="811" y="226" width="48" height="164"/>
+  <rect class="error-dop" x="665" y="285" width="16" height="16"/>
+  <text class="text" x="688" y="298">DOP853</text>
+  <rect class="error-taylor" x="755" y="285" width="16" height="16"/>
+  <text class="text" x="778" y="298">Taylor</text>
+  <text class="text" x="147" y="414">1e−9</text>
+  <text class="text" x="352" y="414">1e−12</text>
+  <text class="text" x="562" y="414">1e−14</text>
+  <text class="text" x="772" y="414">epsilon</text>
+</svg>

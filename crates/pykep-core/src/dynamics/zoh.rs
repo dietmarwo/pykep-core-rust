@@ -13,8 +13,9 @@
 
 use crate::error::ensure_finite;
 use crate::integration::{
-    DifferentiableDynamicsModel, Dop853, DynamicsModel, InitialValueProblem, IntegrationStats,
-    IntegratorOptions, Propagation, SensitivityProblem, SensitivityPropagation, Termination,
+    AdaptiveIntegrator, DifferentiableDynamicsModel, Dop853, DynamicsModel, InitialValueProblem,
+    IntegrationMethod, IntegrationStats, IntegratorOptions, Propagation, SensitivityProblem,
+    SensitivityPropagation, TaylorDynamicsModel, Termination,
 };
 use crate::{PykepError, Result};
 
@@ -191,6 +192,43 @@ where
     propagate_schedule_direction(model, schedule, initial_state, constants, options, false)
 }
 
+/// Propagates a ZOH schedule with the selected adaptive backend.
+///
+/// DOP853 remains the default used by [`propagate_schedule`]. Taylor is
+/// available for the four built-in ZOH models.
+///
+/// # Errors
+///
+/// Returns a model-domain or integration error.
+#[allow(private_bounds)]
+pub fn propagate_schedule_with_method<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    initial_state: [f64; N],
+    constants: [f64; K],
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+) -> Result<Propagation<N>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    propagate_schedule_selected(
+        model,
+        schedule,
+        initial_state,
+        constants,
+        options,
+        method,
+        false,
+    )
+}
+
 /// Propagates a ZOH schedule backward from its last boundary to its first.
 ///
 /// # Errors
@@ -213,6 +251,40 @@ where
     M: ZeroOrderHoldModel<N, C, K, P>,
 {
     propagate_schedule_direction(model, schedule, final_state, constants, options, true)
+}
+
+/// Propagates a ZOH schedule backward with the selected adaptive backend.
+///
+/// # Errors
+///
+/// Returns a model-domain or integration error.
+#[allow(private_bounds)]
+pub fn propagate_schedule_backward_with_method<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    final_state: [f64; N],
+    constants: [f64; K],
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+) -> Result<Propagation<N>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    propagate_schedule_selected(
+        model,
+        schedule,
+        final_state,
+        constants,
+        options,
+        method,
+        true,
+    )
 }
 
 /// Propagates arbitrary seed directions through a complete ZOH schedule.
@@ -253,6 +325,46 @@ where
     )
 }
 
+/// Propagates seed directions through a schedule with the selected backend.
+///
+/// Taylor currently obtains sensitivities with centered propagation
+/// differences; DOP853 advances direct variational equations.
+///
+/// # Errors
+///
+/// Returns an error for invalid seeds or a model/integration failure.
+#[allow(private_bounds)]
+pub fn propagate_schedule_with_sensitivities_and_method<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+    const W: usize,
+>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    initial_state: [f64; N],
+    constants: [f64; K],
+    seeds: &ZohSensitivitySeeds<N, C, K, W>,
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+) -> Result<SensitivityPropagation<N, W>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    propagate_schedule_sensitivities_selected(
+        model,
+        schedule,
+        initial_state,
+        constants,
+        seeds,
+        options,
+        method,
+        false,
+    )
+}
+
 /// Propagates arbitrary seed directions backward through a ZOH schedule.
 ///
 /// # Errors
@@ -286,6 +398,183 @@ where
         options,
         true,
     )
+}
+
+/// Propagates seed directions backward with the selected backend.
+///
+/// # Errors
+///
+/// Returns an error for invalid seeds or a model/integration failure.
+#[allow(private_bounds)]
+pub fn propagate_schedule_with_sensitivities_backward_and_method<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+    const W: usize,
+>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    final_state: [f64; N],
+    constants: [f64; K],
+    seeds: &ZohSensitivitySeeds<N, C, K, W>,
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+) -> Result<SensitivityPropagation<N, W>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    propagate_schedule_sensitivities_selected(
+        model,
+        schedule,
+        final_state,
+        constants,
+        seeds,
+        options,
+        method,
+        true,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn propagate_schedule_selected<M, const N: usize, const C: usize, const K: usize, const P: usize>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    initial_state: [f64; N],
+    constants: [f64; K],
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+    backward: bool,
+) -> Result<Propagation<N>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    let integrator = AdaptiveIntegrator::new(method);
+    let mut state = initial_state;
+    let mut statistics = IntegrationStats::default();
+    let mut run_segment = |index: usize, start: f64, end: f64| -> Result<()> {
+        let result = integrator.propagate(
+            model,
+            InitialValueProblem::new(
+                start,
+                state,
+                end,
+                M::parameters(schedule.controls[index], constants),
+            ),
+            options,
+        )?;
+        state = result.state;
+        add_statistics(&mut statistics, result.stats);
+        Ok(())
+    };
+    if backward {
+        for index in (0..schedule.len()).rev() {
+            run_segment(
+                index,
+                schedule.boundaries[index + 1],
+                schedule.boundaries[index],
+            )?;
+        }
+    } else {
+        for index in 0..schedule.len() {
+            run_segment(
+                index,
+                schedule.boundaries[index],
+                schedule.boundaries[index + 1],
+            )?;
+        }
+    }
+    Ok(Propagation {
+        time: if backward {
+            schedule.initial_time()
+        } else {
+            schedule.final_time()
+        },
+        state,
+        stats: statistics,
+        termination: Termination::FinalTime,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn propagate_schedule_sensitivities_selected<
+    M,
+    const N: usize,
+    const C: usize,
+    const K: usize,
+    const P: usize,
+    const W: usize,
+>(
+    model: &M,
+    schedule: &ControlSchedule<C>,
+    initial_state: [f64; N],
+    constants: [f64; K],
+    seeds: &ZohSensitivitySeeds<N, C, K, W>,
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+    backward: bool,
+) -> Result<SensitivityPropagation<N, W>>
+where
+    M: ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
+{
+    if seeds.segment_controls.len() != schedule.len() {
+        return Err(PykepError::DimensionMismatch {
+            expected: schedule.len(),
+            actual: seeds.segment_controls.len(),
+        });
+    }
+    let integrator = AdaptiveIntegrator::new(method);
+    let mut state = initial_state;
+    let mut sensitivities = seeds.initial_state;
+    let mut statistics = IntegrationStats::default();
+    let mut run_segment = |index: usize, start: f64, end: f64| -> Result<()> {
+        let result = integrator.propagate_with_sensitivities(
+            model,
+            SensitivityProblem {
+                nominal: InitialValueProblem::new(
+                    start,
+                    state,
+                    end,
+                    M::parameters(schedule.controls[index], constants),
+                ),
+                initial_sensitivities: sensitivities,
+                parameter_seeds: M::parameter_seeds(seeds.segment_controls[index], seeds.constants),
+            },
+            options,
+        )?;
+        state = result.state;
+        sensitivities = result.sensitivities;
+        add_statistics(&mut statistics, result.stats);
+        Ok(())
+    };
+    if backward {
+        for index in (0..schedule.len()).rev() {
+            run_segment(
+                index,
+                schedule.boundaries[index + 1],
+                schedule.boundaries[index],
+            )?;
+        }
+    } else {
+        for index in 0..schedule.len() {
+            run_segment(
+                index,
+                schedule.boundaries[index],
+                schedule.boundaries[index + 1],
+            )?;
+        }
+    }
+    Ok(SensitivityPropagation {
+        time: if backward {
+            schedule.initial_time()
+        } else {
+            schedule.final_time()
+        },
+        state,
+        sensitivities,
+        stats: statistics,
+    })
 }
 
 fn propagate_schedule_direction<M, const N: usize, const C: usize, const K: usize, const P: usize>(

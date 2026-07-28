@@ -18,9 +18,11 @@ The JPL low-precision
 provider supplies approximate heliocentric states for Mercury through Neptune
 over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
 evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
-An adaptive pure-Rust DOP853 facade now defines evaluated model, parameter,
-dense-output, terminal-event, and first-order sensitivity contracts for the
-remaining dynamics phases. Stateless evaluated Kepler, CR3BP, and bicircular
+Adaptive pure-Rust DOP853 and fixed-system Taylor facades define evaluated
+model, parameter, dense-output, and first-order sensitivity contracts; DOP853
+also supports terminal events and arbitrary user dynamics. Taylor is the
+default for nominal propagation of the built-in TA-derived models. Stateless
+evaluated Kepler, CR3BP, and bicircular
 models provide direct right-hand sides, adaptive propagation, analytic
 Jacobians and STMs; CR3BP also provides its effective potential and Jacobi
 constant.

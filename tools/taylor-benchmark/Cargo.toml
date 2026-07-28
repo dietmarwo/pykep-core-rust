@@ -1,0 +1,14 @@
+[package]
+name = "pykep-taylor-benchmark"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Reproducible matched-accuracy benchmark for pykep-core integration."
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+pykep-core = { workspace = true }
