@@ -21,9 +21,11 @@ earth_state = earth.state(0.0)
 
 Angles are radians and Julian conversions are arithmetic day counts without
 an implied UTC, TT, or TDB time scale. Public numerical functions reject NaN
-and infinity. Sequence batch functions preserve order, release the GIL around
-native work, and do not create a thread pool. Numeric `Epoch` arithmetic uses
-days; `add_seconds()` and `seconds_since()` make second-based arithmetic
+and infinity. Ordered batch functions preserve scalar semantics and release
+the GIL around native work. Their common `workers` contract uses Rayon's shared
+pool for `0`, serial evaluation for `1`, and a cached pool of exactly `N`
+threads for `N > 1`; avoid nested full-size pools. Numeric `Epoch` arithmetic
+uses days; `add_seconds()` and `seconds_since()` make second-based arithmetic
 explicit. Constructor data is copied into immutable native objects.
 
 The wheel ships a `py.typed` marker and complete extension stub. The full

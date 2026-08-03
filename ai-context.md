@@ -9,9 +9,10 @@ requires.
 
 This repository is an independent native Rust port of the numerical C++
 library in pykep/kep3 3.0.1. `pykep-core` contains the astrodynamics
-implementation and has no C or C++ runtime dependency. `pykep-py` is a thin,
-unpublished PyO3 conversion and exception layer over the same core. It does
-not duplicate the numerical algorithms.
+implementation and has no C or C++ runtime dependency. The internal
+`pykep-py` workspace crate is a thin, `publish = false` PyO3 conversion and
+exception layer used to build the published `pykep-rust` Python distribution.
+It does not duplicate the numerical algorithms.
 
 The public distribution surfaces have deliberately distinct names:
 
@@ -20,12 +21,13 @@ cargo add pykep-core                -> use pykep_core
 python -m pip install pykep-rust    -> import pykep_rust
 ```
 
-The current synchronized release is 0.1.2. Rust 1.88 is the tested minimum
-toolchain. Published wheels target CPython 3.11 through 3.13 and need neither a
-Rust toolchain nor a C/C++ compiler. Building the Python source distribution
-does require Rust. The default Rust feature embeds the VSOP2013 coefficient
-data; use `default-features = false` when only the smaller numerical core,
-Keplerian ephemerides, and JPL low-precision ephemerides are needed.
+The current synchronized release is 0.1.4 on crates.io and PyPI. Rust 1.88 is
+the tested minimum toolchain. Published wheels target CPython 3.11 through
+3.13 and need neither a Rust toolchain nor a C/C++ compiler. Building the
+Python source distribution does require Rust. The default Rust feature embeds
+the VSOP2013 coefficient data; use `default-features = false` when only the
+smaller numerical core, Keplerian ephemerides, and JPL low-precision
+ephemerides are needed.
 
 Do not infer complete pykep ecosystem parity from the numerical surface.
 SPICE kernels, TLE parsing, Python-defined ephemeris providers, plotting,
@@ -33,6 +35,36 @@ trajectory-optimization UDPs, gym helpers, arbitrary heyoka expression
 graphs, and several legacy aliases are intentionally unavailable. Consult
 [`docs/python-migration.md`](docs/python-migration.md) before promising
 drop-in compatibility with `pykep` or `kep3`.
+
+## Current release behavior
+
+Version 0.1.3 changed nominal propagation of all eleven built-in evaluated
+dynamics types to the pure-Rust adaptive Taylor backend. DOP853 remains an
+explicitly selectable general-purpose backend and is still used for arbitrary
+user models, terminal events, direct variational solves, and the established
+Python model-propagation methods.
+
+Version 0.1.4 replaced repeated full-series evaluation with incremental
+coefficient evaluators for every built-in Taylor model. Kepler and ZOH Kepler
+use specialized recurrences; the other nine models use lazily built,
+common-subexpression-eliminated fixed expression tapes. The recorded
+eight-model migration benchmark improved warmed propagation by 6.45× to
+28.97× relative to the preceding Rust evaluator. These are improvements over
+the earlier Rust implementation, not claims that Rust now beats warmed
+upstream heyoka.
+
+Built-in Rust `ZohLeg` values can now select Taylor or DOP853 for nominal
+mismatch and history calculations through
+`mismatch_constraints_with_method()` and `state_history_with_method()`.
+The original no-suffix methods remain DOP853 for compatibility, and
+`mismatch_jacobian()` retains the established DOP853 variational path with
+centered model Jacobians. The Python ZOH-leg surface likewise retains its
+established behavior; it does not expose these Rust-only method selectors.
+
+Use [`PERFORMANCE_GUIDE.md`](PERFORMANCE_GUIDE.md) before choosing between the
+original Python/C++ fcmaes/pykep stack and the Rust stack. Use
+[`docs/add-ode-system.md`](docs/add-ode-system.md) as the definition of done
+when adding another built-in dynamics family.
 
 ## Required workflow for the AI
 
@@ -169,6 +201,26 @@ calls can spend more time crossing the extension boundary than doing
 astrodynamics. See [`docs/batch-processing.md`](docs/batch-processing.md) for
 the complete API matrix and nested-parallelism guidance.
 
+Choose the deployment stack separately from the physical model. In the
+recorded warmed comparisons, upstream heyoka's LLVM-generated, model-specific
+Taylor kernels are 2.83× to 4.53× faster than `pykep-core` 0.1.4 for the five
+directly matched built-in fixtures. Heyoka also paid approximately 50–742 ms
+of first cache-miss JIT setup in those fixtures. The Rust core has no runtime
+JIT, C++ ABI, or LLVM deployment dependency; its analytical propagation,
+state-transition, Lambert, and transcription kernels are often much closer to
+upstream, and some measured Rust kernels are faster. Prefer warmed upstream
+heyoka when a long-lived built-in Taylor workload dominates and its native
+dependency stack is acceptable. Prefer the Rust stack when Cargo-native
+deployment, short-lived processes, native optimizer composition, predictable
+startup, or avoiding Python/C++ boundaries dominates. Do not generalize either
+choice without benchmarking the complete user workload.
+
+Rust could host an LLVM ORC JIT and generate the same kind of specialized
+coefficient kernels, but doing so would require a symbolic system, Taylor
+decomposition, IR generation, caches, adaptive integration, dense output,
+events, sensitivities, and cross-platform native packaging. That is a much
+larger project and would no longer be a pure-Rust deployment.
+
 Native ephemeris providers and validated leg objects are immutable or
 thread-safe and can be reused. Give each concurrent operation isolated output
 and optimizer state. Do not add a broad mutex around numerical evaluation.
@@ -214,7 +266,7 @@ numbers.
 | ZOH schedules | `dynamics::zoh` | scalar and batch `propagate_zoh_*` | Switch ownership, row widths, and model constants are explicit. |
 | Pontryagin dynamics | `dynamics::pontryagin` | scalar and batch `pontryagin_*`, `Optimality` | Costates and normalization belong to the user's indirect formulation. |
 | Sims–Flanagan legs | `leg::SimsFlanagan*` | immutable classes with scalar and batch evaluations | Constraint and Jacobian ordering must match the optimizer. |
-| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel`, and batch evaluations | Numerical model Jacobians limit derivative accuracy. |
+| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel`, and batch evaluations | Rust nominal mismatch/history can select Taylor; no-suffix and Python methods remain DOP853, while numerical model Jacobians limit derivative accuracy. |
 
 ## Epochs, calendars, and anomalies
 
@@ -480,11 +532,15 @@ no mismatch Jacobian; do not fabricate one from the fixed leg.
 
 `ZohLeg` represents continuous piecewise-constant control over a strictly
 increasing time grid. Its mismatch is the component-wise difference between
-forward and backward states at the cut. Its four Jacobian groups are initial
-state, final state, flattened chronological controls, and all time-grid nodes.
-The built-in model Jacobians use centered differences, and validated
-end-to-end derivative tolerances reach `3e-5`. Solver tolerances of `1e-12`
-must not be reported as derivative accuracy.
+forward and backward states at the cut. For built-in Rust legs,
+`mismatch_constraints_with_method()` and `state_history_with_method()` select
+Taylor or DOP853. The compatibility methods `mismatch_constraints()` and
+`state_history()`, the Python surface, and the Jacobian path remain DOP853.
+Its four Jacobian groups are initial state, final state, flattened
+chronological controls, and all time-grid nodes. The built-in model Jacobians
+use centered differences, and validated end-to-end derivative tolerances reach
+`3e-5`. Solver tolerances of `1e-12` must not be reported as derivative
+accuracy.
 
 Leg objects validate and copy their configuration. Reuse them for repeated
 constraint evaluation. Use the explicit ordered batch mismatch API for Python
@@ -580,6 +636,13 @@ experimentation under its documented models. It does not certify navigation,
 flight safety, or mission feasibility. High-stakes results require independent
 software, authoritative ephemerides/frames, uncertainty analysis, and domain
 review.
+
+Treat a silent, plausible but materially wrong trajectory, derivative, frame,
+unit conversion, or constraint result as a potential numerical-integrity
+security issue. Follow [`SECURITY.md`](SECURITY.md) and report such cases
+privately through GitHub's security-advisory form. Ordinary documented model
+limitations and accuracy trade-offs are correctness discussions rather than
+security vulnerabilities.
 
 ## Minimal implementation patterns
 
@@ -700,6 +763,8 @@ rebuilding conventions from memory.
   transcription, constraints, cuts, and Jacobian layouts.
 - [`docs/zoh-leg.md`](docs/zoh-leg.md): generic continuous ZOH leg, histories,
   model aliases, and four sensitivity groups.
+- [`docs/add-ode-system.md`](docs/add-ode-system.md): implementation, Taylor,
+  test, benchmark, Python, and documentation checklist for a new ODE system.
 - [`docs/validation.md`](docs/validation.md): golden-oracle provenance,
   independent properties, tolerances, and Python surface evidence.
 - [`docs/status.md`](docs/status.md): evidence-backed implementation matrix.
@@ -709,6 +774,11 @@ rebuilding conventions from memory.
   coverage and explicit gaps.
 - [`docs/development.md`](docs/development.md): formatting, lint, test,
   documentation, MSRV, coverage, fuzz, and benchmark commands.
+- [`PERFORMANCE_GUIDE.md`](PERFORMANCE_GUIDE.md): measured original-versus-Rust
+  stack trade-offs, warmed JIT results, and the pure-Rust design boundary.
+- [`SECURITY.md`](SECURITY.md): supported-release policy and private reporting
+  process for security and silent numerical-integrity failures.
+- [`CHANGELOG.md`](CHANGELOG.md): synchronized Rust/Python release history.
 - [`RELEASE.md`](RELEASE.md): registry artifacts and clean-consumer checks.
 - Generated Rust API documentation: `cargo doc -p pykep-core --open`.
 - Shipped Python signatures: `python/pykep_rust/_pykep_rust.pyi`.

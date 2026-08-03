@@ -32,8 +32,10 @@ events, and direct variational solves.
 Validated fixed- and variable-duration Sims–Flanagan legs provide mismatch
 and throttle constraints, with analytic fixed-leg gradients. The generic ZOH
 leg supports the four built-in controlled dynamics families, complete
-first-order mismatch sensitivities, histories, and batches. Do not infer full
-pykep parity from the current API.
+first-order mismatch sensitivities, histories, and batches. Built-in Rust ZOH
+legs can explicitly select Taylor or DOP853 for nominal mismatch and history
+evaluation; compatibility methods, Jacobians, and the Python surface retain
+DOP853. Do not infer full pykep parity from the current API.
 
 ## Layout
 
@@ -46,6 +48,10 @@ pykep parity from the current API.
   and original-versus-Rust stack selection guidance.
 - `ai-context.md`: operational model-selection, convention, implementation,
   and validation guidance for AI-assisted user problems.
+- `docs/add-ode-system.md`: definition of done for implementing, validating,
+  benchmarking, documenting, and exposing another dynamics family.
+- `SECURITY.md`: supported-release and private numerical-integrity reporting
+  policy.
 - `tools/release-benchmark`: fixed-protocol release regression benchmark.
 - `tools/taylor-benchmark`: matched-accuracy DOP853/Taylor benchmark.
 - `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
@@ -87,16 +93,17 @@ The typed Python contract and upstream migration matrix are documented in
 [docs/python-migration.md](docs/python-migration.md).
 Rust and Python quick starts plus the complete runnable matrix are in
 [docs/examples.md](docs/examples.md).
-Release-candidate performance distributions, profiling, dynamic analysis, and
-remaining external blockers are in
-[docs/stabilization.md](docs/stabilization.md).
+The historical pre-0.1.0 release-candidate performance distributions,
+profiling, dynamic analysis, and since-resolved publication blockers are in
+[docs/stabilization.md](docs/stabilization.md). The current publication and
+clean-consumer procedure is in [RELEASE.md](RELEASE.md).
 
 ## Intended properties
 
 - Native Rust algorithms with no C or C++ runtime dependency.
 - One numerical implementation in `pykep-core`; Python wrappers contain no
   duplicate astrodynamics logic.
-- Numerical parity checked against the current `kep3` C++ tests and generated
+- Numerical parity checked against the pinned `kep3` C++ tests and generated
   reference vectors.
 - Explicit units, shapes, branch ordering, error behavior, and tolerances.
 - Ordered serial/parallel batches that preserve scalar numerical semantics.

@@ -35,6 +35,8 @@ Repository = "https://github.com/dietmarwo/pykep-core-rust"
 Documentation = "https://dietmarwo.github.io/pykep-core-rust/"
 Issues = "https://github.com/dietmarwo/pykep-core-rust/issues"
 Changelog = "https://github.com/dietmarwo/pykep-core-rust/blob/main/CHANGELOG.md"
+Performance = "https://github.com/dietmarwo/pykep-core-rust/blob/main/PERFORMANCE_GUIDE.md"
+Security = "https://github.com/dietmarwo/pykep-core-rust/security/policy"
 
 [tool.maturin]
 manifest-path = "crates/pykep-py/Cargo.toml"

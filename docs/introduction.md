@@ -14,9 +14,9 @@ This book connects the narrative material for both interfaces:
   layouts, tolerances, and error behavior;
 - the dynamics, ephemeris, propagation, and low-thrust guides explain
   algorithm-specific contracts;
-- [validation](validation.md) and
-  [stabilization evidence](stabilization.md) record parity, independent
-  checks, coverage, performance, and release limitations.
+- [validation](validation.md) records current parity and independent checks;
+  the [stabilization evidence](stabilization.md) preserves the historical
+  pre-0.1.0 coverage, performance, and release-candidate snapshot.
 
 Exact Rust types, methods, and compiled examples are in the generated
 [`pykep-core` API reference](https://docs.rs/pykep-core). Python users should

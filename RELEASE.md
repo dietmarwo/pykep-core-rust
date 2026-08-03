@@ -11,7 +11,12 @@ The `pykep-py` binding implementation crate remains `publish = false`.
 Publication is irreversible: never reuse a version after uploading it to
 either registry.
 
-## One-time GitHub and registry setup
+The production `dietmarwo/pykep-core-rust` repository has already completed
+the registry bootstrap and uses Trusted Publishing for both artifacts. The
+setup steps below are retained for recovery or for a new fork; routine
+releases start with the reproducible-candidate checks.
+
+## One-time GitHub and registry setup (already completed upstream)
 
 1. In `dietmarwo/pykep-core-rust`, create a protected GitHub environment named
    `release`. Require a reviewer and restrict deployment tags to `v*`.
@@ -22,10 +27,10 @@ either registry.
    owner `dietmarwo`, repository `pykep-core-rust`, workflow
    `python-release.yml`, and environment `release`. PyPI supports this before
    the first project upload.
-4. crates.io requires the first `pykep-core` version to be published manually.
-   After that upload, configure its Trusted Publisher with owner `dietmarwo`,
-   repository `pykep-core-rust`, workflow `publish-crates.yml`, and
-   environment `release`.
+4. For a new crates.io project, publish the first `pykep-core` version
+   manually. After that upload, configure its Trusted Publisher with owner
+   `dietmarwo`, repository `pykep-core-rust`, workflow
+   `publish-crates.yml`, and environment `release`.
 5. Only after crates.io accepts that publisher, set the GitHub repository
    variable `CRATES_IO_TRUSTED_PUBLISHING` to `true`:
 
@@ -70,7 +75,7 @@ The release commit must have the intended version in `Cargo.toml` and
 `Cargo.lock`, a dated changelog entry, a clean working tree, passing hosted
 CI, and no uncommitted generated artifacts.
 
-## First crates.io release
+## First crates.io release for a new registry project
 
 Log in locally without putting a token in shell history, publish the exact
 validated commit, and remove the local credential afterward if it is not
@@ -106,9 +111,7 @@ files cannot be replaced.
 
 ## Tag and publish
 
-After both trusted publishers are configured, the first crates.io bootstrap
-is complete, external API review approves the public-name freeze, and all
-pre-release checks pass:
+After both trusted publishers are configured and all pre-release checks pass:
 
 ```bash
 version="$(python scripts/package_version.py)"

@@ -19,7 +19,7 @@ def main() -> None:
     if expected_version is not None:
         assert installed_version == expected_version
 
-    assert pk.port_status() == "phase 18: release candidate"
+    assert pk.port_status() == f"pykep-core {installed_version}"
     epoch = pk.Epoch.from_iso("2030-01")
     assert epoch.to_iso() == "2030-01-01T00:00:00.000000"
     states = np.array([[1.0, 0.0, 0.0, 0.0, 1.0, 0.0]], dtype=np.float64)

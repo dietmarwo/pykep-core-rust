@@ -1,8 +1,13 @@
 # Stabilization and release-candidate evidence
 
-This document records the Phase 18 checks that complement numerical parity
-and invariant testing. It does not claim that registry publication,
-cross-platform hosted CI, external API review, or a release tag has occurred.
+This document is the historical Phase 18, pre-0.1.0 evidence snapshot that
+complements numerical parity and invariant testing. Its artifact versions and
+then-open blockers are intentionally preserved as the record of that release
+candidate; they do not describe the current release state. The synchronized
+0.1.4 artifacts are now published. See [Implementation status](status.md) and
+the
+[release procedure](https://github.com/dietmarwo/pykep-core-rust/blob/main/RELEASE.md)
+for the current state and procedure.
 
 ## Matched Rust/C++ distribution
 
@@ -128,10 +133,12 @@ matrix is configured to build and consume wheels for CPython 3.11–3.13 on
 Linux, macOS, and Windows, but is not represented here as an executed remote
 run.
 
-## External blockers
+## Historical external blockers
 
-Public names are documented but not declared permanently frozen: external API
-review is still required. The independent repository URL and owner are now
-recorded, while private security contact, registry-side trusted publishers,
-registry uploads, downloads of published artifacts, and the release tag all
-require release-owner authority. See `RELEASE.md` for the exact boundary.
+At the time of this snapshot, public names were not declared permanently
+frozen and external API review was still required. The repository URL and
+owner had been recorded, while the private security contact, registry-side
+trusted publishers, registry uploads, download checks, and release tag still
+required release-owner authority. Those publication blockers were later
+resolved; the paragraph remains to explain what the Phase 18 evidence did and
+did not establish.

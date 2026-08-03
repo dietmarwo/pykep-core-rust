@@ -7,6 +7,7 @@ import gc
 import inspect
 import math
 from concurrent.futures import ThreadPoolExecutor
+from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
@@ -15,9 +16,9 @@ import pytest
 import pykep_rust as pk
 
 
-def test_status_probe_reports_release_candidate() -> None:
-    """The public facade reports the current native implementation phase."""
-    assert pk.port_status() == "phase 18: release candidate"
+def test_status_probe_reports_package_version() -> None:
+    """The public facade reports the installed native package version."""
+    assert pk.port_status() == f"pykep-core {version('pykep-rust')}"
 
 
 def test_constants_and_julian_conversions() -> None:

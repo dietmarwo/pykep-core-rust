@@ -221,6 +221,8 @@ registry patch:
   application uses analytical Keplerian ephemerides and Lambert solves, so
   the Taylor default does not alter its normal computation path.
 
-Neither downstream manifest was changed during this rehearsal. Both still
-pin the already-published `pykep-core = "=0.1.2"` and must move to the next
-release before their ordinary CI can exercise the new implementation.
+Neither downstream manifest was changed during that pre-release rehearsal;
+both pinned `pykep-core = "=0.1.2"` at the time. They were subsequently moved
+to published versions and retested: the GTOC1 tutorial now pins 0.1.4, while
+`pykep-lambert` pins 0.1.3 because its analytical ephemeris/Lambert workload
+does not exercise the 0.1.4 Taylor and ZOH-leg changes.

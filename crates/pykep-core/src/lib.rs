@@ -33,15 +33,17 @@ pub use types::{CartesianState, Elements6, Matrix3, Matrix6, Vector3};
 
 /// Current implementation status exposed by both the Rust and Python smoke
 /// tests.
-pub const PORT_STATUS: &str = "phase 18: release candidate";
+pub const PORT_STATUS: &str = concat!("pykep-core ", env!("CARGO_PKG_VERSION"));
 
 #[cfg(test)]
 mod tests {
     use super::PORT_STATUS;
 
     #[test]
-    fn status_reports_release_candidate() {
-        assert!(PORT_STATUS.contains("phase 18"));
-        assert!(PORT_STATUS.contains("release candidate"));
+    fn status_reports_package_version() {
+        assert_eq!(
+            PORT_STATUS,
+            concat!("pykep-core ", env!("CARGO_PKG_VERSION"))
+        );
     }
 }

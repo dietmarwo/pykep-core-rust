@@ -1,8 +1,8 @@
 # Changelog
 
 All notable changes to this project will be documented in this file. The
-format follows Keep a Changelog, and releases will use semantic versioning
-once the public API is ready to stabilize.
+format follows Keep a Changelog and releases use semantic versioning. During
+the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ## [Unreleased]
 
@@ -11,6 +11,15 @@ once the public API is ready to stabilize.
 - Added a measurement-backed guide for choosing between the original
   Python/C++ fcmaes/pykep stack and the native Rust crates, including warmed
   Taylor, low-thrust, analytical-kernel, and JIT lifecycle results.
+
+### Changed
+
+- Updated the security policy, implementation status, validation history,
+  release instructions, package READMEs, and AI operational context to reflect
+  the published 0.1.4 artifacts, current integration defaults, ZOH method
+  selection, parallel batch semantics, and pure-Rust performance boundary.
+- Replaced the stale Phase 18 release-candidate status probe with a value
+  derived automatically from the Cargo package version.
 
 ## [0.1.4] - 2026-07-28
 
@@ -160,8 +169,9 @@ once the public API is ready to stabilize.
 
 ### Changed
 
-- Enabled independent packaging of `pykep-core`; the PyO3 implementation crate
-  remains unpublished and the Python distribution remains a separate wheel.
+- Enabled independent packaging of `pykep-core`; the internal PyO3
+  implementation crate remains `publish = false` and the Python distribution
+  remains a separate wheel.
 - ZOH state histories use one dense-output solve per segment. Backward
   histories use an equivalent increasing-time coordinate to avoid the
   selected backend's decreasing-time interpolation boundary defect.

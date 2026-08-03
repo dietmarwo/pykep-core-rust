@@ -1,7 +1,7 @@
 # pykep-core
 
 `pykep-core` is an independent native Rust implementation of numerical
-algorithms from pykep version 3. The current phase provides physical constants,
+algorithms from pykep version 3. Version 0.1.4 provides physical constants,
 Julian-date arithmetic, microsecond-resolution epochs, stable Stumpff
 functions, Kepler-equation residuals, anomaly conversions, and allocation-free
 small-vector/matrix operations. Cartesian, classical Keplerian, and modified
@@ -40,10 +40,12 @@ forward/backward transcription, throttle constraints, and analytic fixed-leg
 mismatch gradients.
 The generic ZOH leg applies the same cut transcription to continuous
 piecewise-constant controls for all four built-in ZOH dynamics models and
-returns endpoint, control, and time-grid sensitivities. Pinned ZOH-leg
-derivative validation uses scaled tolerances up to `3e-5`; see the
-module-level sensitivity documentation before using those derivatives in a
-tightly converged optimizer.
+returns endpoint, control, and time-grid sensitivities. Built-in Rust legs can
+explicitly select Taylor or DOP853 for nominal mismatch and history
+evaluation; the no-suffix compatibility methods and the Jacobian path retain
+DOP853. Pinned ZOH-leg derivative validation uses scaled tolerances up to
+`3e-5`; see the module-level sensitivity documentation before using those
+derivatives in a tightly converged optimizer.
 
 The crate has no C or C++ runtime dependency.
 
@@ -83,5 +85,6 @@ assert_eq!(batch.len(), states.len());
 ```
 
 The crate is packaged independently from the `pykep-rust` Python wheel. The
-numerical crate has no PyO3, NumPy, C, or C++ dependency; the unpublished
-`pykep-py` workspace crate supplies conversion and exception plumbing only.
+numerical crate has no PyO3, NumPy, C, or C++ dependency; the internal
+`publish = false` `pykep-py` workspace crate supplies conversion and exception
+plumbing for the separately published Python distribution only.
