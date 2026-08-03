@@ -32,82 +32,138 @@ pinned C++ oracle, with both built in release mode on the same machine:
 | Lagrange propagation + STM | 216.68 ns | 444.289 ns |
 | 1,024 Lagrange calls | 113.78 µs (9.00 million/s) | — |
 
-Phase 6 Rust medians from the same orientation run were 6.258 ns for Hohmann,
-10.923 ns for flyby constraints, 34.567 ns for flyby delta-v, 235.76 ns for a
-zero-revolution Lambert problem, and 1.263 µs for the seven-solution
-multi-revolution case.
-Keplerian ephemeris evaluation measured 80.299 ns for one scalar epoch and
-22.575 µs for an ordered 256-epoch batch in the Phase 7 orientation run.
-JPL low-precision Earth evaluation measured 95.198 ns for one scalar epoch
-and 31.611 µs for an ordered 256-epoch batch in the Phase 8 orientation run.
-The Phase 9 VSOP2013 spike measured 11.615 µs default-threshold
-initialization, 339.98 ns per default scalar state, 89.554 µs per ordered
-256-state batch, and 37.157 µs per `1e-9` scalar state. The matching C++/heyoka
-orientation harness measured 63.96 ms and 552.53 ms first-time JIT
-initialization at `1e-5` and `1e-9`, then 166 ns and 5.908 µs per scalar call.
-The feature increased the release benchmark executable from 2.6 MiB to
-7.0 MiB. See ADR 0003 for the data/cache decision and caveats.
-The Phase 10 integration decision harness measured the selected DOP853 facade
-at 11.865 µs for the representative nominal Kepler solve and 85.663 µs for
-the state plus 6 by 6 STM. The equivalent warmed C++/heyoka solves measured
-3.722 µs and 84.440 µs; cloning the cached C++ nominal integrator once cost
-0.467 ms. A same-profile candidate tool measured 15.431 µs for the selected
-facade and 7.369 µs for `ode_solvers`, whose missing root/sensitivity
-facilities and per-step allocations outweighed the nominal timing advantage.
-See ADR 0004 for configuration, ranges, and risks.
-The later fixed-system Taylor backend uses a separate matched-accuracy
-protocol because coefficient sweeps are not comparable to DOP853 RHS calls.
-For one eccentric nondimensional revolution on the development host, Taylor
-was 0.87×, 1.18×, 1.61×, and 2.16× the DOP853 speed at `1e-9`, `1e-12`,
-`1e-14`, and machine epsilon, respectively, while producing smaller final
-state errors throughout. The interpretation is deliberately narrow: Taylor
-is a high-accuracy option, not a low-accuracy replacement. See
-[High-accuracy Taylor integration](taylor-integration.md) and the committed
-CSV for the 100- and 1,000-revolution rows.
+## Mission-design kernels
+
+Phase 6 measured each operation separately in the same Rust orientation run:
+
+| Workload | Rust median |
+|---|---:|
+| Hohmann transfer | 6.258 ns |
+| Flyby constraints | 10.923 ns |
+| Flyby delta-v | 34.567 ns |
+| Zero-revolution Lambert problem | 235.76 ns |
+| Seven-solution multi-revolution Lambert problem | 1.263 µs |
+
+## Ephemerides
+
+Scalar and ordered-batch measurements were kept separate:
+
+| Phase | Provider and workload | Result |
+|---|---|---:|
+| 7 | Keplerian, one epoch | 80.299 ns |
+| 7 | Keplerian, 256 ordered epochs | 22.575 µs |
+| 8 | JPL low-precision Earth, one epoch | 95.198 ns |
+| 8 | JPL low-precision Earth, 256 ordered epochs | 31.611 µs |
+| 9 | VSOP2013 default-threshold initialization | 11.615 µs |
+| 9 | VSOP2013 default-threshold scalar state | 339.98 ns |
+| 9 | VSOP2013 default-threshold 256-state batch | 89.554 µs |
+| 9 | VSOP2013 `1e-9` scalar state | 37.157 µs |
+
+The matching C++/heyoka VSOP2013 harness measured first-time JIT costs of
+63.96 ms at `1e-5` and 552.53 ms at `1e-9`. Warm scalar calls took 166 ns and
+5.908 µs, respectively. Enabling VSOP2013 increased the Rust release benchmark
+executable from 2.6 MiB to 7.0 MiB. ADR 0003 explains the data and cache
+decision.
+
+## Integration and dynamics
+
+### DOP853 selection
+
+The Phase 10 decision harness produced these orientation measurements:
+
+| Workload | Selected Rust facade | Warmed C++/heyoka |
+|---|---:|---:|
+| Representative nominal Kepler solve | 11.865 µs | 3.722 µs |
+| State plus 6 by 6 STM | 85.663 µs | 84.440 µs |
+
+Cloning the cached C++ nominal integrator once cost 0.467 ms. In a same-profile
+candidate test, the selected facade took 15.431 µs and `ode_solvers` took
+7.369 µs. The latter lacked the required root and sensitivity facilities and
+allocated per step, so nominal timing alone did not decide the dependency.
+ADR 0004 records the configuration, ranges, and risks.
+
+### Taylor integration
+
+The fixed-system Taylor backend uses a matched-accuracy protocol because
+coefficient sweeps are not comparable to DOP853 right-hand-side calls. For one
+eccentric nondimensional revolution, Taylor's speed relative to DOP853 was:
+
+| Tolerance | Taylor/DOP853 speed |
+|---|---:|
+| `1e-9` | 0.87× |
+| `1e-12` | 1.18× |
+| `1e-14` | 1.61× |
+| Machine epsilon | 2.16× |
+
+Taylor produced smaller final-state errors at every point. This is deliberately
+a narrow conclusion: Taylor is a high-accuracy option, not a low-accuracy
+replacement. The committed CSV also contains the 100- and 1,000-revolution
+rows; see [High-accuracy Taylor integration](taylor-integration.md).
+
 All eleven built-in Taylor models now use incremental coefficient evaluators.
-In the representative eight-model migration benchmark, replacing repeated
-full-series evaluation reduced warmed end-to-end propagation time by 6.45×
-to 28.97×. The per-model timings, protocol, and validation boundaries are in
-[High-accuracy Taylor integration](taylor-integration.md).
-The Phase 11 evaluated-model orientation measured Kepler, CR3BP, and BCP
-right-hand sides at 10.828 ns, 32.833 ns, and 63.386 ns. A representative
-CR3BP propagation measured 7.808 µs and its state-plus-STM propagation
-measured 45.368 µs. The same initial state, final time, parameter, and
-`1e-12` tolerance in warmed C++/heyoka measured 2.885 µs and 95.017 µs
-median, respectively.
-The Phase 12 ZOH Kepler RHS measured 8.928 ns. A 32-segment alternating
-control schedule measured 36.089 µs in Rust and 10.268 µs in the warmed
-C++/heyoka harness with the same state, boundaries, controls, and `1e-12`
-tolerance. The Rust path deliberately starts an independent DOP853 solve at
-each switch; the timing includes those 32 restarts and confirms there is no
-segment-count-dependent control search inside integration.
-The Phase 13 Cartesian mass-optimal RHS measured 52.384 ns and its normalized
-1.2345-time-unit propagation measured 142.52 µs in Rust. The warmed
-C++/heyoka integrator measured a 11.716 µs median for the same state,
-parameters, final time, and `1e-12` tolerance. Rust uses a `0.01` maximum step
-to enforce the recorded oracle tolerance; the C++ Taylor solve has no
-equivalent maximum-step restriction, so this orientation identifies an
-integration-performance target rather than like-for-like algorithm speed.
-The Phase 14 physical five-segment Sims–Flanagan case measured 1.002 µs for
-mismatch evaluation and 4.241 µs for its complete analytic mismatch Jacobian
-in Rust. The same warmed C++ configuration measured 1.037 µs and 12.748 µs,
-respectively. Both sides used the same endpoint states, masses, controls,
-duration, propulsion parameters, gravity parameter, and `cut = 0.6`; neither
-timing includes construction or validation.
-The Phase 15 20-segment normalized Kepler ZOH leg measured a Criterion
-23.67 µs median for mismatch evaluation and 493.55 µs for the complete
-endpoint/control/time-grid Jacobian. The matching warmed C++/heyoka harness
-averaged 6.865 µs and 182.17 µs. Both use the same states, chronological
-controls, time grid, constants, cut, and `1e-12` tolerance, with no maximum
-step. Rust integrates each segment independently and computes fixed-size
-numerical dynamics Jacobians, making both paths visible optimization targets.
-The Phase 16 release-wheel wrapper harness used 20,000 items and the median of
-nine samples on the same machine. A Python scalar loop around `stumpff_c`
-measured 38.9 ns/item versus 14.6 ns/item through `stumpff_c_batch`, a 2.67×
-throughput improvement. Scalar Lagrange calls measured 0.72 µs/item versus
-0.09 µs/item for the `N × 6` NumPy batch, a 7.82× improvement. These include
-Python input/output conversion and demonstrate that throughput-sensitive code
-should use explicit batches; they are not Rust-core timings.
+Across the representative eight-model migration benchmark, replacing repeated
+full-series evaluation reduced warmed end-to-end propagation time by 6.45× to
+28.97×. The linked Taylor guide gives per-model results and validation limits.
+
+### Evaluated models and controlled dynamics
+
+| Phase | Workload | Rust | Warmed C++/heyoka |
+|---|---|---:|---:|
+| 11 | Kepler RHS | 10.828 ns | — |
+| 11 | CR3BP RHS | 32.833 ns | — |
+| 11 | BCP RHS | 63.386 ns | — |
+| 11 | CR3BP propagation | 7.808 µs | 2.885 µs |
+| 11 | CR3BP state plus STM | 45.368 µs | 95.017 µs |
+| 12 | ZOH Kepler RHS | 8.928 ns | — |
+| 12 | 32-segment alternating-control schedule | 36.089 µs | 10.268 µs |
+| 13 | Cartesian mass-optimal RHS | 52.384 ns | — |
+| 13 | Cartesian mass-optimal propagation | 142.52 µs | 11.716 µs |
+
+The Phase 11 comparisons use the same initial state, final time, parameter,
+and `1e-12` tolerance.
+
+The Phase 12 Rust schedule deliberately starts an independent DOP853 solve at
+each switch. Its timing includes all 32 restarts and confirms that integration
+does not perform a segment-count-dependent control search.
+
+The Phase 13 propagation covers 1.2345 normalized time units. Rust uses a
+`0.01` maximum step to meet the recorded oracle tolerance, whereas the C++
+Taylor solve has no equivalent limit. Treat this as an identified performance
+target, not as a like-for-like algorithm comparison.
+
+## Low-thrust legs
+
+| Phase | Workload | Rust | Warmed C++/heyoka |
+|---|---|---:|---:|
+| 14 | Five-segment Sims–Flanagan mismatch | 1.002 µs | 1.037 µs |
+| 14 | Complete analytic mismatch Jacobian | 4.241 µs | 12.748 µs |
+| 15 | 20-segment normalized Kepler ZOH mismatch | 23.67 µs | 6.865 µs |
+| 15 | Complete endpoint/control/time-grid Jacobian | 493.55 µs | 182.17 µs |
+
+The Phase 14 comparison uses the same endpoints, masses, controls, duration,
+propulsion parameters, gravity parameter, and `cut = 0.6`. Construction and
+validation are outside both timings.
+
+The Phase 15 comparison uses the same states, chronological controls, time
+grid, constants, cut, and `1e-12` tolerance, with no maximum step. Rust
+integrates every segment independently and uses fixed-size numerical dynamics
+Jacobians. Both operations therefore remain visible optimization targets.
+
+## Python batch throughput
+
+The Phase 16 release-wheel harness used 20,000 items and the median of nine
+samples:
+
+| Workload | Python scalar loop | NumPy batch | Batch improvement |
+|---|---:|---:|---:|
+| `stumpff_c` | 38.9 ns/item | 14.6 ns/item | 2.67× |
+| Lagrange propagation | 0.72 µs/item | 0.09 µs/item | 7.82× |
+
+These measurements include Python input/output conversion; they are not
+Rust-core timings. They show why throughput-sensitive Python code should use
+the explicit batch APIs.
+
+## Interpreting the results
 
 These are not cross-language speed claims. CPU frequency was not fixed and
 the run is not a substitute for distributions collected under controlled
@@ -116,6 +172,8 @@ compiler optimization and timer resolution dominate its interpretation.
 The C++ column is an elapsed average from five million calls rather than a
 Criterion distribution; it is included as the required same-input orientation
 baseline, not as a statistically controlled language comparison.
+
+## Reproducing the measurements
 
 Run the maintained harness with:
 
@@ -132,29 +190,25 @@ cargo run --release -p pykep-lambert-optimization-benchmark
 cargo run --release -p pykep-taylor-benchmark
 ```
 
-The same harness includes scalar elliptic/hyperbolic anomaly solvers and a
-64-value batch-equivalent loop. This keeps branch-heavy iterative work
-separate from the foundation arithmetic measurements.
-Element benchmarks separate scalar classical/equinoctial conversion, analytic
-Jacobian evaluation, and a 64-state batch-equivalent loop.
-Propagation benchmarks separate elliptic and hyperbolic Lagrange coefficients,
-universal variables, analytic STM evaluation, and a 1,024-state throughput
-loop. Scalar propagation and STM APIs operate entirely on fixed-size arrays
-and perform no heap allocation.
-Mission benchmarks cover basic transfers, flyby constraints/delta-v, and both
-zero- and multi-revolution Lambert solution construction. The same harness
-measures scalar and 256-epoch Keplerian and JPL low-precision ephemeris
-evaluation separately, plus VSOP2013 initialization, scalar, high-precision,
-and batch paths.
-Integration benchmarks separate nominal six-state DOP853 and Taylor
-propagation and their STM paths. The final-state output callback does not
-retain internal steps.
-Dynamics benchmarks separate raw evaluated right-hand sides from CR3BP
-nominal and variational propagation, ZOH schedules, and Pontryagin
-state/costate propagation.
-Leg benchmarks separate Sims–Flanagan mismatch and analytic-gradient
-evaluation and generic ZOH mismatch and sensitivity evaluation for the same
-configurations used by their C++ harnesses.
+Each benchmark group has a distinct scope:
+
+| Group | Workloads |
+|---|---|
+| Foundation | Arithmetic kernels plus scalar elliptic/hyperbolic anomaly solvers and a 64-value loop |
+| Elements | Scalar classical/equinoctial conversions, analytic Jacobians, and a 64-state loop |
+| Propagation | Elliptic/hyperbolic Lagrange coefficients, universal variables, analytic STMs, and a 1,024-state loop |
+| Mission | Transfers, flyby constraints/delta-v, Lambert branches, and scalar/batch ephemerides |
+| Integration | Nominal six-state DOP853 and Taylor propagation plus STM paths |
+| Dynamics | Evaluated right-hand sides, CR3BP nominal/variational propagation, ZOH schedules, and Pontryagin propagation |
+| Legs | Sims–Flanagan mismatch/analytic gradients and generic ZOH mismatch/sensitivities |
+
+The foundation anomaly loop keeps branch-heavy iterative work separate from
+arithmetic kernels. Scalar propagation and STM APIs use fixed-size arrays and
+perform no heap allocation. Ephemeris measurements distinguish initialization,
+scalar, high-precision, and batch paths. The integration final-state callback
+does not retain internal steps.
+
+## Standalone Lambert optimization
 
 The standalone Lambert optimization benchmark ports the fixed `easy.kttsp`
 leg from `pykep-lambert`. It measures deterministic objective throughput and
@@ -164,9 +218,13 @@ decision bounds, penalty, optimizer budget, and seed are printed with every
 run; see `tools/lambert-optimization-benchmark/README.md` for the complete
 protocol.
 
+## Cross-language comparison policy
+
 C++ comparisons are added only when both sides execute identical input data,
 validation policy, branch families, tolerances, and output work. Initialization
 and batch throughput are reported separately from warm scalar latency.
+
+## Release stabilization evidence
 
 Phase 18 adds a protocol-matched 100-sample Rust/C++ distribution, bootstrap
 median confidence intervals, CI regression limits, allocation/cache/

@@ -18,24 +18,25 @@ For a measurement-backed choice between the original Python/C++ fcmaes/pykep
 stack and the native Rust crates, see
 [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md).
 
-The numerical foundations, epochs, anomalies, element conversions, two-body
-propagation, state-transition matrices, Lambert solutions, impulsive
-transfers, flybys, encodings, MIMA approximations, the planet interface, and
-the Keplerian, JPL low-precision, and feature-gated VSOP2013 ephemerides are
-implemented. The pure-Rust adaptive integration backend now drives evaluated
-Kepler, CR3BP, bicircular, four zero-order-hold dynamics families, and
-Cartesian/equinoctial Pontryagin models with first-order sensitivities. An
-adaptive Taylor backend is the default for nominal propagation of the
-TA-derived built-in dynamics, matching upstream pykep's algorithm family;
-the general-purpose DOP853 backend remains available for arbitrary models,
-events, and direct variational solves.
-Validated fixed- and variable-duration Sims–Flanagan legs provide mismatch
-and throttle constraints, with analytic fixed-leg gradients. The generic ZOH
-leg supports the four built-in controlled dynamics families, complete
-first-order mismatch sensitivities, histories, and batches. Built-in Rust ZOH
-legs can explicitly select Taylor or DOP853 for nominal mismatch and history
-evaluation; compatibility methods, Jacobians, and the Python surface retain
-DOP853. Do not infer full pykep parity from the current API.
+## Implemented scope
+
+- **Foundations:** epochs, anomalies, element conversions, two-body
+  propagation, state-transition matrices, Lambert solutions, impulsive
+  transfers, flybys, encodings, and MIMA approximations.
+- **Ephemerides:** a common planet interface plus Keplerian, JPL
+  low-precision, and feature-gated VSOP2013 providers.
+- **Dynamics:** evaluated Kepler, CR3BP, bicircular, four zero-order-hold
+  families, and Cartesian/equinoctial Pontryagin models with first-order
+  sensitivities.
+- **Integration:** adaptive Taylor is the nominal default for the TA-derived
+  built-in models. General-purpose DOP853 remains available for arbitrary
+  models, events, and direct variational solves.
+- **Low-thrust legs:** fixed- and variable-duration Sims–Flanagan legs plus a
+  generic ZOH leg for the four built-in controlled dynamics families.
+
+Built-in Rust ZOH legs can select Taylor or DOP853 for nominal mismatch and
+history evaluation. Compatibility methods, Jacobians, and the Python surface
+retain DOP853. Do not infer full upstream pykep parity from this scope.
 
 ## Layout
 
@@ -67,36 +68,21 @@ Lambert arcs, gravity assists, and Sims–Flanagan low-thrust legs with
 then explains multi-fidelity planet-order search, numerical validation, and
 the ephemeris limitations of the resulting model score.
 
-The pinned upstream source and adaptation policy are recorded in
-[UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md). The complete port checklist is in
-[docs/source-map.md](docs/source-map.md), and the evidence policy is in
-[docs/validation.md](docs/validation.md). Ephemeris frames, validity, and
-accuracy are documented in [docs/ephemerides.md](docs/ephemerides.md).
-Dynamics frames, parameters, errors, and reference tolerances are documented
-in [docs/dynamics.md](docs/dynamics.md).
-Taylor selection, supported models, measured crossover, and current
-sensitivity limitations are documented in
-[docs/taylor-integration.md](docs/taylor-integration.md).
-Piecewise-constant controls, switching boundaries, and ZOH sensitivities are
-documented in [docs/zero-order-hold.md](docs/zero-order-hold.md).
-Indirect-control state, costate, control, and parameter conventions are
-documented in [docs/pontryagin.md](docs/pontryagin.md).
-Sims–Flanagan endpoint, cut, impulse, constraint, and Jacobian conventions are
-documented in [docs/low-thrust-legs.md](docs/low-thrust-legs.md).
-Generic continuous-thrust ZOH leg models, grids, sensitivities, and integration
-settings are documented in [docs/zoh-leg.md](docs/zoh-leg.md).
-The SpOC 4–motivated ordered parallel batch extension, worker semantics,
-complete Python batch matrix, and nested-parallelism guidance are documented
-in [docs/batch-processing.md](docs/batch-processing.md).
-The typed Python contract and upstream migration matrix are documented in
-[docs/python-api.md](docs/python-api.md) and
-[docs/python-migration.md](docs/python-migration.md).
-Rust and Python quick starts plus the complete runnable matrix are in
-[docs/examples.md](docs/examples.md).
-The historical pre-0.1.0 release-candidate performance distributions,
-profiling, dynamic analysis, and since-resolved publication blockers are in
-[docs/stabilization.md](docs/stabilization.md). The current publication and
-clean-consumer procedure is in [RELEASE.md](RELEASE.md).
+## Documentation map
+
+| Topic | Guide |
+|---|---|
+| Upstream provenance and adaptation | [UPSTREAM_NOTICE.md](UPSTREAM_NOTICE.md) |
+| Port coverage and evidence | [Source map](docs/source-map.md) and [validation](docs/validation.md) |
+| Units, frames, and model contracts | [Ephemerides](docs/ephemerides.md) and [dynamics](docs/dynamics.md) |
+| Integration | [Taylor](docs/taylor-integration.md) and [zero-order hold](docs/zero-order-hold.md) |
+| Indirect optimal control | [Pontryagin models](docs/pontryagin.md) |
+| Low-thrust transcriptions | [Sims–Flanagan](docs/low-thrust-legs.md) and [generic ZOH legs](docs/zoh-leg.md) |
+| Ordered parallel computation | [Batch processing](docs/batch-processing.md) |
+| Python use and migration | [Python contract](docs/python-api.md) and [upstream mapping](docs/python-migration.md) |
+| Runnable examples | [Rust and Python quick starts](docs/examples.md) |
+| Historical release evidence | [Pre-0.1.0 stabilization](docs/stabilization.md) |
+| Publishing | [Release procedure](RELEASE.md) |
 
 ## Intended properties
 

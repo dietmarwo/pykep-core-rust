@@ -1,51 +1,41 @@
 # pykep-core
 
 `pykep-core` is an independent native Rust implementation of numerical
-algorithms from pykep version 3. Version 0.1.4 provides physical constants,
-Julian-date arithmetic, microsecond-resolution epochs, stable Stumpff
-functions, Kepler-equation residuals, anomaly conversions, and allocation-free
-small-vector/matrix operations. Cartesian, classical Keplerian, and modified
-equinoctial conversions include analytic 6 by 6 Jacobians. Two-body
-propagation supports Lagrange coefficients and universal variables, with
-analytic Lagrangian and Reynolds state-transition matrices.
-Mission-design utilities include impulsive transfers, time encodings, flybys,
-single/multi-revolution Lambert branches, and MIMA mass approximations.
-The object-safe ephemeris interface and analytic Keplerian provider support
-thread-safe scalar and ordered parallel batch evaluation. Two-body
-propagation, Lambert problems, anomalies, vector operations, and generic
-fallible scalar computations expose the same deterministic worker contract.
-The JPL low-precision
-provider supplies approximate heliocentric states for Mercury through Neptune
-over 1800–2050. The default `vsop2013` feature embeds a pure-Rust analytical
-evaluator for Mercury through Pluto at coefficient thresholds down to `1e-9`.
-Adaptive pure-Rust DOP853 and fixed-system Taylor facades define evaluated
-model, parameter, dense-output, and first-order sensitivity contracts; DOP853
-also supports terminal events and arbitrary user dynamics. Taylor is the
-default for nominal propagation of the built-in TA-derived models. Stateless
-evaluated Kepler, CR3BP, and bicircular
-models provide direct right-hand sides, adaptive propagation, analytic
-Jacobians and STMs; CR3BP also provides its effective potential and Jacobi
-constant.
-Validated zero-order-hold schedules drive normalized Kepler, CR3BP,
-modified-equinoctial, and ideal solar-sail models with deterministic switch
-ownership, backward propagation, and segment-local sensitivities.
-Cartesian and modified-equinoctial Pontryagin models provide mass- and
-time-optimal state/costate dynamics, evaluated controls and Hamiltonians, and
-first-order sensitivity Jacobians. Their full model Jacobians, and those of
-the four ZOH dynamics models, use fixed-size centered differences; the
-integrator tolerance is not a derivative-accuracy guarantee. Canonical
-Pontryagin costate rates themselves use forward-mode differentiation.
-Fixed- and variable-duration Sims–Flanagan legs provide validated
-forward/backward transcription, throttle constraints, and analytic fixed-leg
-mismatch gradients.
-The generic ZOH leg applies the same cut transcription to continuous
-piecewise-constant controls for all four built-in ZOH dynamics models and
-returns endpoint, control, and time-grid sensitivities. Built-in Rust legs can
-explicitly select Taylor or DOP853 for nominal mismatch and history
-evaluation; the no-suffix compatibility methods and the Jacobian path retain
-DOP853. Pinned ZOH-leg derivative validation uses scaled tolerances up to
-`3e-5`; see the module-level sensitivity documentation before using those
-derivatives in a tightly converged optimizer.
+algorithms from pykep version 3. Version 0.1.4 includes:
+
+- **Numerical foundations:** physical constants, Julian-date arithmetic,
+  microsecond-resolution epochs, Stumpff functions, Kepler equations, anomaly
+  conversions, and allocation-free small-vector/matrix operations.
+- **Elements and propagation:** Cartesian, classical, and modified
+  equinoctial conversions; analytic 6 by 6 Jacobians; Lagrange and universal
+  variable propagation; and Lagrangian/Reynolds state-transition matrices.
+- **Mission design:** impulsive transfers, time encodings, flybys,
+  single/multi-revolution Lambert branches, and MIMA mass approximations.
+- **Ephemerides:** a Keplerian provider, JPL low-precision states for Mercury
+  through Neptune over 1800–2050, and feature-gated VSOP2013 states for Mercury
+  through Pluto at coefficient thresholds down to `1e-9`.
+- **Dynamics and integration:** DOP853 and fixed-system Taylor facades;
+  evaluated Kepler, CR3BP, bicircular, ZOH, and Pontryagin models; dense output,
+  terminal DOP853 events, and first-order sensitivities.
+- **Low-thrust transcriptions:** fixed/variable-duration Sims–Flanagan legs and
+  generic continuous-thrust ZOH legs.
+- **Ordered batches:** deterministic worker semantics across propagation,
+  Lambert, anomaly, vector, ephemeris, and other fallible scalar operations.
+
+Taylor is the default for nominal propagation of the built-in TA-derived
+models. DOP853 supports arbitrary user dynamics and direct variational solves.
+
+The ZOH models cover normalized Kepler, CR3BP, modified equinoctial, and ideal
+solar-sail dynamics. They define deterministic switch ownership, backward
+propagation, and segment-local sensitivities. Rust ZOH legs can select Taylor
+or DOP853 for nominal mismatch and history evaluation; compatibility methods
+and Jacobians retain DOP853.
+
+The full Pontryagin and ZOH model Jacobians use fixed-size centered differences,
+although canonical Pontryagin costate rates use forward-mode differentiation.
+Integrator tolerance therefore does not guarantee derivative accuracy. Pinned
+ZOH-leg derivative validation uses scaled tolerances up to `3e-5`; consult the
+module-level sensitivity documentation before tightly converged optimization.
 
 The crate has no C or C++ runtime dependency.
 

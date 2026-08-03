@@ -201,19 +201,21 @@ calls can spend more time crossing the extension boundary than doing
 astrodynamics. See [`docs/batch-processing.md`](docs/batch-processing.md) for
 the complete API matrix and nested-parallelism guidance.
 
-Choose the deployment stack separately from the physical model. In the
-recorded warmed comparisons, upstream heyoka's LLVM-generated, model-specific
-Taylor kernels are 2.83× to 4.53× faster than `pykep-core` 0.1.4 for the five
-directly matched built-in fixtures. Heyoka also paid approximately 50–742 ms
-of first cache-miss JIT setup in those fixtures. The Rust core has no runtime
-JIT, C++ ABI, or LLVM deployment dependency; its analytical propagation,
-state-transition, Lambert, and transcription kernels are often much closer to
-upstream, and some measured Rust kernels are faster. Prefer warmed upstream
-heyoka when a long-lived built-in Taylor workload dominates and its native
-dependency stack is acceptable. Prefer the Rust stack when Cargo-native
-deployment, short-lived processes, native optimizer composition, predictable
-startup, or avoiding Python/C++ boundaries dominates. Do not generalize either
-choice without benchmarking the complete user workload.
+Choose the deployment stack separately from the physical model. The recorded
+comparison establishes two different performance boundaries:
+
+| Boundary | Evidence |
+|---|---|
+| Warmed built-in Taylor propagation | Upstream heyoka's LLVM-generated kernels were 2.83× to 4.53× faster across five matched fixtures. |
+| First cache miss | Heyoka JIT setup took approximately 50–742 ms across those fixtures. |
+| Analytical and transcription kernels | Results were generally much closer; some measured Rust kernels were faster. |
+| Deployment | Rust requires no runtime JIT, C++ ABI, or LLVM installation. |
+
+Prefer warmed upstream heyoka when a long-lived built-in Taylor workload
+dominates and its native dependency stack is acceptable. Prefer Rust for
+Cargo-native deployment, short-lived processes, native optimizer composition,
+predictable startup, or avoiding Python/C++ boundaries. Benchmark the complete
+user workload before generalizing either choice.
 
 Rust could host an LLVM ORC JIT and generate the same kind of specialized
 coefficient kernels, but doing so would require a symbolic system, Taylor
@@ -536,6 +538,7 @@ forward and backward states at the cut. For built-in Rust legs,
 `mismatch_constraints_with_method()` and `state_history_with_method()` select
 Taylor or DOP853. The compatibility methods `mismatch_constraints()` and
 `state_history()`, the Python surface, and the Jacobian path remain DOP853.
+
 Its four Jacobian groups are initial state, final state, flattened
 chronological controls, and all time-grid nodes. The built-in model Jacobians
 use centered differences, and validated end-to-end derivative tolerances reach

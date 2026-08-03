@@ -19,14 +19,20 @@ earth = pk.Planet.jpl_low_precision("earth")
 earth_state = earth.state(0.0)
 ```
 
-Angles are radians and Julian conversions are arithmetic day counts without
-an implied UTC, TT, or TDB time scale. Public numerical functions reject NaN
-and infinity. Ordered batch functions preserve scalar semantics and release
-the GIL around native work. Their common `workers` contract uses Rayon's shared
-pool for `0`, serial evaluation for `1`, and a cached pool of exactly `N`
-threads for `N > 1`; avoid nested full-size pools. Numeric `Epoch` arithmetic
-uses days; `add_seconds()` and `seconds_since()` make second-based arithmetic
-explicit. Constructor data is copied into immutable native objects.
+Key conventions:
+
+- Angles are radians.
+- Julian conversions are arithmetic day counts without an implied UTC, TT, or
+  TDB time scale.
+- Numeric `Epoch` arithmetic uses days; `add_seconds()` and `seconds_since()`
+  make second-based arithmetic explicit.
+- Public numerical functions reject NaN and infinity.
+- Ordered batches preserve scalar semantics and release the GIL around native
+  work.
+- `workers=0` uses Rayon's shared pool, `workers=1` runs serially, and
+  `workers=N` uses a cached pool of exactly `N` threads. Avoid nested full-size
+  pools.
+- Constructors copy their data into immutable native objects.
 
 The wheel ships a `py.typed` marker and complete extension stub. The full
 units, shape, default, ownership, and error contract is in

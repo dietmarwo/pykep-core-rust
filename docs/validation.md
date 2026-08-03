@@ -21,12 +21,18 @@ Rust workloads exist.
 Randomized oracle cases use a named PCG32 seed recorded in each data file.
 Discovered failures are promoted to fixed regression cases.
 
+## Phase-by-phase evidence
+
+### Phase 3: epochs and anomalies
+
 Phase 3 adds 9 epoch cases and 134 anomaly cases from the pinned C++
 implementation. The anomaly set includes every conversion direction,
 elliptic and hyperbolic boundary regimes, angles outside one revolution, and
 64 deterministic PCG32 solver samples. The Rust layer additionally rejects
 invalid calendars and true anomalies outside the physical hyperbolic
 asymptote instead of propagating non-finite values.
+
+### Phase 4: elements and Jacobians
 
 Phase 4 adds 206 direct element/Cartesian cases and 16 analytic Jacobians from
 the pinned implementation. Jacobian files explicitly record row-major
@@ -35,16 +41,21 @@ and hyperbolic state round trips, both equinoctial pole conventions,
 finite-difference derivatives, and inverse-Jacobian identities. NumPy batches
 are compared row-for-row with the scalar Python API.
 
+### Phase 5: two-body propagation
+
 Phase 5 adds 28 propagation cases spanning zero and negative duration,
 circular, elliptic, hyperbolic, near-parabolic, and many-period trajectories.
 Each case records both Lagrange-coefficient and universal-variable states plus
 the Lagrangian and Reynolds 6 by 6 STMs. The source file SHA-256 is
 `63e2340aa8e4f65a4ae831b7e1c8eb3a28930e2e1ed336d9324e0dbf44469e57`.
+
 Independent tests check energy and angular-momentum conservation, time
 reversal, central finite differences, and STM composition. Scalar propagation
 uses only fixed-size stack values; the core path performs zero heap
 allocations. Batch APIs allocate exactly their returned output storage after
 copying Python-owned input before releasing the GIL.
+
+### Phase 6: mission-design utilities
 
 Phase 6 records transfer, encoding, flyby, MIMA, and 13 Lambert solutions
 across three geometries in `phase6-v1.json` (SHA-256
@@ -54,12 +65,16 @@ returned branch is independently propagated to its requested endpoint;
 encoding pairs round-trip, and the flyby Jacobian is checked by central
 differences. MIMA2 is checked against the published upstream reference case.
 
+### Phase 7: Keplerian ephemerides
+
 Phase 7 adds six Keplerian states over negative, reference, near-reference,
 and long-span MJD2000 epochs. `phase7-v1.json` has SHA-256
 `7eda8fb03796ab7d70cdb0e94c422773422ed682aff9310cd06512c0f6396a54`.
 Independent tests cover period recurrence, all supported element
 representations, ordered batches, explicit unsupported capabilities, and
 concurrent read-only evaluation through shared ownership.
+
+### Phase 8: JPL low-precision ephemerides
 
 Phase 8 adds true-anomaly elements, Cartesian states, and physical metadata
 for all eight JPL low-precision bodies at five epochs spanning the open
@@ -72,17 +87,22 @@ boundaries. The provider retains the source table's slightly negative fitted
 Earth inclination near the ends of the interval while keeping the general
 public classical-element converter's canonical `[0, π]` inclination contract.
 
+### Phase 9: VSOP2013 ephemerides
+
 Phase 9 adds 54 VSOP2013 states covering all nine bodies at six epochs around
 the 1890–2000 fit interval and the J2000/MJD2000 half-day offset. Two
 additional cases verify coefficient selection at the default `1e-5` and
 coarse `0.5` thresholds. `phase9-v1.json` has SHA-256
 `9d5af01df18acb17fcd1b2356af6f2cc08f1cf75e10864270d0c30732f8b00d8`.
+
 The oracle uses pykep 3.0.1 linked to heyoka 7.10.0. At the embedded
 high-precision floor of `1e-9`, the maximum observed Rust/C++ difference is
 0.185 m in position and `6.6e-8 m/s` in velocity. Independent checks cover
 case-insensitive names, feature reporting, threshold errors, clone
 determinism, ordered Python batches, and a build/test run without the optional
 coefficient feature.
+
+### Phase 10: adaptive integration
 
 Phase 10 selects a pure-Rust DOP853 backend through a pykep-owned facade.
 Decision tests compare Kepler states and the 6 by 6 STM to the independent
@@ -100,17 +120,22 @@ and variational timings, allocation limitations, and the dense-output
 maximum-step caveat are recorded in ADR 0004. Those tests validate integration
 machinery independently of the production models added in Phase 11.
 
+### Phase 11: evaluated dynamics
+
 Phase 11 adds five sampled states and the final 6 by 6 STM for each of
 Kepler, CR3BP, and BCP in `phase11-v1.json`. The BCP case uses a nonzero Sun
 mass and a nonzero initial epoch, while the CR3BP case reproduces the
 representative upstream trajectory. The file has SHA-256
 `1c2b67eb203da62baf921db9f811b0ad0f763cbaa03f0ca80d6319870b0da807`.
+
 The oracle uses pykep 3.0.1 and heyoka 7.10.0 at a requested tolerance of
 `1e-16`; Rust comparison settings and achieved tolerances are documented in
 `dynamics.md`. Separate tests evaluate the source equations directly, verify
 the triangular equilibrium, preserve the Jacobi constant, make zero-Sun BCP
 reduce to CR3BP, check every state/parameter Jacobian column by central
 differences, and distinguish body singularities from solver failures.
+
+### Phase 12: zero-order-hold dynamics
 
 Phase 12 records the final state and all first-order state/control variations
 for one upstream regression case from each of the four ZOH systems.
@@ -123,6 +148,8 @@ switch ownership, malformed grids, zero-control reductions, manual
 segment-by-segment equivalence, forward/backward reversal, and activation of
 per-segment sensitivity columns.
 
+### Phase 13: Pontryagin dynamics
+
 Phase 13 records mass- and time-optimal Cartesian and modified-equinoctial
 states and all first-order variations with respect to the seven initial
 costates and upstream `lambda0` variational argument. It also records the
@@ -130,11 +157,15 @@ upstream dimensional 100-day equinoctial case. `phase13-v1.json` has SHA-256
 `a1276c4c35c7ad60b481d81d69f8df64b542bad1d5cc6571738db820cb0e2c3d`.
 Normalized nominal trajectories use a scaled `3e-10` bound, the dimensional
 case uses `3e-9`, and variations use `2e-4` to account for the generic
-centered numerical Jacobians. Independent tests cover minimized-Hamiltonian
+centered numerical Jacobians.
+
+Independent tests cover minimized-Hamiltonian
 conservation, propagated central differences, output-by-input Jacobian
 orientation, explicit zero-primer errors, control normalization, and
 canonical Hamiltonian agreement across the analytic coordinate/costate
 transform.
+
+### Phase 14: Sims–Flanagan legs
 
 Phase 14 records fixed-duration Sims–Flanagan mismatch and throttle
 constraints, all three analytic mismatch-Jacobian groups, and throttle
@@ -144,9 +175,13 @@ durations for the alpha variant. `phase14-v1.json` has SHA-256
 `0bd6adddc72d850f1de5e4ab95a436128d9b8181f8de2b3bbbc67300e004d542`.
 The Rust analytic gradients agree with the pinned C++ values to scaled bounds
 of `2e-10` to `3e-10` and with independent scale-adjusted central
-differences. Separate tests cover one segment, odd/even splits, zero and
+differences.
+
+Separate tests cover one segment, odd/even splits, zero and
 unit-limit throttle, all cut boundaries, normalized weights, invalid
 propulsion/gravity/mass values, dimension mismatches, and non-finite inputs.
+
+### Phase 15: generic ZOH legs
 
 Phase 15 records generic ZOH-leg mismatches and all four Jacobian groups for
 Kepler, CR3BP, modified-equinoctial, and ideal solar-sail dynamics.
@@ -156,14 +191,20 @@ Nominal mismatches agree with the pinned C++/heyoka oracle within a scaled
 `3e-9` bound; endpoint, chronological-control, and time-grid derivatives agree
 within `3e-5`, reflecting the fixed-size numerical model Jacobians. Every
 Kepler derivative column is also checked against independent scale-adjusted
-central differences. Separate tests cover cut zero and one, strict time grids,
+central differences.
+
+Separate tests cover cut zero and one, strict time grids,
 dimensions, finite values, solver options, state histories, ordered batches,
 and maximum-step exhaustion with direction, segment index, and time interval
 in the reported failure.
 
+### Phase 16: Python API
+
 Phase 16 audits the complete Python surface against the pinned upstream
 exports and records every equivalent, renamed, intentionally different,
-deferred, and unsupported area in `python-migration.md`. Pytest checks every
+deferred, and unsupported area in `python-migration.md`.
+
+Pytest checks every
 runtime export against the shipped stub, including parameter names/order,
 defaults, return-annotation presence, and class-member documentation, then
 exercises strided/read-only arrays, wrong dtype and rank, wrong shape,
@@ -172,6 +213,8 @@ concurrent reuse. Mypy checks representative code against the packaged stub. A
 clean wheel matrix installs and imports CPython 3.11–3.13 wheels on Linux,
 macOS, and Windows; local shared-library inspection verifies that the
 extension has no C++ runtime dependency.
+
+### Phase 17: runnable examples
 
 Phase 17 adds deterministic Rust/Python pairs for epochs and anomalies,
 elements and propagation, Lambert branches, ephemerides, gravity assists,
@@ -182,6 +225,8 @@ the installed release extension. Ten Rustdoc examples cover every major module
 landing page and representative Lambert/ZOH types and compile with warnings
 denied.
 
+### Phase 18: release stabilization
+
 Phase 18 adds a protocol-matched 100-sample Rust/C++ performance distribution,
 coarse CI regression thresholds, batch scaling, and allocation/cache/
 vectorization profiling before any optimization. Miri runs suitable structural
@@ -191,11 +236,14 @@ Lambert inputs, and Reynolds-STM overflow boundaries. `stabilization.md`
 records exact results, limits, tool constraints, and the absence of algorithm
 changes.
 
+## Taylor extension
+
 The Taylor extension adds closed-form recurrence tests, coefficient-level
 comparisons between the optimized incremental evaluators and an independent
 full-series reference through order 24, matched DOP853 trajectories for all
 eleven built-in model types, and a separate official heyoka 7.10.1 fixture
 for Kepler, CR3BP, BCP, and the Kepler STM.
+
 `taylor-heyoka-v1.json` is regenerated by the optional
 `tools/heyoka-cross-validation/generate.py` harness. The committed
 one/100/1,000-revolution accuracy and timing protocol is
@@ -203,6 +251,8 @@ one/100/1,000-revolution accuracy and timing protocol is
 state-error reference. The ZOH and Pontryagin Taylor checks use their existing
 pinned upstream fixtures plus same-problem DOP853 comparisons and are not
 mislabelled as direct heyoka runs.
+
+## Downstream release rehearsals
 
 Before changing the built-in nominal default to Taylor, two downstream
 applications were rehearsed against the local crate through a temporary Cargo

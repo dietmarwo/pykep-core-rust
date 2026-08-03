@@ -20,6 +20,8 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
   selection, parallel batch semantics, and pure-Rust performance boundary.
 - Replaced the stale Phase 18 release-candidate status probe with a value
   derived automatically from the Cargo package version.
+- Reorganized dense landing-page, performance, and validation prose into
+  labeled sections, tables, and shorter inventories for human readers.
 
 ### Fixed
 

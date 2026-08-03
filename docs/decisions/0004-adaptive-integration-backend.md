@@ -35,6 +35,7 @@ terminal root finding, scalar/component tolerances, and explicit step and
 rejection limits. It accepts stack-allocated arrays and user-defined state
 types. Its Apache-2.0 license is compatible, and a no-default-feature build
 passes Rust 1.88 even though the crate does not declare an MSRV.
+
 Its `simba` dependency currently brings `paste` 1.0.15. RustSec advisory
 RUSTSEC-2024-0436 marks that macro crate unmaintained but reports no
 vulnerability and no safe upgrade. The exact advisory is narrowly allowlisted
