@@ -21,6 +21,12 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 - Replaced the stale Phase 18 release-candidate status probe with a value
   derived automatically from the Cargo package version.
 
+### Fixed
+
+- Forced Python CI to install the wheel built from the current checkout rather
+  than allowing an already-published wheel with the same workspace version to
+  win pip's candidate selection.
+
 ## [0.1.4] - 2026-07-28
 
 ### Added
