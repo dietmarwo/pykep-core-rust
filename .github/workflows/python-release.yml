@@ -40,7 +40,7 @@ jobs:
           target: x86_64
           args: --release --locked --out dist --find-interpreter
           manylinux: auto
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-x86_64
           path: dist
@@ -97,7 +97,7 @@ jobs:
           python -m pip install --no-index --no-deps --find-links dist pykep-rust
           $env:EXPECTED_VERSION = python scripts/package_version.py
           python scripts/smoke_python_package.py
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-x64-py${{ matrix.python-version }}
           path: dist
@@ -133,7 +133,7 @@ jobs:
             --find-links dist pykep-rust
           EXPECTED_VERSION="$(python scripts/package_version.py)" \
             python scripts/smoke_python_package.py
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
@@ -159,7 +159,7 @@ jobs:
           python -m pip install dist/*.tar.gz
           EXPECTED_VERSION="$(python scripts/package_version.py)" \
             python scripts/smoke_python_package.py
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
           path: dist
