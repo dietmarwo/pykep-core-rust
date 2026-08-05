@@ -18,6 +18,17 @@ python tools/check_markdown_links.py
 mdbook build
 ```
 
+Build and verify the complete PDF edition after the HTML book is current:
+
+```bash
+python scripts/build_book_pdf.py
+```
+
+The PDF builder needs Chrome or Chromium plus `mutool`. It creates a
+navigable bookmark tree, keeps chapter links inside the book, converts links
+to repository artifacts into portable GitHub URLs, and writes
+`docs/pykep-rust-book.pdf`.
+
 Run benchmarks separately so timing work is never hidden in the test suite:
 
 ```bash
