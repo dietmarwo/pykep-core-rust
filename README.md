@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/pykep-rust.png" alt="pykep-core-rust overview">
+</p>
+
 # pykep-rust
 
 ![Pure Rust astrodynamics core](https://img.shields.io/badge/astrodynamics%20core-100%25%20Rust-brightgreen)
@@ -6,6 +10,10 @@
 [![docs.rs](https://docs.rs/pykep-core/badge.svg)](https://docs.rs/pykep-core)
 [![PyPI](https://img.shields.io/pypi/v/pykep_rust.svg?cacheSeconds=300)](https://pypi.org/project/pykep-rust/)
 [![mdBook guide](https://img.shields.io/badge/guide-mdBook-blue)](https://dietmarwo.github.io/pykep-core-rust/)
+
+[Slides (PDF)](https://github.com/dietmarwo/pykep-core-rust/blob/main/docs/pykep-rust-slides.pdf)
+· [Book (PDF)](https://github.com/dietmarwo/pykep-core-rust/blob/main/docs/pykep-rust-book.pdf)
+· [YouTube video](https://youtu.be/bbxdj9rmX7M)
 
 This repository contains an independent native Rust port of the numerical C++
 library in pykep version 3 (`kep3`), together with a thin Python API built with
