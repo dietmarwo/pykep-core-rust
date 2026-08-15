@@ -6,6 +6,8 @@
 
 ![Pure Rust astrodynamics core](https://img.shields.io/badge/astrodynamics%20core-100%25%20Rust-brightgreen)
 ![No C++ backend](https://img.shields.io/badge/C%2B%2B%20backend-none-brightgreen)
+[![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)
+](https://github.com/rust-secure-code/safety-dance/)
 [![crates.io](https://img.shields.io/crates/v/pykep-core.svg?cacheSeconds=300)](https://crates.io/crates/pykep-core)
 [![docs.rs](https://docs.rs/pykep-core/badge.svg)](https://docs.rs/pykep-core)
 [![PyPI](https://img.shields.io/pypi/v/pykep_rust.svg?cacheSeconds=300)](https://pypi.org/project/pykep-rust/)
