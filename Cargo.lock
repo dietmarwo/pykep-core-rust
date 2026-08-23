@@ -220,9 +220,9 @@ checksum = "9e5e8f6c15a24b9a3ee5efec809ccd006d3b30e8b3bb63c39af737c7f87daa1d"
 
 [[package]]
 name = "fcmaes-core"
-version = "0.1.3"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2f4cc03ed3da3d4ea7ea8fe1452b7d67eaeee582f226e5cc472e513dffaaefe"
+checksum = "03a4842c171c6aab6dc55666ab5450bb6d5af91f0479ec5a4432dcccadac2f25"
 dependencies = [
  "libm",
  "nalgebra",
