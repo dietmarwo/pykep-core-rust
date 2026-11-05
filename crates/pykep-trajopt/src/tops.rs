@@ -201,7 +201,9 @@ impl TopsProblem {
         let scales = Scales {
             length,
             time: if normalise {
-                (length.powi(3) / required(raw.mu)?).sqrt()
+                // Plain products: `powi` precision differs between platforms,
+                // and the normalized bounds must be bit-identical everywhere.
+                (length * length * length / required(raw.mu)?).sqrt()
             } else {
                 1.0
             },

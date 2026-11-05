@@ -166,7 +166,8 @@ impl BoundaryPair {
                 Cr3bpDynamics.rhs(time, &state, &[self.mu], &mut rhs)?;
                 rhs
             } else {
-                let r3 = state[..3].iter().map(|v| v * v).sum::<f64>().powf(1.5);
+                let r2 = state[..3].iter().map(|v| v * v).sum::<f64>();
+                let r3 = r2 * r2.sqrt();
                 [
                     state[3],
                     state[4],
