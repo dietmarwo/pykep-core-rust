@@ -14,6 +14,11 @@ release and does not imply endorsement by ESA or the upstream authors.
   `benchmark/` trees used for the port match that commit byte-for-byte, apart
   from the generated `include/kep3/config.hpp` and notebook files excluded
   from the comparison.
+- Trajectory gym, TOPS data and matched benchmarks: upstream version `3.1.0`,
+  commit `c01e19debad5ea22b7079189f786f473046a79d5`. The `pykep-trajopt`
+  crate adapts the decision layouts and formulations of `pykep/trajopt/` at
+  that commit; its embedded data are described in the
+  [gym dataset notice](crates/pykep-trajopt/data/NOTICE.md).
 
 The upstream source and adaptations are distributed under the Mozilla Public
 License 2.0. See [LICENSE](LICENSE). Rust files translated or substantially

@@ -14,7 +14,7 @@ members = [
 exclude = ["fuzz"]
 
 [workspace.package]
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 rust-version = "1.88"
 license = "MPL-2.0"
@@ -23,7 +23,8 @@ repository = "https://github.com/dietmarwo/pykep-core-rust"
 homepage = "https://dietmarwo.github.io/pykep-core-rust/"
 
 [workspace.dependencies]
-pykep-core = { version = "=0.1.4", path = "crates/pykep-core" }
+pykep-core = { version = "=0.1.5", path = "crates/pykep-core" }
+pykep-trajopt = { version = "=0.1.5", path = "crates/pykep-trajopt" }
 
 [workspace.lints.rust]
 missing_docs = "deny"

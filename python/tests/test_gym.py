@@ -71,3 +71,19 @@ def test_sail_objective_and_launcher():
     assert p.fitness(x)[0] == x[-1]
     assert gym.launcher_mass("falcon9", -1) == .1
     assert np.isfinite(gym.launcher_mass("ariane5", 2.7, -13.))
+
+
+def test_embedded_dataset_bytes_match_provenance():
+    """The checkout must keep the pinned TOPS and launcher bytes on every platform."""
+    import hashlib
+    import json
+    from pathlib import Path
+
+    data = Path(__file__).resolve().parents[2] / "crates" / "pykep-trajopt" / "data"
+    if not data.is_dir():
+        pytest.skip("source checkout not available")
+    inventory = json.loads((data / "provenance.json").read_text(encoding="utf-8"))
+    for name, expected in inventory["sha256"].items():
+        candidates = [data / name, data / "tops" / name]
+        path = next(p for p in candidates if p.is_file())
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, name

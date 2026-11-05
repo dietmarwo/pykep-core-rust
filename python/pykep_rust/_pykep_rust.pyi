@@ -196,16 +196,20 @@ class ZohLeg:
     def mismatch_constraints(self, *, method: str = "dop853") -> list[float]: ...
     def mismatch_jacobian(
         self,
+        *,
+        method: str = "dop853",
     ) -> tuple[
         list[list[float]],
         list[list[float]],
         list[list[float]],
         list[list[float]],
     ]:
-        """Return finite-difference-based sensitivities in output-by-input order.
+        """Return mismatch sensitivities in output-by-input order.
 
-        Integrator tolerances are not derivative-accuracy guarantees; pinned
-        validation uses scaled bounds up to 3e-5.
+        ``method="taylor"`` differentiates the Taylor recurrences. DOP853 uses
+        analytic Kepler and CR3BP model Jacobians and centered differences for
+        the equinoctial and sail models. Integrator tolerances are not
+        derivative-accuracy guarantees.
         """
     def state_history(
         self, samples_per_segment: int = 2,
@@ -220,7 +224,9 @@ class ZohLeg:
     ) -> list[list[float]]: ...
     @staticmethod
     def mismatch_jacobian_batch(
-        legs: Sequence[ZohLeg], workers: int = 0
+        legs: Sequence[ZohLeg], workers: int = 0,
+        *,
+        method: str = "dop853",
     ) -> list[
         tuple[
             list[list[float]],

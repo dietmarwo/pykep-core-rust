@@ -22,10 +22,12 @@ use crate::{PykepError, Result};
 
 /// Mismatch derivatives in output-by-input row order.
 ///
-/// These derivatives compose segment sensitivities whose built-in model
-/// Jacobians use centered differences. Validation against the pinned oracle
-/// therefore uses scaled tolerances up to `3e-5`, independently of the
-/// integrator tolerance.
+/// These derivatives compose segment sensitivities. With DOP853, the
+/// equinoctial and solar-sail models use centered-difference model Jacobians,
+/// so validation against the pinned oracle uses scaled tolerances up to
+/// `3e-5` independently of the integrator tolerance. The Kepler and CR3BP
+/// models use analytic model Jacobians, and the Taylor backend differentiates
+/// its coefficient recurrences for all four models.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ZohLegMismatchJacobian<const N: usize> {
     /// Derivative with respect to the initial state, shape `N × N`.
@@ -274,10 +276,12 @@ where
     /// Evaluates all four first-order mismatch derivative groups.
     ///
     /// The matrices use output-by-input rows and chronological control
-    /// blocks, matching the upstream ZOH-leg contract. Built-in model
-    /// Jacobians are centered finite differences with a relative step of
-    /// `3e-6`; the validation ceiling is a scaled `3e-5`, even when the
-    /// propagation tolerance is tighter.
+    /// blocks, matching the upstream ZOH-leg contract. This method uses
+    /// DOP853. The equinoctial and solar-sail model Jacobians are centered
+    /// finite differences with a relative step of `3e-6`, so their validation
+    /// ceiling is a scaled `3e-5` even when the propagation tolerance is
+    /// tighter; the Kepler and CR3BP model Jacobians are analytic. Use
+    /// [`Self::mismatch_jacobian_with_method`] to select Taylor.
     ///
     /// # Errors
     ///

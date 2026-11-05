@@ -214,5 +214,6 @@ Rows select the fastest tested tolerance at scaled endpoint error `1e-11`.
 | equinoctial_mass | 622.882 | 508.383 | 0.82× |
 | equinoctial_time | 554.198 | 413.126 | 0.75× |
 
-See the comparison guide for reproduction commands and the patch archive for raw measurements.
-[Comparison guide](../tools/taylor-comparison/README.md)
+See the comparison guide for reproduction commands. The raw measurements
+are in the measurement archive attached to the [0.1.5 release](https://github.com/dietmarwo/pykep-core-rust/releases/tag/v0.1.5).
+[Comparison guide](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/taylor-comparison/README.md)

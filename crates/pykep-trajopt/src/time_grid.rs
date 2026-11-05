@@ -1,4 +1,9 @@
+// Copyright (c) 2023-2026 Dario Izzo (dario.izzo@gmail.com)
+//                          Advanced Concepts Team, European Space Agency (ESA)
+// Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
+// Uniform and softmax segment grids follow the pinned PyKEP TOPS transcriptions
+// at c01e19debad5ea22b7079189f786f473046a79d5.
 
 use crate::problem::invalid;
 use pykep_core::Result;

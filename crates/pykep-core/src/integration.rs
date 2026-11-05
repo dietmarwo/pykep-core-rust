@@ -135,7 +135,10 @@ pub enum EventDirection {
 }
 
 /// An analytic Taylor event for models whose first six states are Cartesian position and velocity.
+///
+/// The enum is non-exhaustive so later releases can add event surfaces.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum TaylorEvent {
     /// A plane defined by `normal · position - offset = 0`.
     Plane {
@@ -790,8 +793,9 @@ impl Taylor {
 
     /// Propagates until the first qualifying root of a supported event polynomial.
     ///
-    /// Direction is measured in propagation order. A root exactly at the
-    /// start of a step is excluded. Stationary roots qualify for
+    /// Direction is measured in propagation order. A root at the initial
+    /// time is excluded, including one displaced by rounding when restarting
+    /// from a returned event state. Stationary roots qualify for
     /// [`EventDirection::Either`] when they can be resolved.
     ///
     /// # Errors

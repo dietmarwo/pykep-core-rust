@@ -25,7 +25,7 @@ assert np.array_equal(parallel, propagated)
 
 ## Trajectory gym
 
-Development wheels built with the `trajopt` feature include
+Release wheels from 0.1.5, built with the `trajopt` feature, include
 `pykep_rust.trajopt.gym`. The problem protocol exposes raw fitness,
 flattened TOPS gradients, metadata, decoding and ordered float64 batches.
 See [gym constructors and examples](trajectory-gym.md) and
@@ -71,8 +71,8 @@ wrappers validate and convert data for the Rust libraries.
 The nominal Kepler, CR3BP, BCP, Pontryagin, and ZOH propagators accept the
 keyword-only `method="taylor"` or `method="dop853"` in their scalar and batch
 forms. Kepler, CR3BP, and BCP default to Taylor. Pontryagin and ZOH schedule
-calls default to DOP853. `ZohLeg` mismatch, history and Jacobian calls accept
-the selector and default to DOP853.
+calls default to DOP853. `ZohLeg` mismatch, history and Jacobian calls,
+including their batch forms, accept the selector and default to DOP853.
 
 See [batch-processing.md](batch-processing.md) for the complete batch matrix,
 array shapes, worker-pool contract, SpOC 4 motivation, and guidance for

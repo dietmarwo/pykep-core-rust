@@ -1,14 +1,14 @@
 # Trajectory optimization gym
 
-The development checkout includes the current PyKEP mission definitions and
-TOPS nonlinear programs in the separate Rust crate `pykep-trajopt`. The
-wheel built by this checkout enables its `trajopt` feature. Constructing a
-problem reads embedded data and creates native Rust state. The benchmark
-tools supply optional optimizers.
+Since 0.1.5 the `pykep-rust` wheels include the current PyKEP mission
+definitions and TOPS nonlinear programs from the Rust crate
+`pykep-trajopt`. Constructing a problem reads embedded data and creates
+native Rust state. The benchmark tools supply optional optimizers.
 
-`pykep-trajopt` is currently a workspace or path dependency. Maturin uses
-the feature list in `pyproject.toml` by default. With an explicit Maturin
-feature override, include `trajopt` alongside any other requested features.
+`pykep-trajopt` is not published on crates.io; Rust users depend on it
+through the repository workspace or a path. Maturin uses the feature list
+in `pyproject.toml` by default. With an explicit Maturin feature override,
+include `trajopt` alongside any other requested features.
 
 | Catalog | Entries |
 |---|---|
@@ -18,8 +18,14 @@ feature override, include `trajopt` alongside any other requested features.
 | Launcher tables | Ariane 5, Ariane 64, Atlas 501, Atlas 551, Soyuz-Fregat, Falcon 9 |
 
 The stable catalog has 82 instance IDs. Each TOPS ID also accepts segment,
-cut, time encoding, constraint and integration options. These settings
-belong to the problem specification and are recorded with experiment results.
+cut, time encoding, constraint and integration options, including
+`maximum_steps`. These settings belong to the problem specification and are
+recorded with experiment results. Classical `gym.*` IDs have fixed
+definitions and ignore the TOPS options.
+
+Fixed-boundary TOPS problems default to the upstream limit of 1,000
+integration steps per propagation. The upstream moving-boundary factories
+impose no limit, so moving problems default to 1,000,000.
 
 ```bash
 cargo run --release --locked -p pykep-gym-benchmark -- list
@@ -44,6 +50,13 @@ protocol. `fitness_batch` takes a two-dimensional float64 NumPy array and
 returns the same rows in input order. Classical mission functions expose
 `has_gradient() == False`.
 
+A decision inside the bounds can still be numerically unusable, for
+example a TOPS schedule that exhausts the propellant before the cut. Such
+calls raise the mapped integration or numerical exception rather than
+returning a penalty, and `fitness_batch` raises for the first failing row
+in input order. Wrap the call when an optimizer needs a penalty value; the
+native `tools/gym-benchmark` adapters map failures to a large merit.
+
 The Rust API also exposes configurable `ImpulsiveProblem` constructors,
 `TopsProblem`, `ProblemSpec`, `Launcher` and the `Problem` trait. The
 optimizer adapters live in `tools/gym-benchmark`. Native execution can use
@@ -58,6 +71,11 @@ cargo run --release --locked -p pykep-gym-benchmark -- optimize \
 cargo run --release --locked -p pykep-gym-benchmark -- validate \
   --run artifacts/gym/eve/run.json
 ```
+
+`validate` restores the recorded settings and backend, replays the best
+decision with a tighter nominal tolerance and exits with an error if the
+objectives differ from the record by more than `1e-6`, a recorded feasible
+point becomes infeasible, or a TOPS forward residual exceeds `1e-6`.
 
 The run directory contains a schema-v1 manifest, the complete problem
 specification, convergence data and a decoded trajectory when available.

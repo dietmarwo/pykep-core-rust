@@ -7,10 +7,14 @@
 //!
 //! This file adapts `src/ta/zoh_kep.cpp`, `zoh_cr3bp.cpp`, `zoh_eq.cpp`, and
 //! `zoh_ss.cpp` from the pinned pykep/kep3 source into evaluated models.
-//! The four built-in models evaluate sensitivity Jacobians with fixed-size
-//! centered differences using a relative step of `3e-6`. Integrator tolerances
-//! therefore do not imply the same accuracy for returned sensitivities.
+//! The Cartesian Kepler and CR3BP models evaluate analytic state and parameter
+//! Jacobians for DOP853 sensitivity propagation. The equinoctial and solar-sail
+//! models use fixed-size centered differences with a relative step of `3e-6`;
+//! for those two models integrator tolerances do not imply the same accuracy
+//! for returned sensitivities. Taylor sensitivities differentiate the
+//! coefficient recurrences directly and do not use these Jacobians.
 
+use super::{moving_mass_parameter_derivative, point_mass_acceleration_and_gradient};
 use crate::error::ensure_finite;
 use crate::integration::{
     AdaptiveIntegrator, DifferentiableDynamicsModel, Dop853, DynamicsModel, InitialValueProblem,
@@ -327,8 +331,9 @@ where
 
 /// Propagates seed directions through a schedule with the selected backend.
 ///
-/// Taylor currently obtains sensitivities with centered propagation
-/// differences; DOP853 advances direct variational equations.
+/// Taylor propagates the seeds through tangent Taylor-coefficient
+/// recurrences; DOP853 advances direct variational equations with the model
+/// Jacobians documented in this module.
 ///
 /// # Errors
 ///
@@ -721,7 +726,7 @@ fn add_statistics(total: &mut IntegrationStats, segment: IntegrationStats) {
 ///
 /// State order is `[x, y, z, vx, vy, vz, mass]`; parameters are
 /// `[thrust, ix, iy, iz, c]`. Its [`DifferentiableDynamicsModel`] Jacobians
-/// use the centered-difference contract documented by this module.
+/// are analytic.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohKeplerDynamics;
 
@@ -768,15 +773,22 @@ impl DifferentiableDynamicsModel<7, 5> for ZohKeplerDynamics {
         state_jacobian: &mut [[f64; 7]; 7],
         parameter_jacobian: &mut [[f64; 5]; 7],
     ) -> Result<()> {
-        numerical_jacobians(
-            self,
-            time,
-            state,
-            parameters,
-            state_jacobian,
-            parameter_jacobian,
-            &[6],
-        )
+        self.validate(time, state, parameters)?;
+        let (_, gravity) = point_mass_acceleration_and_gradient(
+            [state[0], state[1], state[2]],
+            1.0,
+            "ZOH Kepler radius",
+        )?;
+        *state_jacobian = [[0.0; 7]; 7];
+        *parameter_jacobian = [[0.0; 5]; 7];
+        for axis in 0..3 {
+            state_jacobian[axis][axis + 3] = 1.0;
+            for column in 0..3 {
+                state_jacobian[axis + 3][column] = gravity[axis][column];
+            }
+        }
+        set_low_thrust_jacobians(state, parameters, state_jacobian, parameter_jacobian);
+        validate_matrices(Self::NAME, state_jacobian, parameter_jacobian)
     }
 }
 
@@ -796,8 +808,7 @@ impl ZeroOrderHoldModel<7, 4, 1, 5> for ZohKeplerDynamics {
 /// Seven-state low-thrust CR3BP dynamics in the synodic frame.
 ///
 /// Parameters are `[thrust, ix, iy, iz, c, mu]`. Its
-/// [`DifferentiableDynamicsModel`] Jacobians use the centered-difference
-/// contract documented by this module.
+/// [`DifferentiableDynamicsModel`] Jacobians are analytic.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ZohCr3bpDynamics;
 
@@ -858,15 +869,33 @@ impl DifferentiableDynamicsModel<7, 6> for ZohCr3bpDynamics {
         state_jacobian: &mut [[f64; 7]; 7],
         parameter_jacobian: &mut [[f64; 6]; 7],
     ) -> Result<()> {
-        numerical_jacobians(
-            self,
-            time,
-            state,
-            parameters,
-            state_jacobian,
-            parameter_jacobian,
-            &[6],
-        )
+        self.validate(time, state, parameters)?;
+        let mu = parameters[5];
+        let d1 = [state[0] + mu, state[1], state[2]];
+        let d2 = [state[0] + mu - 1.0, state[1], state[2]];
+        let operations = [
+            "ZOH CR3BP primary-one distance",
+            "ZOH CR3BP primary-two distance",
+        ];
+        let (_, primary) = point_mass_acceleration_and_gradient(d1, 1.0 - mu, operations[0])?;
+        let (_, secondary) = point_mass_acceleration_and_gradient(d2, mu, operations[1])?;
+        let primary_mu = moving_mass_parameter_derivative(d1, 1.0 - mu, -1.0, operations[0])?;
+        let secondary_mu = moving_mass_parameter_derivative(d2, mu, 1.0, operations[1])?;
+        *state_jacobian = [[0.0; 7]; 7];
+        *parameter_jacobian = [[0.0; 6]; 7];
+        for axis in 0..3 {
+            state_jacobian[axis][axis + 3] = 1.0;
+            for column in 0..3 {
+                state_jacobian[axis + 3][column] = primary[axis][column] + secondary[axis][column];
+            }
+            parameter_jacobian[axis + 3][5] = primary_mu[axis] + secondary_mu[axis];
+        }
+        state_jacobian[3][0] += 1.0;
+        state_jacobian[4][1] += 1.0;
+        state_jacobian[3][4] = 2.0;
+        state_jacobian[4][3] = -2.0;
+        set_low_thrust_jacobians(state, parameters, state_jacobian, parameter_jacobian);
+        validate_matrices(Self::NAME, state_jacobian, parameter_jacobian)
     }
 }
 
@@ -1158,6 +1187,53 @@ fn cross(left: &[f64], right: &[f64]) -> [f64; 3] {
 
 fn regularized_mass_flow(mass: f64, thrust: f64, coefficient: f64) -> f64 {
     -coefficient * thrust * (-1.0 / mass / 1e16).exp()
+}
+
+/// Adds the thrust and mass-flow terms shared by the Cartesian models.
+///
+/// Both parameter vectors start with `[thrust, ix, iy, iz, c]`, and the
+/// state is `[position, velocity, mass]`.
+fn set_low_thrust_jacobians<const P: usize>(
+    state: &[f64; 7],
+    parameters: &[f64; P],
+    state_jacobian: &mut [[f64; 7]; 7],
+    parameter_jacobian: &mut [[f64; P]; 7],
+) {
+    let [thrust, ix, iy, iz, c] = [
+        parameters[0],
+        parameters[1],
+        parameters[2],
+        parameters[3],
+        parameters[4],
+    ];
+    let mass = state[6];
+    for (axis, direction) in [ix, iy, iz].into_iter().enumerate() {
+        state_jacobian[axis + 3][6] = -thrust * direction / (mass * mass);
+        parameter_jacobian[axis + 3][0] = direction / mass;
+        parameter_jacobian[axis + 3][axis + 1] = thrust / mass;
+    }
+    // m' = -c T exp(-1 / (1e16 m)), whose exponent derivative is 1 / (1e16 m^2).
+    let regularization = (-1.0 / mass / 1e16).exp();
+    state_jacobian[6][6] = -c * thrust * regularization / (1e16 * mass * mass);
+    parameter_jacobian[6][0] = -c * regularization;
+    parameter_jacobian[6][4] = -thrust * regularization;
+}
+
+fn validate_matrices<const N: usize, const P: usize>(
+    operation: &'static str,
+    state_jacobian: &[[f64; N]; N],
+    parameter_jacobian: &[[f64; P]; N],
+) -> Result<()> {
+    if state_jacobian
+        .iter()
+        .flatten()
+        .chain(parameter_jacobian.iter().flatten())
+        .all(|value| value.is_finite())
+    {
+        Ok(())
+    } else {
+        Err(PykepError::NumericalOverflow { operation })
+    }
 }
 
 fn validate_rhs<const N: usize>(operation: &'static str, values: &[f64; N]) -> Result<()> {

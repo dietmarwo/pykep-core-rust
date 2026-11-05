@@ -86,7 +86,7 @@ impl NativeGym {
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
 #[pyo3(signature=(id, nseg=None, cut=0.5, time_encoding="uniform", direction_inequalities=None, backend="taylor",
-    tolerance=1e-13, derivative_tolerance=1e-13))]
+    tolerance=1e-13, derivative_tolerance=1e-13, maximum_steps=None))]
 fn _gym_problem(
     id: &str,
     nseg: Option<usize>,
@@ -96,6 +96,7 @@ fn _gym_problem(
     backend: &str,
     tolerance: f64,
     derivative_tolerance: f64,
+    maximum_steps: Option<usize>,
 ) -> PyResult<NativeGym> {
     let method = match backend {
         "taylor" => IntegrationMethod::Taylor,
@@ -112,6 +113,7 @@ fn _gym_problem(
             method,
             tolerance,
             derivative_tolerance,
+            maximum_steps,
         },
     )
     .map_err(to_python)?;

@@ -1,8 +1,12 @@
+// Copyright (c) 2023-2026 Dario Izzo (dario.izzo@gmail.com)
+//                          Advanced Concepts Team, European Space Agency (ESA)
+// Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
+// Moving-boundary endpoints follow `pykep/trajopt/_zoh_pl2pl.py` and
+// `_zoh_ss_pl2pl.py` at c01e19debad5ea22b7079189f786f473046a79d5.
 
 use core::f64::consts::TAU;
 
-use pykep_core::Result;
 use pykep_core::astro::elements::{
     ModifiedEquinoctialElements, cartesian_to_modified_equinoctial,
     cartesian_to_modified_equinoctial_jacobian, modified_equinoctial_to_cartesian,
@@ -12,6 +16,7 @@ use pykep_core::dynamics::Cr3bpDynamics;
 use pykep_core::integration::{
     AdaptiveIntegrator, DynamicsModel, InitialValueProblem, IntegratorOptions,
 };
+use pykep_core::{PykepError, Result};
 
 use crate::tops::{Scales, TopsOptions};
 use crate::tops_data::{RawCase, TopsFamily, required};
@@ -26,6 +31,7 @@ pub(crate) struct BoundaryPair {
     half_window: f64,
     mu: f64,
     revs: f64,
+    maximum_steps: usize,
 }
 
 impl BoundaryPair {
@@ -34,6 +40,7 @@ impl BoundaryPair {
         raw: &RawCase,
         scales: Scales,
         options: TopsOptions,
+        maximum_steps: usize,
     ) -> Result<Self> {
         let mut state = [raw.state_s, raw.state_f];
         let mut revs = 0.0;
@@ -51,7 +58,17 @@ impl BoundaryPair {
                 }
                 mu
             }
-            _ => 1.0,
+            _ => {
+                // The two-body and sail endpoint arcs are propagated in the
+                // source's normalized units, which the upstream data fix at mu = 1.
+                if required(raw.mu)? != 1.0 {
+                    return Err(PykepError::InvalidInput {
+                        parameter: "TOPS endpoint mu",
+                        reason: "moving two-body and sail endpoints require mu = 1".into(),
+                    });
+                }
+                1.0
+            }
         };
         // The upstream MEE moving constructor fixes the departure epoch.
         let half_window = if family == TopsFamily::Mee {
@@ -68,6 +85,7 @@ impl BoundaryPair {
             half_window,
             mu,
             revs,
+            maximum_steps,
         })
     }
 
@@ -129,7 +147,7 @@ impl BoundaryPair {
                     IntegratorOptions {
                         relative_tolerance: tolerance,
                         absolute_tolerance: tolerance,
-                        maximum_steps: 1000,
+                        maximum_steps: self.maximum_steps,
                         ..IntegratorOptions::default()
                     },
                 )?

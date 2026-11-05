@@ -1,9 +1,9 @@
 # Choosing between the original and Rust fcmaes/pykep stacks
 
-The development comparison uses common inputs, PyKEP 3.1.0 and achieved
+The 0.1.5 comparison uses common inputs, PyKEP 3.1.0 and achieved
 accuracy gates. Warmed heyoka retains an advantage on several scalar
-Taylor models. Rust leads on selected equinoctial and full-leg derivative
-workloads. Use the row for the required model, accuracy and timing boundary.
+Taylor models and on nominal ZOH mismatch. Rust leads on selected
+equinoctial and full-leg derivative workloads. Use the row for the required model, accuracy and timing boundary.
 [Current matched measurements](docs/matched-benchmarks.md)
 
 The tables on this page record the released 0.1.4 baseline. The intermediate
@@ -129,8 +129,10 @@ DOP853 Rust path and the upstream heyoka leg:
 | ZOH mismatch | 23.67 µs | 6.865 µs | 3.45× |
 | Complete endpoint/control/time-grid Jacobian | 493.55 µs | 182.17 µs | 2.71× |
 
-The development benchmark runs the shared 20-, 40- and 80-segment PyKEP
-workloads with native Taylor mismatch and full Jacobian calls. Its report
+The 0.1.5 benchmark runs the shared 20-, 40- and 80-segment PyKEP
+workloads with native Taylor mismatch and full Jacobian calls. At the
+tighter reference setting the complete Jacobian favored Rust by
+1.93–2.22×, while nominal mismatch favored heyoka by 1.23–1.54×. Its report
 records the nominal and variational tolerances for both arms.
 [Current leg comparisons](docs/matched-benchmarks.md)
 

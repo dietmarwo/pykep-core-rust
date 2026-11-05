@@ -730,6 +730,13 @@ def test_leg_object_batches_match_scalar_methods() -> None:
     actual_zoh_jacobian = pk.ZohLeg.mismatch_jacobian_batch([zoh], workers=2)[0]
     for actual, expected in zip(actual_zoh_jacobian, zoh.mismatch_jacobian()):
         assert_array_close(actual, expected)
+    taylor_jacobian = zoh.mismatch_jacobian(method="taylor")
+    batch_taylor = pk.ZohLeg.mismatch_jacobian_batch([zoh], workers=2, method="taylor")[0]
+    for taylor, batch, dop853 in zip(taylor_jacobian, batch_taylor, zoh.mismatch_jacobian()):
+        assert_array_close(batch, taylor)
+        np.testing.assert_allclose(taylor, dop853, rtol=1e-8, atol=1e-8)
+    with pytest.raises(ValueError, match="method"):
+        zoh.mismatch_jacobian(method="rk4")
     actual_forward, actual_backward = pk.ZohLeg.state_history_batch(
         [zoh], 2, workers=2
     )[0]

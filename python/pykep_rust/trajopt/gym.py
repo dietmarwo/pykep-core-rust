@@ -19,16 +19,17 @@ class Problem:
     def __init__(
         self, id, *, nseg=None, cut=0.5, time_encoding="uniform",
         inequalities_for_tc=None, backend="taylor", tolerance=1e-13,
-        derivative_tolerance=1e-13,
+        derivative_tolerance=1e-13, maximum_steps=None,
     ):
         self._configuration = {
             "id": id, "nseg": nseg, "cut": cut, "time_encoding": time_encoding,
             "inequalities_for_tc": inequalities_for_tc, "backend": backend,
             "tolerance": tolerance, "derivative_tolerance": derivative_tolerance,
+            "maximum_steps": maximum_steps,
         }
         self._problem = _entry("_gym_problem")(
             id, nseg, cut, time_encoding, inequalities_for_tc, backend,
-            tolerance, derivative_tolerance,
+            tolerance, derivative_tolerance, maximum_steps,
         )
         self._spec = json.loads(self._problem.spec_json())
 

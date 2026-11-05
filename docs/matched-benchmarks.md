@@ -1,6 +1,6 @@
 # Matched PyKEP benchmarks
 
-The development checkout was tested against PyKEP 3.1.0 at
+The 0.1.5 benchmark tree was measured against PyKEP 3.1.0 at
 `c01e19debad5ea22b7079189f786f473046a79d5`. Warmed heyoka led on nine
 scalar Taylor fixtures. Rust led on both equinoctial Pontryagin fixtures
 and on the complete ZOH Jacobian in the three leg pilots. The nominal
@@ -60,8 +60,8 @@ results from one ABBA block. Small differences are sensitive to host load.
 
 The initial sweep found convergence exhaustion in the previous Lagrange
 anomaly solve. With safeguarded Newton iteration, the repeat passed the
-failure-count, output-count and sampled-value gates. The archive
-preserves the initial failed cases and the repeat.
+failure-count, output-count and sampled-value gates. The measurement
+archive preserves the initial failed cases and the repeat.
 
 ### Complete ZOH legs
 
@@ -69,8 +69,10 @@ Each segment count uses 200 shared cases, seed 424242, cached legs and
 five passes per arm. The complete Jacobian includes both endpoint-state
 blocks, every segment control and all grid-node derivatives. The table
 uses `1e-13` for both variational tolerances and `1e-14` for nominal
-integration. The archive also records the source `1e-8` derivative
-setting and a separate Rust DOP853 arm.
+integration. The measurement archive also records the source `1e-8`
+derivative setting and a separate Rust DOP853 arm. That arm predates the
+analytic DOP853 model Jacobians for the Kepler and CR3BP ZOH models in
+0.1.5; the Taylor rows are unaffected.
 
 | Segments | Operation | Rust µs | Upstream µs | Upstream / Rust time | Sampled scaled difference |
 | --- | --- | --- | --- | --- | --- |
@@ -87,7 +89,7 @@ Four TOPS cases use 16 segments, uniform time and the same first vector
 in each Python implementation. The source variational tolerance is
 `1e-13`. Fitness and derivative agreement was checked on four vectors
 for each case. Each cell is the median of seven inner samples in one
-process. The archive has the softmax results, two classical examples,
+process. The measurement archive has the softmax results, two classical examples,
 construction, ordered batch, fitness plus gradient, and history timings.
 
 | Problem | Rust fitness µs | PyKEP fitness µs | Rust gradient µs | PyKEP gradient µs |
@@ -112,6 +114,11 @@ A five-segment DOP853 arm exercises an alternative cut and direction mode.
 | Fixed TOPS | 68 | 68 | 0 | 0 | 0 |
 | Moving TOPS | 68 | 34 | 14 | 12 | 8 |
 
+The moving discrepancies are ten moving-MEE rows and two moving-CR3BP
+stress vectors whose trajectories pass close to the Moon. The CR3BP pair
+differs from the source gradient by a scaled `1.07e-6` and `4.23e-6`,
+inside the `2.4e-5` spread of the Rust Taylor gradient across tolerances
+on the same vectors; see [TOPS known limitations](tops.md#known-limitations).
 Moving CR3BP softmax has a separate Rust formulation ID and an independent
 gradient check. The source moving CR3BP constructor selects uniform time.
 Moving MEE retains the original source discrepancies and a separate
@@ -158,6 +165,7 @@ list-to-time multiplication. The separately labelled provider
 comparison covers Keplerian, JPL low-precision and VSOP2013 scalar
 and batch paths.
 
-The patch archive contains the paired samples, per-case gym results,
-optimizer records, fixture hashes and SDK provenance.
-[Run the comparisons](../tools/upstream-comparison/README.md)
+The measurement archive attached to the [0.1.5 release](https://github.com/dietmarwo/pykep-core-rust/releases/tag/v0.1.5) contains
+the paired samples, per-case gym results, optimizer records, fixture
+hashes and SDK provenance, including the development-only heyoka header
+adapter. [Run the comparisons](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/upstream-comparison/README.md)

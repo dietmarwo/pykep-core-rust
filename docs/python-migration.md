@@ -27,7 +27,7 @@ upstream version recorded in `UPSTREAM_NOTICE.md`.
 | `alpha2direct`, `direct2alpha`, `eta2direct`, `direct2eta` | `alpha_to_direct`, `direct_to_alpha`, `eta_to_direct`, `direct_to_eta` | Descriptive direction |
 | `fb_con`, `fb_dv`, `fb_vout` | `flyby_constraints`, `flyby_delta_v`, `flyby_outgoing_velocity` | Jacobian has a separate named function |
 | `leg.sims_flanagan`, `leg.sims_flanagan_alpha`, `leg.zoh` | `SimsFlanaganLeg`, `SimsFlanaganAlphaLeg`, `ZohLeg` | Same numerical cores, immutable validated construction |
-| Selected `trajopt.gym` and `trajopt.launchers` from PyKEP 3.1.0 | `pykep_rust.trajopt.gym` in development wheels | Stable IDs, raw PyGMO-compatible fitness and analytic TOPS gradients |
+| Selected `trajopt.gym` and `trajopt.launchers` from PyKEP 3.1.0 | `pykep_rust.trajopt.gym` in wheels from 0.1.5 | Stable IDs, raw PyGMO-compatible fitness and analytic TOPS gradients |
 
 ## Intentionally different
 

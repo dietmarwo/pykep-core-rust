@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "criterion",
  "differential-equations",
@@ -490,14 +490,14 @@ dependencies = [
 
 [[package]]
 name = "pykep-examples"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "pykep-core",
 ]
 
 [[package]]
 name = "pykep-gym-benchmark"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "fcmaes-core",
  "pykep-core",
@@ -508,7 +508,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-lambert-optimization-benchmark"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "fcmaes-core",
  "pykep-core",
@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-py"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "numpy",
  "pykep-core",
@@ -528,21 +528,21 @@ dependencies = [
 
 [[package]]
 name = "pykep-release-benchmark"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "pykep-core",
 ]
 
 [[package]]
 name = "pykep-taylor-benchmark"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "pykep-core",
 ]
 
 [[package]]
 name = "pykep-trajopt"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "pykep-core",
  "serde",
@@ -551,7 +551,7 @@ dependencies = [
 
 [[package]]
 name = "pykep-upstream-benchmark"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "pykep-core",
  "serde_json",

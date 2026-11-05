@@ -14,3 +14,7 @@ __pycache__/
 
 /artifacts/taylor-followup/
 /artifacts/gym/
+# Default outputs of the optional comparison tools.
+/results/
+/fixtures.txt
+/layout.json

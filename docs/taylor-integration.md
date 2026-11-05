@@ -240,7 +240,7 @@ python tools/taylor-codegen/regenerate.py --check
 The ignored Rust exporter serializes private model graphs, and the developer
 tool emits and formats the Rust module. An ordinary crate or wheel build
 uses the checked-in source. The tape and full-series tests provide reference
-evaluators. See [the comparison instructions](../tools/taylor-comparison/README.md)
+evaluators. See [the comparison instructions](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/taylor-comparison/README.md)
 for reproducible native and Python timings.
 
 ## Population, history, and shooting workflows

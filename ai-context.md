@@ -21,7 +21,7 @@ cargo add pykep-core                -> use pykep_core
 python -m pip install pykep-rust    -> import pykep_rust
 ```
 
-The current synchronized release is 0.1.4 on crates.io and PyPI. Rust 1.88 is
+The current synchronized release is 0.1.5 on crates.io and PyPI. Rust 1.88 is
 the tested minimum toolchain. Published wheels target CPython 3.11 through
 3.13 and need neither a Rust toolchain nor a C/C++ compiler. Building the
 Python source distribution does require Rust. The default Rust feature embeds
@@ -29,7 +29,7 @@ the VSOP2013 coefficient data; use `default-features = false` when only the
 smaller numerical core, Keplerian ephemerides, and JPL low-precision
 ephemerides are needed.
 
-Development wheels add `pykep_rust.trajopt.gym` with the PyKEP 3.1.0
+Wheels from 0.1.5 include `pykep_rust.trajopt.gym` with the PyKEP 3.1.0
 classical missions, four fixed and four moving TOPS formulations and launcher
 tables. The runtime uses Rust evaluators and optional optimizer adapters.
 SPICE, TLE, Python-defined ephemerides and symbolic heyoka expression graphs
@@ -41,8 +41,10 @@ and [migration matrix](docs/python-migration.md).
 Version 0.1.3 changed nominal propagation of all eleven built-in evaluated
 dynamics types to the pure-Rust adaptive Taylor backend. DOP853 remains an
 explicitly selectable general-purpose backend and is still used for arbitrary
-user models, terminal events, direct variational solves, and the established
-Python model-propagation methods.
+user models, user-defined terminal events, and the no-selector compatibility
+methods. Since 0.1.5, built-in Cartesian models also support analytic Taylor
+plane, sphere, and radial-velocity events, and Taylor sensitivities use
+tangent coefficient recurrences.
 
 Version 0.1.4 replaced repeated full-series evaluation with incremental
 coefficient evaluators for every built-in Taylor model. Kepler and ZOH Kepler
@@ -53,13 +55,13 @@ eight-model migration benchmark improved warmed propagation by 6.45× to
 the earlier Rust implementation, not claims that Rust now beats warmed
 upstream heyoka.
 
-Built-in Rust `ZohLeg` values can now select Taylor or DOP853 for nominal
-mismatch and history calculations through
-`mismatch_constraints_with_method()` and `state_history_with_method()`.
-The original no-suffix methods remain DOP853 for compatibility, and
-`mismatch_jacobian()` retains the established DOP853 variational path with
-centered model Jacobians. The Python ZOH-leg surface likewise retains its
-established behavior; it does not expose these Rust-only method selectors.
+Built-in Rust `ZohLeg` values select Taylor or DOP853 for mismatch, history,
+and full Jacobian calculations through `mismatch_constraints_with_method()`,
+`state_history_with_method()`, and `mismatch_jacobian_with_method()`. The
+original no-suffix methods remain DOP853 for compatibility. The Python
+`ZohLeg` exposes the same choice through a keyword-only `method` on
+`mismatch_constraints`, `state_history`, `mismatch_jacobian`, and their batch
+forms, defaulting to DOP853.
 
 ## Development benchmarks and backend selection
 
@@ -215,7 +217,7 @@ comparison establishes two different performance boundaries:
 
 | Boundary | Evidence |
 |---|---|
-| Warmed built-in Taylor propagation | Upstream heyoka's LLVM-generated kernels were 2.83× to 4.53× faster across five matched fixtures. |
+| Warmed built-in Taylor propagation | In the 0.1.5 shared-input study, warmed upstream heyoka was 1.67× to 2.57× faster on nine fixtures, and Rust was 1.28× and 1.20× faster on the equinoctial mass- and time-optimal fixtures. The 0.1.4 study had measured 2.83× to 4.53× on five fixtures. |
 | First cache miss | Heyoka JIT setup took approximately 50–742 ms across those fixtures. |
 | Analytical and transcription kernels | Results were generally much closer; some measured Rust kernels were faster. |
 | Deployment | Rust requires no runtime JIT, C++ ABI, or LLVM installation. |
@@ -452,13 +454,14 @@ approaches, switching behavior, and required invariant drift.
 
 Rust can select `IntegrationMethod::Taylor` or `IntegrationMethod::Dop853`
 for all eleven built-in dynamics types. Keep DOP853 for arbitrary user models
-and terminal events.
+and user-defined terminal events.
 Measured Kepler crossover is workload-dependent: Taylor was slower at `1e-9`,
 modestly faster at `1e-12`, and clearly faster at `1e-14` and machine
-epsilon while producing smaller errors. Taylor sensitivities currently use
-`2W + 1` centered propagations, so DOP853's direct variational solve is
-normally preferable for a wide STM. Python model propagators remain DOP853 in
-this release.
+epsilon while producing smaller errors. Taylor sensitivities propagate the
+seed directions through tangent coefficient recurrences. Python model
+propagators accept `method="taylor"` or `method="dop853"`; Kepler, CR3BP, and
+BCP default to Taylor, while Pontryagin and ZOH schedule calls default to
+DOP853.
 
 Validate Kepler propagation with energy/angular momentum. Validate CR3BP with
 the Jacobi constant when the modeled trajectory avoids singular primaries.
@@ -504,7 +507,8 @@ parameters are `[mu, maximum_thrust, exhaust_velocity]` with implicit
 not invent a direction or suppress that failure.
 
 Canonical costate rates use forward-mode differentiation, while complete
-model state/parameter Jacobians use fixed-size centered differences. The
+Pontryagin model state/parameter Jacobians for DOP853 variational solves use
+fixed-size centered differences. The
 recorded first-order validation tolerance is much looser than nominal
 trajectory tolerance. Validate gradients independently before using them as a
 tightly converged optimization stopping criterion.
@@ -544,15 +548,18 @@ no mismatch Jacobian; do not fabricate one from the fixed leg.
 `ZohLeg` represents continuous piecewise-constant control over a strictly
 increasing time grid. Its mismatch is the component-wise difference between
 forward and backward states at the cut. For built-in Rust legs,
-`mismatch_constraints_with_method()` and `state_history_with_method()` select
-Taylor or DOP853. The compatibility methods `mismatch_constraints()` and
-`state_history()`, the Python surface, and the Jacobian path remain DOP853.
+`mismatch_constraints_with_method()`, `state_history_with_method()`, and
+`mismatch_jacobian_with_method()` select Taylor or DOP853. The compatibility
+methods without a selector, and Python calls without `method=`, remain DOP853.
 
 Its four Jacobian groups are initial state, final state, flattened
-chronological controls, and all time-grid nodes. The built-in model Jacobians
-use centered differences, and validated end-to-end derivative tolerances reach
-`3e-5`. Solver tolerances of `1e-12` must not be reported as derivative
-accuracy.
+chronological controls, and all time-grid nodes. With DOP853, the Kepler and
+CR3BP model Jacobians are analytic; the equinoctial and solar-sail model
+Jacobians use centered differences, and their validated end-to-end derivative
+tolerances reach `3e-5`. Solver tolerances of `1e-12` must not be reported as
+derivative accuracy for those two models. Near close approaches to a primary
+the transition matrices are ill-conditioned; check the gradient spread across
+tolerances before treating tight agreement as meaningful.
 
 Leg objects validate and copy their configuration. Reuse them for repeated
 constraint evaluation. Use the explicit ordered batch mismatch API for Python

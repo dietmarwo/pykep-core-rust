@@ -2,5 +2,7 @@
 # requires Unix newlines and Windows runners must not rewrite Rust sources.
 * text=auto eol=lf
 
-# Preserve the pinned upstream TOPS bytes, including whitespace.
+# The pinned upstream TOPS bytes are recorded by SHA-256 in
+# crates/pykep-trajopt/data/provenance.json. Keep them LF-only (above) and
+# exempt them from whitespace checks so `git apply` and diffs leave them intact.
 crates/pykep-trajopt/data/tops/*.json -whitespace

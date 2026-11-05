@@ -1,6 +1,10 @@
+// Copyright (c) 2023-2026 Dario Izzo (dario.izzo@gmail.com)
+//                          Advanced Concepts Team, European Space Agency (ESA)
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
-// Transcriptions follow the pinned ESA PyKEP trajectory definitions.
+// Transcriptions follow the pinned ESA PyKEP trajectory definitions at
+// c01e19debad5ea22b7079189f786f473046a79d5: `pykep/trajopt/_mga.py`, `_mga_1dsm.py`,
+// `_pl2pl_N_impulses.py`, `gym/_em_Nimp.py` and `gym/_juice_mga_1dsm.py`.
 
 use core::f64::consts::{PI, TAU};
 use std::sync::Arc;
@@ -11,7 +15,7 @@ use pykep_core::astro::lambert::{LambertProblem, LambertSolution};
 use pykep_core::astro::propagation::propagate_lagrangian;
 use pykep_core::constants::DAY_TO_SECONDS;
 use pykep_core::ephemeris::{Ephemeris, EphemerisMetadata, JplLowPrecision};
-use pykep_core::{CartesianState, Result, Vector3};
+use pykep_core::{CartesianState, PykepError, Result, Vector3};
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -415,7 +419,9 @@ impl ImpulsiveProblem {
             Formulation::Impulses(opt) => self.run_impulses(x, opt, record, &mut trace)?,
         };
         if !cost.is_finite() {
-            return Err(invalid("mission objective", "numerical overflow"));
+            return Err(PykepError::NumericalOverflow {
+                operation: "mission objective",
+            });
         }
         let mut objectives = vec![cost];
         if self.spec.objectives.len() > 1 {
@@ -760,7 +766,9 @@ fn transfer(a: Vector3, b: Vector3, dt: f64, mu: f64, clockwise: bool) -> Result
     p.solutions()
         .first()
         .cloned()
-        .ok_or_else(|| invalid("Lambert transfer", "no zero-revolution solution"))
+        .ok_or(PykepError::SingularGeometry {
+            operation: "zero-revolution Lambert transfer",
+        })
 }
 
 fn lambert_arc(

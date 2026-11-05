@@ -37,6 +37,40 @@ change that branch. Optimizer adapters eliminate those frozen coordinates.
 The benchmark report records free-column checks at the anchors and full
 derivative checks away from the transition.
 
+## Known limitations
+
+- **Moving CR3BP close lunar passes.** Two moving-CR3BP stress vectors,
+  in P1 and P13, differ from the PyKEP gradient by a scaled `1.07e-6` and
+  `4.23e-6`, above the `1e-7` gate used for the other rows. Both
+  trajectories pass close to the Moon, where the transition matrices are
+  ill-conditioned. Against a `1e-16` reference run, Rust Taylor gradients
+  at tolerances `1e-12` to `1e-15` differ by up to a scaled `2.4e-5` on
+  the same vectors, so the remaining source difference lies inside the
+  double-precision conditioning spread rather than indicating a
+  formulation error. The DOP853 backend agrees with the Taylor gradient
+  within a scaled `5.1e-5`, and central differences of the fitness agree to their
+  truncation error. Both vectors are regression tests in
+  `crates/pykep-trajopt/tests/cr3bp_conditioning.rs`.
+- **Moving MEE source discrepancies.** The pinned source applies a
+  different MEE chain rule at the endpoints and returns nonfinite values
+  for four configurations per encoding. The Rust formulation is checked
+  against the source symbolic MEE map instead; see the
+  [benchmark report](matched-benchmarks.md#gym-validation).
+- **Moving CR3BP softmax.** The source factory always uses uniform time.
+  The Rust softmax variant is a separate formulation,
+  `tops-v1-cr3bp-moving-softmax`, without an upstream reference.
+- **Fixed sail P5 scaling.** The source normalizes the sail characteristic
+  acceleration by the acceleration unit. Because the sail acceleration
+  scales with the inverse square of the distance, this equals the
+  unnormalized constant only when the initial radius is one. P5 starts at
+  radius `0.7`, so `tops.sail.P5` has `0.49` times the sail acceleration
+  of `tops.sail.P5.moving`. The Rust catalog keeps the source behaviour.
+- **DOP853 derivatives.** With `backend="dop853"`, the Cartesian two-body
+  and CR3BP Jacobians use analytic model Jacobians. MEE and solar-sail
+  Jacobians use centered-difference model Jacobians, so their accuracy is
+  not set by the integrator tolerance. The default Taylor backend
+  differentiates the coefficient recurrences for all four families.
+
 ## Feasible replay examples
 
 The bundled decisions were generated using a bounded least-squares search

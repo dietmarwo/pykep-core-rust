@@ -511,7 +511,10 @@ impl CoreZohLeg {
         }
     }
 
-    fn mismatch_jacobian(&self) -> Result<PythonZohJacobian, PykepError> {
+    fn mismatch_jacobian(
+        &self,
+        method: IntegrationMethod,
+    ) -> Result<PythonZohJacobian, PykepError> {
         fn convert<const N: usize>(value: ZohLegMismatchJacobian<N>) -> PythonZohJacobian {
             (
                 rows(value.initial_state),
@@ -521,10 +524,10 @@ impl CoreZohLeg {
             )
         }
         match self {
-            Self::Kepler(leg) => leg.mismatch_jacobian().map(convert),
-            Self::Cr3bp(leg) => leg.mismatch_jacobian().map(convert),
-            Self::Equinoctial(leg) => leg.mismatch_jacobian().map(convert),
-            Self::SolarSail(leg) => leg.mismatch_jacobian().map(convert),
+            Self::Kepler(leg) => leg.mismatch_jacobian_with_method(method).map(convert),
+            Self::Cr3bp(leg) => leg.mismatch_jacobian_with_method(method).map(convert),
+            Self::Equinoctial(leg) => leg.mismatch_jacobian_with_method(method).map(convert),
+            Self::SolarSail(leg) => leg.mismatch_jacobian_with_method(method).map(convert),
         }
     }
 
@@ -692,13 +695,17 @@ impl PyZohLeg {
 
     /// Return initial, final, control, and time-grid Jacobian rows.
     ///
-    /// Built-in model Jacobians use centered differences with a relative
-    /// step of `3e-6`; integrator tolerances are not derivative-accuracy
-    /// guarantees, and pinned validation uses scaled bounds up to `3e-5`.
-    fn mismatch_jacobian(&self, python: Python<'_>) -> PyResult<PythonZohJacobian> {
+    /// `method="taylor"` propagates seeded derivatives through the Taylor
+    /// recurrences. With the default DOP853 backend, the Kepler and CR3BP
+    /// models use analytic model Jacobians, while the equinoctial and sail
+    /// models use centered differences with a relative step of `3e-6`.
+    /// Integrator tolerances are not derivative-accuracy guarantees.
+    #[pyo3(signature = (*, method = "dop853"))]
+    fn mismatch_jacobian(&self, python: Python<'_>, method: &str) -> PyResult<PythonZohJacobian> {
+        let method = integration_method(method)?;
         let inner = self.inner.clone();
         python
-            .detach(move || inner.mismatch_jacobian())
+            .detach(move || inner.mismatch_jacobian(method))
             .map_err(to_python)
     }
 
@@ -740,19 +747,21 @@ impl PyZohLeg {
 
     /// Evaluate multiple leg Jacobians in input order while releasing the GIL.
     #[staticmethod]
-    #[pyo3(signature = (legs, workers=0))]
+    #[pyo3(signature = (legs, workers=0, *, method = "dop853"))]
     fn mismatch_jacobian_batch(
         python: Python<'_>,
         legs: Vec<PyRef<'_, Self>>,
         workers: usize,
+        method: &str,
     ) -> PyResult<Vec<PythonZohJacobian>> {
+        let method = integration_method(method)?;
         let legs = legs
             .into_iter()
             .map(|leg| leg.inner.clone())
             .collect::<Vec<_>>();
         python
             .detach(move || {
-                pykep_core::batch::try_map(&legs, workers, CoreZohLeg::mismatch_jacobian)
+                pykep_core::batch::try_map(&legs, workers, |leg| leg.mismatch_jacobian(method))
             })
             .map_err(to_python)
     }

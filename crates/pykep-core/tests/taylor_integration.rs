@@ -208,6 +208,50 @@ fn batch_keeps_order_with_different_directions_and_a_partial_group() {
 }
 
 #[test]
+fn restarting_from_a_returned_event_finds_the_next_crossing() {
+    use pykep_core::integration::{EventDirection, TaylorEvent, Termination};
+
+    let event = TaylorEvent::Plane {
+        normal: [1.0, 0.0, 0.0],
+        offset: 0.0,
+    };
+    let half_turn = core::f64::consts::PI;
+    let mut time = 0.0;
+    let mut state = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+    for crossing in 0..4 {
+        let first = Taylor
+            .propagate_until_event(
+                &KeplerDynamics,
+                InitialValueProblem::new(time, state, time + 7.0, [1.0]),
+                options(),
+                event,
+                EventDirection::Either,
+            )
+            .unwrap();
+        assert_eq!(first.termination, Termination::Event);
+        let expected = core::f64::consts::FRAC_PI_2 + f64::from(crossing) * half_turn;
+        assert!(
+            (first.time - expected).abs() < 1e-11,
+            "{crossing}: {}",
+            first.time
+        );
+        // The same restart with time re-based to zero must also advance.
+        let rebased = Taylor
+            .propagate_until_event(
+                &KeplerDynamics,
+                InitialValueProblem::new(0.0, first.state, 7.0, [1.0]),
+                options(),
+                event,
+                EventDirection::Either,
+            )
+            .unwrap();
+        assert!((rebased.time - half_turn).abs() < 1e-11, "{}", rebased.time);
+        time = first.time;
+        state = first.state;
+    }
+}
+
+#[test]
 fn circular_orbit_plane_event_selects_direction() {
     use pykep_core::integration::{EventDirection, TaylorEvent, Termination};
 

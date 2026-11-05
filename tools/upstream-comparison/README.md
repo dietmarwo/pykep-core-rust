@@ -9,8 +9,9 @@ developer comparison environment.
 Build the pinned source as a release SDK with a C++23 compiler, heyoka 7.10.0,
 Boost 1.88, fmt 12.1, xtensor 0.27.1, xtensor-blas 0.23.0 and OpenBLAS.
 The Python studies used CPython 3.12, heyoka.py 7.10.1 and PyGMO 2.20.0.
-The SDK and Python extension must use a compatible heyoka ABI. The archive
-records the exact compiler, wheel and header adaptation used here.
+The SDK and Python extension must use a compatible heyoka ABI. The
+[reference SDK notes](reference-sdk/README.md) record the exact compiler,
+dependency revisions and header adaptation used for the 0.1.5 measurements.
 
 ```bash
 git clone https://github.com/esa/pykep.git upstream-pykep

@@ -1669,6 +1669,108 @@ mod tests {
         }
     }
 
+    fn assert_generated_matches<M, const N: usize, const P: usize>(
+        model: &M,
+        time: f64,
+        state: [f64; N],
+        parameters: [f64; P],
+    ) where
+        M: TaylorCoefficientModel<N, P>,
+    {
+        for order in [8, 15, MAX_ORDER] {
+            let mut generated = [[0.0; MAX_ORDER + 1]; N];
+            model.generated_coefficients::<f64>(time, &state, &parameters, order, &mut generated);
+            let mut validated = [[0.0; MAX_ORDER + 1]; N];
+            model
+                .coefficients(time, &state, &parameters, order, &mut validated)
+                .unwrap();
+            assert_jets_match(&generated, &validated, order, 1e-12);
+        }
+    }
+
+    /// Every ahead-of-time kernel, which drives SIMD batches and Taylor
+    /// sensitivities, matches the series-validated coefficient path.
+    #[test]
+    fn generated_kernels_match_validated_coefficients() {
+        let mu = 0.012_150_585_609_624_04;
+        assert_generated_matches(
+            &KeplerDynamics,
+            0.3,
+            [0.8, -0.4, 0.3, 0.2, 0.9, -0.1],
+            [1.0],
+        );
+        assert_generated_matches(&Cr3bpDynamics, 0.3, [0.8, -0.2, 0.1, 0.03, 1.0, 0.02], [mu]);
+        assert_generated_matches(
+            &BcpDynamics,
+            0.3,
+            [0.8, -0.2, 0.1, 0.03, 1.0, 0.02],
+            [mu, 328_900.56, 389.172, -0.925_195_985_520_347],
+        );
+        assert_generated_matches(
+            &ZohKeplerDynamics,
+            0.3,
+            [0.9, -0.2, 0.1, 0.15, 0.95, -0.04, 1.2],
+            [0.07, 0.3, -0.4, 0.5, 0.025],
+        );
+        assert_generated_matches(
+            &ZohCr3bpDynamics,
+            0.3,
+            [0.9, -0.2, 0.1, 0.15, 0.95, -0.04, 1.2],
+            [0.07, 0.3, -0.4, 0.5, 0.025, mu],
+        );
+        assert_generated_matches(
+            &ZohEquinoctialDynamics,
+            0.3,
+            [1.1, 0.1, -0.05, 0.02, -0.03, 0.4, 1.1],
+            [0.02, 0.3, -0.4, 0.5, 0.01],
+        );
+        assert_generated_matches(
+            &ZohSolarSailDynamics,
+            0.3,
+            [0.8, -0.4, 0.3, 0.2, 0.9, -0.1],
+            [0.25, -1.1, 0.04],
+        );
+        assert_generated_matches(
+            &CartesianTimeOptimal,
+            0.0,
+            [
+                1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ],
+            [1.0, 0.01, 1.0],
+        );
+        assert_generated_matches(
+            &EquinoctialTimeOptimal,
+            0.0,
+            [
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            ],
+            [1.0, 1e-4, 1.0],
+        );
+        // Both smoothed-throttle branches of the mass-optimal models.
+        for costate in [1.0, -1.0] {
+            let mut cartesian = [
+                1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ];
+            cartesian[13] = costate;
+            assert_generated_matches(
+                &CartesianMassOptimal,
+                0.0,
+                cartesian,
+                [1.0, 0.01, 1.0, 0.5, 1.0],
+            );
+            let mut equinoctial = [
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            ];
+            equinoctial[13] = if costate > 0.0 { 0.5 } else { -1.0 };
+            assert_generated_matches(
+                &EquinoctialMassOptimal,
+                0.0,
+                equinoctial,
+                [1.0, 1e-4, 1.0, 1.0, 1e-4],
+            );
+        }
+    }
+
     #[test]
     fn incremental_cr3bp_matches_series_reference() {
         let state = [0.8, -0.2, 0.1, 0.03, 1.0, 0.02];

@@ -63,12 +63,12 @@ dynamics jump at every switching time. Constant model parameters are fixed
 leg configuration and therefore are not a returned derivative group.
 
 Use `mismatch_jacobian_with_method(IntegrationMethod::Taylor)` for direct
-Taylor tangent propagation on the built-in models. The DOP853 path computes
-local RHS Jacobians with fixed-size
-centered differences using a relative step of `3e-6`. Consequently,
-integrator tolerances such as `1e-12` do not imply `1e-12` derivative
-accuracy: the pinned end-to-end validation uses scaled tolerances up to
-`3e-5`. See [zero-order-hold.md](zero-order-hold.md#sensitivities) for the
+Taylor tangent propagation on the built-in models. The DOP853 path uses
+analytic local RHS Jacobians for the Kepler and CR3BP models. For the
+equinoctial and solar-sail models it uses fixed-size centered differences
+with a relative step of `3e-6`; there, integrator tolerances such as `1e-12`
+do not imply `1e-12` derivative accuracy, and the pinned end-to-end
+validation uses scaled tolerances up to `3e-5`. See [zero-order-hold.md](zero-order-hold.md#sensitivities) for the
 model-level contract and validation evidence. The
 [matched report](matched-benchmarks.md) covers the measured full Jacobians
 and nominal mismatch calls at 20, 40 and 80 segments.
@@ -97,8 +97,8 @@ legs in input order.
 `pykep_rust.ZohLeg` accepts a `ZohModel` value: `Kepler`, `Cr3bp`,
 `Equinoctial`, or `SolarSail`. The constructor validates dynamic state,
 control, and constant dimensions for that selection. Mismatch, Jacobian, and
-history evaluation release the Python GIL. Pass `method="taylor"` to use
-the Taylor path.
+history evaluation release the Python GIL. Pass `method="taylor"` to any of
+them, or to their batch forms, to use the Taylor path.
 
 The ZOH-leg batch methods clone the small immutable leg descriptors, release
 the GIL once, and return results in input order. `workers=0` uses the shared

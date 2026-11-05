@@ -13,7 +13,7 @@ pub use launcher::Launcher;
 mod problem;
 mod tops;
 mod tops_data;
-pub use tops::{TopsOptions, TopsProblem};
+pub use tops::{MOVING_MAXIMUM_STEPS, TopsOptions, TopsProblem};
 pub use tops_data::TopsFamily;
 mod time_grid;
 pub use problem::{Evaluation, Problem, ProblemSpec, Work};

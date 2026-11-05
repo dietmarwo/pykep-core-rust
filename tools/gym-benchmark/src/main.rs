@@ -55,6 +55,10 @@ fn main() -> AnyResult<()> {
         },
         tolerance: number("--tolerance", "1e-13")?,
         derivative_tolerance: number("--derivative-tolerance", "1e-13")?,
+        maximum_steps: flags
+            .get("--maximum-steps")
+            .map(|v| v.parse())
+            .transpose()?,
     };
     let run: Option<Value> = flags
         .get("--run")
@@ -70,6 +74,16 @@ fn main() -> AnyResult<()> {
         options.cut = s["cut"].as_f64().unwrap_or(options.cut);
         options.time_encoding = s["time_encoding"].as_str().unwrap_or("uniform").parse()?;
         options.direction_inequalities = s["direction_inequalities"].as_bool();
+        options.method = match s["backend"].as_str().unwrap_or("taylor") {
+            "taylor" => IntegrationMethod::Taylor,
+            "dop853" => IntegrationMethod::Dop853,
+            _ => return Err("unknown recorded integration backend".into()),
+        };
+        options.derivative_tolerance = s["derivative_tolerance"]
+            .as_f64()
+            .unwrap_or(options.derivative_tolerance);
+        options.maximum_steps = s["maximum_steps"].as_u64().map(|n| n as usize);
+        // Replay the recorded decisions with a tighter nominal tolerance.
         options.tolerance = 5e-15;
     }
     let problem = GymProblem::new(id, options)?;
@@ -93,10 +107,22 @@ fn main() -> AnyResult<()> {
             if flag("--gradient", "false").parse::<bool>()? {
                 result["gradient"] = json!(problem.gradient(&x)?);
             }
-            if command == "validate" && matches!(problem, GymProblem::Tops(_)) {
-                result["forward_residual"] = json!(problem.forward_residual(&x)?);
+            let mut failure = None;
+            if command == "validate" {
+                let r = run.as_ref().ok_or("validate requires --run FILE")?;
+                let forward = if matches!(problem, GymProblem::Tops(_)) {
+                    let residual = problem.forward_residual(&x)?;
+                    result["forward_residual"] = json!(residual);
+                    Some(residual.iter().fold(0.0_f64, |m, v| m.max(v.abs())))
+                } else {
+                    None
+                };
+                failure = validate_replay(r, &evaluation, forward, &mut result)?;
             }
             println!("{}", serde_json::to_string_pretty(&result)?);
+            if let Some(reason) = failure {
+                return Err(reason.into());
+            }
         }
         "replay" => {
             let count = integer("--count", "64")?;
@@ -229,6 +255,63 @@ fn population(spec: &pykep_trajopt::ProblemSpec, count: usize, seed: u64) -> Vec
                 .collect()
         })
         .collect()
+}
+
+/// Compare a replayed best decision with its recorded evaluation.
+///
+/// Returns a failure reason when the replayed objectives differ, a recorded
+/// feasible point becomes infeasible, or the forward residual is too large.
+fn validate_replay(
+    run: &Value,
+    evaluation: &pykep_trajopt::Evaluation,
+    forward_residual: Option<f64>,
+    result: &mut Value,
+) -> AnyResult<Option<String>> {
+    let recorded = |key: &str| -> AnyResult<Vec<f64>> {
+        serde_json::from_value(run["best"]["evaluation"][key].clone())
+            .map_err(|e| format!("run record lacks best.evaluation.{key}: {e}").into())
+    };
+    let (objectives, equalities, inequalities) = (
+        recorded("objectives")?,
+        recorded("equalities")?,
+        recorded("inequalities")?,
+    );
+    let equality = run["pykep"]["equality_tolerance"].as_f64().unwrap_or(1e-6);
+    let inequality = run["pykep"]["inequality_tolerance"]
+        .as_f64()
+        .unwrap_or(1e-8);
+    let objective_difference = objectives
+        .iter()
+        .zip(&evaluation.objectives)
+        .map(|(a, b)| (a - b).abs() / a.abs().max(1.0))
+        .fold(0.0_f64, f64::max);
+    let recorded_feasible = equalities.iter().all(|v| v.abs() <= equality)
+        && inequalities.iter().all(|v| *v <= inequality);
+    let feasible = evaluation.feasible(equality, inequality);
+    let mut failures = Vec::new();
+    if objectives.len() != evaluation.objectives.len() || objective_difference > 1e-6 {
+        failures.push(format!(
+            "objective differs from the record by {objective_difference:e}"
+        ));
+    }
+    if recorded_feasible && !feasible {
+        failures.push("recorded feasible point is infeasible on replay".into());
+    }
+    if let Some(residual) = forward_residual
+        && feasible
+        && residual > 1e-6
+    {
+        failures.push(format!("forward residual {residual:e} exceeds 1e-6"));
+    }
+    result["validation"] = json!({
+        "objective_difference": objective_difference,
+        "recorded_feasible": recorded_feasible,
+        "feasible": feasible,
+        "forward_residual": forward_residual,
+        "passed": failures.is_empty(),
+        "failures": failures,
+    });
+    Ok((!failures.is_empty()).then(|| failures.join("; ")))
 }
 
 fn read_json(path: &Path) -> AnyResult<Value> {

@@ -28,12 +28,13 @@ For a measurement-backed choice between the original Python/C++ fcmaes/pykep
 stack and the native Rust crates, see
 [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md).
 
-The development tree includes a shared-input benchmark suite against PyKEP
+Release 0.1.5 includes a shared-input benchmark suite against PyKEP
 3.1.0. At the same endpoint-error gate, warmed native heyoka was about
 1.7–2.6× faster on nine scalar Taylor fixtures. Rust was about 1.2–1.3×
 faster on the two equinoctial Pontryagin fixtures. The complete ZOH
 Jacobian pilots favored Rust by about 1.9–2.2× at the tighter reference
-setting. Python calls and optimizer runs have separate results.
+setting, while nominal ZOH mismatch favored heyoka by about 1.2–1.5×.
+Python calls and optimizer runs have separate results.
 [Current measurements](docs/matched-benchmarks.md)
 
 ## Implemented scope
@@ -51,11 +52,12 @@ setting. Python calls and optimizer runs have separate results.
   models, events, and direct variational solves.
 - **Low-thrust legs:** fixed- and variable-duration Sims–Flanagan legs plus a
   generic ZOH leg for the four built-in controlled dynamics families.
-- **Trajectory gym in the development tree:** 14 classical mission problems,
-  34 fixed and 34 moving TOPS instances, and six launcher tables.
+- **Trajectory gym:** 14 classical mission problems, 34 fixed and 34 moving
+  TOPS instances, and six launcher tables, in Rust and in the Python wheels.
 
 Built-in ZOH legs offer explicit Taylor and DOP853 selection for mismatch,
-history and full Jacobian evaluation. Compatibility methods use DOP853.
+history and full Jacobian evaluation in Rust and Python. Calls without a
+selector keep DOP853.
 The TOPS gym defaults to Taylor and records both tolerances in its metadata.
 
 ## Layout

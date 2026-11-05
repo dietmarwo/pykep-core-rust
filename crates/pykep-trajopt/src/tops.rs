@@ -1,16 +1,21 @@
+// Copyright (c) 2023-2026 Dario Izzo (dario.izzo@gmail.com)
+//                          Advanced Concepts Team, European Space Agency (ESA)
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
-// Decision layouts and normalization follow the pinned PyKEP TOPS transcriptions.
+// Decision layouts and normalization follow the pinned PyKEP TOPS transcriptions
+// at c01e19debad5ea22b7079189f786f473046a79d5:
+// `pykep/trajopt/gym/_tops.py`, `pykep/trajopt/_zoh_point2point.py`,
+// `_zoh_ss_point2point.py`, `_zoh_pl2pl.py` and `_zoh_ss_pl2pl.py`.
 
 use core::f64::consts::{FRAC_PI_2, TAU};
 
-use pykep_core::Result;
 use pykep_core::dynamics::zoh::{
     ZeroOrderHoldModel, ZohCr3bpDynamics, ZohEquinoctialDynamics, ZohKeplerDynamics,
     ZohSolarSailDynamics, propagate_schedule_with_method,
 };
 use pykep_core::integration::{IntegrationMethod, IntegratorOptions, TaylorDynamicsModel};
 use pykep_core::leg::ZohLeg;
+use pykep_core::{PykepError, Result};
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -37,7 +42,17 @@ pub struct TopsOptions {
     pub tolerance: f64,
     /// Local error target for sensitivity propagation.
     pub derivative_tolerance: f64,
+    /// Integration step limit per propagation, or the family default.
+    ///
+    /// Fixed-boundary problems default to the upstream limit of 1,000 steps.
+    /// The upstream moving-boundary factories impose no limit, so moving
+    /// problems default to [`MOVING_MAXIMUM_STEPS`].
+    pub maximum_steps: Option<usize>,
 }
+
+/// Default step limit for moving-boundary problems, whose upstream factories
+/// impose none.
+pub const MOVING_MAXIMUM_STEPS: usize = 1_000_000;
 
 impl Default for TopsOptions {
     fn default() -> Self {
@@ -49,6 +64,7 @@ impl Default for TopsOptions {
             method: IntegrationMethod::Taylor,
             tolerance: 1e-13,
             derivative_tolerance: 1e-13,
+            maximum_steps: None,
         }
     }
 }
@@ -127,6 +143,7 @@ pub struct TopsProblem {
     constants: [f64; 2],
     boundary: Option<BoundaryPair>,
     direction_inequalities: bool,
+    maximum_steps: usize,
 }
 
 impl TopsProblem {
@@ -154,6 +171,13 @@ impl TopsProblem {
         let segments = options.segments.unwrap_or(default_segments);
         if !(1..=512).contains(&segments) {
             return Err(invalid("segments", "expected 1..=512"));
+        }
+        let maximum_steps =
+            options
+                .maximum_steps
+                .unwrap_or(if moving { MOVING_MAXIMUM_STEPS } else { 1000 });
+        if maximum_steps == 0 {
+            return Err(invalid("maximum_steps", "expected a positive step limit"));
         }
         if !(0.0..=1.0).contains(&options.cut)
             || [options.tolerance, options.derivative_tolerance]
@@ -208,7 +232,7 @@ impl TopsProblem {
         let layout = Layout::new(segments, sail, moving);
         let direction_inequalities = options.direction_inequalities.unwrap_or(moving || !cr3bp);
         let boundary = moving
-            .then(|| BoundaryPair::new(family, raw, scales, options))
+            .then(|| BoundaryPair::new(family, raw, scales, options, maximum_steps))
             .transpose()?;
         let mut bounds = Vec::with_capacity(layout.tof + 1 + segments);
         let mut decisions = Vec::with_capacity(bounds.capacity());
@@ -316,6 +340,7 @@ impl TopsProblem {
                     "integration_units_si": scales.physical(raw),
                     "backend": match options.method { IntegrationMethod::Taylor => "taylor", IntegrationMethod::Dop853 => "dop853" },
                     "tolerance": options.tolerance, "derivative_tolerance": options.derivative_tolerance,
+                    "maximum_steps": maximum_steps,
                     "frame": if cr3bp { "rotating CR3BP" } else if family == TopsFamily::Mee {
                         "prograde MEE with unwrapped longitude"
                     } else { "inertial Cartesian" }
@@ -333,6 +358,7 @@ impl TopsProblem {
             constants,
             boundary,
             direction_inequalities,
+            maximum_steps,
         })
     }
 
@@ -445,7 +471,15 @@ impl TopsProblem {
         let options = IntegratorOptions {
             relative_tolerance: tolerance,
             absolute_tolerance: tolerance,
-            maximum_steps: 1000,
+            // The independent forward check integrates the whole schedule at a
+            // tighter tolerance, so it receives a proportionally larger budget.
+            maximum_steps: if matches!(operation, Operation::Forward) {
+                self.maximum_steps
+                    .saturating_mul(self.segments)
+                    .saturating_mul(4)
+            } else {
+                self.maximum_steps
+            },
             ..IntegratorOptions::default()
         };
         let weights = grid.weights;
@@ -603,7 +637,10 @@ impl Problem for TopsProblem {
     fn evaluate(&self, x: &[f64]) -> Result<Evaluation> {
         self.apply(x, Operation::Fitness)?
             .evaluation
-            .ok_or_else(|| invalid("evaluation", "missing result"))
+            .ok_or(PykepError::UnsupportedCapability {
+                provider: self.spec.id.clone(),
+                capability: "TOPS evaluation result",
+            })
     }
 
     fn gradient(&self, x: &[f64]) -> Result<Vec<Vec<f64>>> {

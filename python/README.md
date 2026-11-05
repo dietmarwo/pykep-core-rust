@@ -5,9 +5,13 @@
 element conversion, two-body propagation and STMs, mission-design utilities,
 Lambert problems, ephemerides, evaluated dynamics, and low-thrust legs.
 
-Development wheels include the native `pykep_rust.trajopt.gym` catalog.
-See the [gym guide](../docs/trajectory-gym.md) for examples and the
-[matched report](../docs/matched-benchmarks.md) for Python and native timings.
+Since 0.1.5 the wheels include the native `pykep_rust.trajopt.gym` catalog:
+14 classical mission problems, 34 fixed and 34 moving TOPS low-thrust
+problems with analytic gradients, and six launcher tables. See the
+[gym guide](https://dietmarwo.github.io/pykep-core-rust/trajectory-gym.html)
+for examples and the
+[matched report](https://dietmarwo.github.io/pykep-core-rust/matched-benchmarks.html)
+for Python and native timings.
 
 ```python
 import pykep_rust as pk

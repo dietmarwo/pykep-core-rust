@@ -38,3 +38,35 @@ fn feasible_tops_examples_pass_full_forward_validation() {
         );
     }
 }
+
+#[test]
+fn ordered_population_batches_match_scalar_evaluations() {
+    for id in ["tops.cr3bp.P0", "tops.sail.P4.moving", "gym.cassini2"] {
+        let problem = GymProblem::new(
+            id,
+            TopsOptions {
+                segments: Some(6),
+                ..TopsOptions::default()
+            },
+        )
+        .unwrap();
+        let spec = problem.spec();
+        let population: Vec<Vec<f64>> = (0..9)
+            .map(|k| {
+                spec.bounds
+                    .iter()
+                    .map(|&[low, high]| low + (high - low) * (0.1 + 0.08 * f64::from(k)))
+                    .collect()
+            })
+            .collect();
+        let batch = problem.evaluate_batch(&population, 3).unwrap();
+        assert_eq!(batch.len(), population.len());
+        for (x, evaluation) in population.iter().zip(&batch) {
+            assert_eq!(
+                evaluation.fitness(),
+                problem.evaluate(x).unwrap().fitness(),
+                "{id}"
+            );
+        }
+    }
+}

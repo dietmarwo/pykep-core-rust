@@ -53,9 +53,11 @@ def main():
         tables[key] = {"speed": definitions["_vinfs_" + prefix], "declination": dec,
                        "mass": mass if dec else [mass]}
     dest = args.output / "launchers.json"
-    dest.write_text(json.dumps(tables, allow_nan=False, separators=(",", ":")) + "\n")
+    dest.write_text(json.dumps(tables, allow_nan=False, separators=(",", ":")) + "\n",
+                    newline="\n")
     inventory["sha256"]["launchers.json"] = hashlib.sha256(dest.read_bytes()).hexdigest()
-    (args.output / "provenance.json").write_text(json.dumps(inventory, indent=2) + "\n")
+    (args.output / "provenance.json").write_text(json.dumps(inventory, indent=2) + "\n",
+                                                 newline="\n")
 
 
 if __name__ == "__main__":

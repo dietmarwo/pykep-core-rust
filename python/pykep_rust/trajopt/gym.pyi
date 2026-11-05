@@ -13,7 +13,7 @@ class Problem:
         self, id: str, *, nseg: int | None = None, cut: float = 0.5,
         time_encoding: TimeEncoding = "uniform", inequalities_for_tc: bool | None = None,
         backend: Backend = "taylor", tolerance: float = 1e-13,
-        derivative_tolerance: float = 1e-13,
+        derivative_tolerance: float = 1e-13, maximum_steps: int | None = None,
     ) -> None: ...
     def get_name(self) -> str: ...
     def get_extra_info(self) -> str: ...
@@ -37,7 +37,7 @@ class _Factory(Protocol):
         self, prob_name: str, cut: float = 0.5, nseg: int | None = None,
         time_encoding: TimeEncoding = "uniform", inequalities_for_tc: bool | None = None,
         *, backend: Backend = "taylor", tolerance: float = 1e-13,
-        derivative_tolerance: float = 1e-13,
+        derivative_tolerance: float = 1e-13, maximum_steps: int | None = None,
     ) -> Problem: ...
 
 tops_twobody: _Factory

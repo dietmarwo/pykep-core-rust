@@ -27,6 +27,9 @@ jobs:
       - run: cargo test --workspace --all-features --locked
       - run: cargo test --workspace --all-features --locked --release
       - run: cargo test -p pykep-core --no-default-features --locked
+      - name: Check generated Taylor kernels
+        if: runner.os == 'Linux'
+        run: python3 tools/taylor-codegen/regenerate.py --check
       - run: cargo run -p pykep-examples --bin port-status
       - run: cmp LICENSE crates/pykep-core/LICENSE
         if: runner.os != 'Windows'
@@ -44,6 +47,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --workspace --locked
+      - run: cargo check --workspace --all-features --locked
 
   python:
     name: Python ${{ matrix.python-version }} (${{ matrix.os }})

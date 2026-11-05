@@ -1,4 +1,9 @@
+// Copyright (c) 2023-2026 Dario Izzo (dario.izzo@gmail.com)
+//                          Advanced Concepts Team, European Space Agency (ESA)
+// Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
+// Launcher tables are extracted from upstream `pykep/trajopt/_launchers.py` at
+// c01e19debad5ea22b7079189f786f473046a79d5.
 
 use pykep_core::{PykepError, Result};
 use serde::Deserialize;

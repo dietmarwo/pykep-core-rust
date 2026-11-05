@@ -224,10 +224,19 @@ where
                 } else {
                     start + offset
                 };
-                if time == start {
-                    return integration_failure(M::NAME, "Taylor event time does not advance");
-                }
                 if last_event == Some(time) {
+                    continue;
+                }
+                // A root within rounding of the step start is either the excluded
+                // initial event, for example after restarting from a returned
+                // event state, or the event already reported at the end of the
+                // previous step.
+                let negligible = 4.0 * f64::EPSILON * start.abs().max(step.abs());
+                if offset.abs() <= negligible
+                    && (start == problem.initial_time
+                        || last_event
+                            .is_some_and(|previous| (previous - start).abs() <= negligible))
+                {
                     continue;
                 }
                 let state = evaluate(&workspace.jet, order, offset);

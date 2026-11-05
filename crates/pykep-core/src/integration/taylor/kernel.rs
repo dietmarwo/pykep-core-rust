@@ -58,7 +58,7 @@ pub(super) fn product<T: Coefficient>(a: &[T; WIDTH], b: &[T; WIDTH], n: usize) 
 pub(super) fn square<T: Coefficient>(a: &[T; WIDTH], n: usize) -> T {
     let half = (0..n.div_ceil(2)).fold(T::ZERO, |sum, k| sum + a[k] * a[n - k]);
     let doubled = half + half;
-    if n % 2 == 0 {
+    if n.is_multiple_of(2) {
         doubled + a[n / 2] * a[n / 2]
     } else {
         doubled

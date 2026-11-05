@@ -1,7 +1,7 @@
 # pykep-core
 
 `pykep-core` is an independent native Rust implementation of numerical
-algorithms from pykep version 3. Version 0.1.4 includes:
+algorithms from pykep version 3. Version 0.1.5 includes:
 
 - **Numerical foundations:** physical constants, Julian-date arithmetic,
   microsecond-resolution epochs, Stumpff functions, Kepler equations, anomaly
@@ -16,7 +16,9 @@ algorithms from pykep version 3. Version 0.1.4 includes:
   through Pluto at coefficient thresholds down to `1e-9`.
 - **Dynamics and integration:** DOP853 and fixed-system Taylor facades;
   evaluated Kepler, CR3BP, bicircular, ZOH, and Pontryagin models; dense output,
-  terminal DOP853 events, and first-order sensitivities.
+  terminal DOP853 events, analytic Taylor plane, sphere, and radial-velocity
+  events, optional four-lane Taylor batches (`simd` feature), and
+  first-order sensitivities.
 - **Low-thrust transcriptions:** fixed/variable-duration Sims–Flanagan legs and
   generic continuous-thrust ZOH legs.
 - **Ordered batches:** deterministic worker semantics across propagation,
@@ -28,21 +30,24 @@ models. DOP853 supports arbitrary user dynamics and direct variational solves.
 The ZOH models cover normalized Kepler, CR3BP, modified equinoctial, and ideal
 solar-sail dynamics. They define deterministic switch ownership, backward
 propagation, and segment-local sensitivities. Rust ZOH legs can select Taylor
-or DOP853 for nominal mismatch and history evaluation; compatibility methods
-and Jacobians retain DOP853.
+or DOP853 for nominal mismatch, history, and full Jacobian evaluation with the
+`*_with_method` calls; the original methods keep DOP853.
 
-The full Pontryagin and ZOH model Jacobians use fixed-size centered differences,
-although canonical Pontryagin costate rates use forward-mode differentiation.
-Integrator tolerance therefore does not guarantee derivative accuracy. Pinned
-ZOH-leg derivative validation uses scaled tolerances up to `3e-5`; consult the
-module-level sensitivity documentation before tightly converged optimization.
+Taylor sensitivities differentiate the coefficient recurrences directly. For
+DOP853 variational solves, the Kepler and CR3BP ZOH models use analytic model
+Jacobians, while the equinoctial and solar-sail ZOH models and the full
+Pontryagin model Jacobians use fixed-size centered differences (canonical
+Pontryagin costate rates use forward-mode differentiation). For those
+centered-difference models, integrator tolerance does not guarantee derivative
+accuracy; consult the module-level sensitivity documentation before tightly
+converged optimization.
 
 The crate has no C or C++ runtime dependency.
 
-The development tree adds explicit Taylor Jacobians and a separate
-`pykep-trajopt` workspace crate. See the
-[matched report](../../docs/matched-benchmarks.md) for current Taylor and
-full-leg comparisons with PyKEP 3.1.0.
+The repository also contains the unpublished `pykep-trajopt` workspace crate
+with the trajectory gym used by the Python wheels. See the
+[matched report](https://dietmarwo.github.io/pykep-core-rust/matched-benchmarks.html)
+for Taylor and full-leg comparisons with PyKEP 3.1.0.
 
 ## Example
 

@@ -1,6 +1,6 @@
 # Development
 
-See the [reference SDK and benchmark instructions](../tools/upstream-comparison/README.md)
+See the [reference SDK and benchmark instructions](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/upstream-comparison/README.md)
 for the pinned comparative studies. Normal Cargo and Maturin builds use the
 Rust evaluator and bundled gym data.
 

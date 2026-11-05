@@ -63,4 +63,5 @@ time-grid gradients for all four built-in ZOH dynamics. It has SHA-256
 parameters. Reproduce the reference with
 `tools/taylor-comparison/upstream.py --reference-only --references`.
 The output uses double precision. Its endpoints are cross-implementation
-reference values and retain double-precision roundoff.
+reference values and retain double-precision roundoff. It has SHA-256
+`2f243546205e058e8574df4a565ad9b87d225297b818375504b888a275f3d0b5`.
