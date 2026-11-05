@@ -6,6 +6,9 @@ Python interface:
 - [AI problem-solving context](https://github.com/dietmarwo/pykep-core-rust/blob/main/ai-context.md):
   selecting physical models, APIs, units, frames, solver settings, and
   validation for a user problem;
+- [astrodynamics-introduction.md](astrodynamics-introduction.md): a
+  programmer's introduction to orbits, gravity assists, low thrust and
+  trajectory optimization with fcmaes, AI agents and experiment campaigns;
 - [examples.md](examples.md): Rust/Python quick starts and runnable examples;
 - [conventions.md](conventions.md): units, epochs, frames, array layouts, and
   numerical behavior;
@@ -16,7 +19,7 @@ Python interface:
   module guides;
 - [trajectory-gym.md](trajectory-gym.md), [tops.md](tops.md) and
   [trajectory-formulations.md](trajectory-formulations.md) cover the
-  development catalog, optimizer examples and trajectory replay.
+  trajectory catalog, optimizer examples and trajectory replay.
 - [matched-benchmarks.md](matched-benchmarks.md) separates current native,
   Python and optimizer evidence.
 - [python-api.md](python-api.md): Python units, arrays, defaults, errors,
