@@ -15,14 +15,27 @@ use pykep_core::dynamics::pontryagin::{
 };
 use pykep_core::dynamics::zoh::{
     ControlSchedule, ZohCr3bpDynamics, ZohEquinoctialDynamics, ZohKeplerDynamics,
-    ZohSolarSailDynamics, propagate_schedule, propagate_schedule_backward,
+    ZohSolarSailDynamics, propagate_schedule_backward_with_method, propagate_schedule_with_method,
 };
 use pykep_core::dynamics::{BcpDynamics, Cr3bpDynamics, KeplerDynamics};
-use pykep_core::integration::{Dop853, DynamicsModel, InitialValueProblem, IntegratorOptions};
+use pykep_core::integration::{
+    AdaptiveIntegrator, DynamicsModel, InitialValueProblem, IntegrationMethod, IntegratorOptions,
+    Taylor, TaylorDynamicsModel,
+};
 use pykep_core::{CartesianState, Matrix6, PykepError};
 use pyo3::prelude::*;
 
 type PyStateStmBatch<'py> = (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray3<f64>>);
+
+pub(crate) fn integration_method(name: &str) -> PyResult<IntegrationMethod> {
+    match name {
+        "taylor" => Ok(IntegrationMethod::Taylor),
+        "dop853" => Ok(IntegrationMethod::Dop853),
+        _ => Err(pyo3::exceptions::PyValueError::new_err(
+            "method must be 'taylor' or 'dop853'",
+        )),
+    }
+}
 
 fn six(values: Vec<f64>) -> Result<CartesianState, PykepError> {
     values
@@ -129,11 +142,12 @@ fn pontryagin_result<M, const P: usize>(
     initial_time: f64,
     final_time: f64,
     integrator_options: IntegratorOptions,
+    method: IntegrationMethod,
 ) -> Result<[f64; 14], PykepError>
 where
-    M: DynamicsModel<14, P>,
+    M: TaylorDynamicsModel<14, P>,
 {
-    Dop853
+    AdaptiveIntegrator::new(method)
         .propagate(
             model,
             InitialValueProblem::new(initial_time, state, final_time, parameters),
@@ -292,7 +306,9 @@ fn pontryagin_equinoctial_hamiltonian(
     initial_time = 0.0,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_pontryagin_cartesian(
@@ -305,7 +321,9 @@ fn propagate_pontryagin_cartesian(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<[f64; 14]> {
+    let method = integration_method(method)?;
     let state = fixed(state).map_err(to_python)?;
     let optimality = *optimality;
     let integrator_options = options(relative_tolerance, absolute_tolerance, maximum_step);
@@ -320,6 +338,7 @@ fn propagate_pontryagin_cartesian(
                     initial_time,
                     final_time,
                     integrator_options,
+                    method,
                 )
                 .map_err(to_python)
             })
@@ -334,6 +353,7 @@ fn propagate_pontryagin_cartesian(
                     initial_time,
                     final_time,
                     integrator_options,
+                    method,
                 )
                 .map_err(to_python)
             })
@@ -350,7 +370,9 @@ fn propagate_pontryagin_cartesian(
     initial_time = 0.0,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_pontryagin_equinoctial(
@@ -363,7 +385,9 @@ fn propagate_pontryagin_equinoctial(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<[f64; 14]> {
+    let method = integration_method(method)?;
     let state = fixed(state).map_err(to_python)?;
     let optimality = *optimality;
     let integrator_options = options(relative_tolerance, absolute_tolerance, maximum_step);
@@ -378,6 +402,7 @@ fn propagate_pontryagin_equinoctial(
                     initial_time,
                     final_time,
                     integrator_options,
+                    method,
                 )
                 .map_err(to_python)
             })
@@ -392,6 +417,7 @@ fn propagate_pontryagin_equinoctial(
                     initial_time,
                     final_time,
                     integrator_options,
+                    method,
                 )
                 .map_err(to_python)
             })
@@ -577,7 +603,9 @@ fn pontryagin_equinoctial_hamiltonian_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_pontryagin_cartesian_batch<'py>(
@@ -591,7 +619,9 @@ fn propagate_pontryagin_cartesian_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     let states = fixed_rows::<14>(states)?;
     matching_length(states.len(), final_times.len())?;
     let parameters = pontryagin_parameters(*optimality, parameters).map_err(to_python)?;
@@ -610,6 +640,7 @@ fn propagate_pontryagin_cartesian_batch<'py>(
                     initial_time,
                     *final_time,
                     integrator_options,
+                    method,
                 ),
                 PontryaginParameters::Time(parameters) => pontryagin_result(
                     &CartesianTimeOptimal,
@@ -618,6 +649,7 @@ fn propagate_pontryagin_cartesian_batch<'py>(
                     initial_time,
                     *final_time,
                     integrator_options,
+                    method,
                 ),
             })
         })
@@ -635,7 +667,9 @@ fn propagate_pontryagin_cartesian_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_pontryagin_equinoctial_batch<'py>(
@@ -649,7 +683,9 @@ fn propagate_pontryagin_equinoctial_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     let states = fixed_rows::<14>(states)?;
     matching_length(states.len(), final_times.len())?;
     let parameters = pontryagin_parameters(*optimality, parameters).map_err(to_python)?;
@@ -668,6 +704,7 @@ fn propagate_pontryagin_equinoctial_batch<'py>(
                     initial_time,
                     *final_time,
                     integrator_options,
+                    method,
                 ),
                 PontryaginParameters::Time(parameters) => pontryagin_result(
                     &EquinoctialTimeOptimal,
@@ -676,6 +713,7 @@ fn propagate_pontryagin_equinoctial_batch<'py>(
                     initial_time,
                     *final_time,
                     integrator_options,
+                    method,
                 ),
             })
         })
@@ -779,6 +817,7 @@ fn cartesian_stm_batch<'py>(
     Ok((states, matrices))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn zoh_result<M, const N: usize, const C: usize, const K: usize, const P: usize>(
     model: &M,
     boundaries: Vec<f64>,
@@ -787,9 +826,10 @@ fn zoh_result<M, const N: usize, const C: usize, const K: usize, const P: usize>
     constants: [f64; K],
     backward: bool,
     integrator_options: IntegratorOptions,
+    method: IntegrationMethod,
 ) -> PyResult<[f64; N]>
 where
-    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P>,
+    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
 {
     zoh_result_core(
         model,
@@ -799,10 +839,12 @@ where
         constants,
         backward,
         integrator_options,
+        method,
     )
     .map_err(to_python)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn zoh_result_core<M, const N: usize, const C: usize, const K: usize, const P: usize>(
     model: &M,
     boundaries: Vec<f64>,
@@ -811,15 +853,30 @@ fn zoh_result_core<M, const N: usize, const C: usize, const K: usize, const P: u
     constants: [f64; K],
     backward: bool,
     integrator_options: IntegratorOptions,
+    method: IntegrationMethod,
 ) -> Result<[f64; N], PykepError>
 where
-    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P>,
+    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P> + TaylorDynamicsModel<N, P>,
 {
     let schedule = ControlSchedule::new(boundaries, control_rows(controls)?)?;
     let result = if backward {
-        propagate_schedule_backward(model, &schedule, state, constants, integrator_options)
+        propagate_schedule_backward_with_method(
+            model,
+            &schedule,
+            state,
+            constants,
+            integrator_options,
+            method,
+        )
     } else {
-        propagate_schedule(model, &schedule, state, constants, integrator_options)
+        propagate_schedule_with_method(
+            model,
+            &schedule,
+            state,
+            constants,
+            integrator_options,
+            method,
+        )
     };
     result.map(|propagation| propagation.state)
 }
@@ -834,10 +891,16 @@ fn zoh_batch<'py, M, const N: usize, const C: usize, const K: usize, const P: us
     constants: [f64; K],
     backward: bool,
     integrator_options: IntegratorOptions,
+    method: IntegrationMethod,
     workers: usize,
 ) -> PyResult<Bound<'py, PyArray2<f64>>>
 where
-    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P> + Copy + Sync + Send + 'static,
+    M: pykep_core::dynamics::zoh::ZeroOrderHoldModel<N, C, K, P>
+        + TaylorDynamicsModel<N, P>
+        + Copy
+        + Sync
+        + Send
+        + 'static,
 {
     let states = fixed_rows::<N>(states)?;
     let count = states.len();
@@ -859,6 +922,7 @@ where
                     constants,
                     backward,
                     integrator_options,
+                    method,
                 )
             })
         })
@@ -1314,7 +1378,9 @@ fn zoh_solar_sail_rhs_batch<'py>(
     backward = false,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_kepler(
@@ -1327,7 +1393,9 @@ fn propagate_zoh_kepler(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<[f64; 7]> {
+    let method = integration_method(method)?;
     let state = seven(state).map_err(to_python)?;
     python.detach(move || {
         zoh_result::<_, 7, 4, 1, 5>(
@@ -1338,6 +1406,7 @@ fn propagate_zoh_kepler(
             [mass_flow_coefficient],
             backward,
             options(relative_tolerance, absolute_tolerance, maximum_step),
+            method,
         )
     })
 }
@@ -1352,7 +1421,9 @@ fn propagate_zoh_kepler(
     backward = false,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_cr3bp(
@@ -1366,7 +1437,9 @@ fn propagate_zoh_cr3bp(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<[f64; 7]> {
+    let method = integration_method(method)?;
     let state = seven(state).map_err(to_python)?;
     python.detach(move || {
         zoh_result::<_, 7, 4, 2, 6>(
@@ -1377,6 +1450,7 @@ fn propagate_zoh_cr3bp(
             [mass_flow_coefficient, mu],
             backward,
             options(relative_tolerance, absolute_tolerance, maximum_step),
+            method,
         )
     })
 }
@@ -1390,7 +1464,9 @@ fn propagate_zoh_cr3bp(
     backward = false,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_equinoctial(
@@ -1403,7 +1479,9 @@ fn propagate_zoh_equinoctial(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<[f64; 7]> {
+    let method = integration_method(method)?;
     let state = seven(state).map_err(to_python)?;
     python.detach(move || {
         zoh_result::<_, 7, 4, 1, 5>(
@@ -1414,6 +1492,7 @@ fn propagate_zoh_equinoctial(
             [mass_flow_coefficient],
             backward,
             options(relative_tolerance, absolute_tolerance, maximum_step),
+            method,
         )
     })
 }
@@ -1427,7 +1506,9 @@ fn propagate_zoh_equinoctial(
     backward = false,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_solar_sail(
@@ -1440,7 +1521,9 @@ fn propagate_zoh_solar_sail(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<CartesianState> {
+    let method = integration_method(method)?;
     let state = six(state).map_err(to_python)?;
     python.detach(move || {
         zoh_result::<_, 6, 2, 1, 3>(
@@ -1451,6 +1534,7 @@ fn propagate_zoh_solar_sail(
             [lightness],
             backward,
             options(relative_tolerance, absolute_tolerance, maximum_step),
+            method,
         )
     })
 }
@@ -1465,7 +1549,9 @@ fn propagate_zoh_solar_sail(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_kepler_batch<'py>(
@@ -1479,7 +1565,9 @@ fn propagate_zoh_kepler_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     zoh_batch::<_, 7, 4, 1, 5>(
         python,
         ZohKeplerDynamics,
@@ -1489,6 +1577,7 @@ fn propagate_zoh_kepler_batch<'py>(
         [mass_flow_coefficient],
         backward,
         options(relative_tolerance, absolute_tolerance, maximum_step),
+        method,
         workers,
     )
 }
@@ -1504,7 +1593,9 @@ fn propagate_zoh_kepler_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_cr3bp_batch<'py>(
@@ -1519,7 +1610,9 @@ fn propagate_zoh_cr3bp_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     zoh_batch::<_, 7, 4, 2, 6>(
         python,
         ZohCr3bpDynamics,
@@ -1529,6 +1622,7 @@ fn propagate_zoh_cr3bp_batch<'py>(
         [mass_flow_coefficient, mu],
         backward,
         options(relative_tolerance, absolute_tolerance, maximum_step),
+        method,
         workers,
     )
 }
@@ -1543,7 +1637,9 @@ fn propagate_zoh_cr3bp_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_equinoctial_batch<'py>(
@@ -1557,7 +1653,9 @@ fn propagate_zoh_equinoctial_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     zoh_batch::<_, 7, 4, 1, 5>(
         python,
         ZohEquinoctialDynamics,
@@ -1567,6 +1665,7 @@ fn propagate_zoh_equinoctial_batch<'py>(
         [mass_flow_coefficient],
         backward,
         options(relative_tolerance, absolute_tolerance, maximum_step),
+        method,
         workers,
     )
 }
@@ -1581,7 +1680,9 @@ fn propagate_zoh_equinoctial_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "dop853"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_zoh_solar_sail_batch<'py>(
@@ -1595,7 +1696,9 @@ fn propagate_zoh_solar_sail_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let method = integration_method(method)?;
     zoh_batch::<_, 6, 2, 1, 3>(
         python,
         ZohSolarSailDynamics,
@@ -1605,6 +1708,7 @@ fn propagate_zoh_solar_sail_batch<'py>(
         [lightness],
         backward,
         options(relative_tolerance, absolute_tolerance, maximum_step),
+        method,
         workers,
     )
 }
@@ -1617,7 +1721,9 @@ fn propagate_zoh_solar_sail_batch<'py>(
     initial_time = 0.0,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_kepler_dynamics(
@@ -1629,16 +1735,19 @@ fn propagate_kepler_dynamics(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<CartesianState> {
+    let method = integration_method(method)?;
     let state = six(state).map_err(to_python)?;
     python
         .detach(move || {
-            KeplerDynamics.propagate(
+            KeplerDynamics.propagate_with_method(
                 initial_time,
                 state,
                 final_time,
                 mu,
                 options(relative_tolerance, absolute_tolerance, maximum_step),
+                method,
             )
         })
         .map(|result| result.state)
@@ -1653,7 +1762,9 @@ fn propagate_kepler_dynamics(
     initial_time = 0.0,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_cr3bp(
@@ -1665,16 +1776,19 @@ fn propagate_cr3bp(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<CartesianState> {
+    let method = integration_method(method)?;
     let state = six(state).map_err(to_python)?;
     python
         .detach(move || {
-            Cr3bpDynamics.propagate(
+            Cr3bpDynamics.propagate_with_method(
                 initial_time,
                 state,
                 final_time,
                 mu,
                 options(relative_tolerance, absolute_tolerance, maximum_step),
+                method,
             )
         })
         .map(|result| result.state)
@@ -1692,7 +1806,9 @@ fn propagate_cr3bp(
     initial_time = 0.0,
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
-    maximum_step = None
+    maximum_step = None,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_bcp(
@@ -1707,16 +1823,19 @@ fn propagate_bcp(
     relative_tolerance: f64,
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
+    method: &str,
 ) -> PyResult<CartesianState> {
+    let method = integration_method(method)?;
     let state = six(state).map_err(to_python)?;
     python
         .detach(move || {
-            BcpDynamics.propagate(
+            BcpDynamics.propagate_with_method(
                 initial_time,
                 state,
                 final_time,
                 [mu, mu_sun, rho_sun, omega_sun],
                 options(relative_tolerance, absolute_tolerance, maximum_step),
+                method,
             )
         })
         .map(|result| result.state)
@@ -1846,7 +1965,9 @@ fn propagate_bcp_with_stm(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_kepler_dynamics_batch<'py>(
@@ -1859,19 +1980,64 @@ fn propagate_kepler_dynamics_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    let options = options(relative_tolerance, absolute_tolerance, maximum_step);
-    cartesian_batch(
+    nominal_batch(
         python,
+        KeplerDynamics,
         states,
         final_times,
+        initial_time,
+        [mu],
+        options(relative_tolerance, absolute_tolerance, maximum_step),
+        integration_method(method)?,
         workers,
-        move |state, final_time| {
-            KeplerDynamics
-                .propagate(initial_time, state, final_time, mu, options)
-                .map(|result| result.state)
-        },
     )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn nominal_batch<'py, M, const P: usize>(
+    python: Python<'py>,
+    model: M,
+    states: PyReadonlyArray2<'py, f64>,
+    final_times: PyReadonlyArray1<'py, f64>,
+    initial_time: f64,
+    parameters: [f64; P],
+    options: IntegratorOptions,
+    method: IntegrationMethod,
+    workers: usize,
+) -> PyResult<Bound<'py, PyArray2<f64>>>
+where
+    M: TaylorDynamicsModel<6, P> + Send + Sync + 'static,
+{
+    if method == IntegrationMethod::Dop853 {
+        return cartesian_batch(
+            python,
+            states,
+            final_times,
+            workers,
+            move |state, final_time| {
+                AdaptiveIntegrator::new(method)
+                    .propagate(
+                        &model,
+                        InitialValueProblem::new(initial_time, state, final_time, parameters),
+                        options,
+                    )
+                    .map(|result| result.state)
+            },
+        );
+    }
+    let states = fixed_rows::<6>(states)?;
+    matching_length(states.len(), final_times.len())?;
+    let problems: Vec<_> = states
+        .into_iter()
+        .zip(final_times.as_array().iter().copied())
+        .map(|(state, time)| InitialValueProblem::new(initial_time, state, time, parameters))
+        .collect();
+    let output = python
+        .detach(move || Taylor.propagate_batch(&model, &problems, options, workers))
+        .map_err(to_python)?;
+    state_array(python, output.into_iter().map(|item| item.state).collect())
 }
 
 /// Batch-propagate CR3BP dynamics.
@@ -1883,7 +2049,9 @@ fn propagate_kepler_dynamics_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_cr3bp_batch<'py>(
@@ -1896,18 +2064,18 @@ fn propagate_cr3bp_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    let options = options(relative_tolerance, absolute_tolerance, maximum_step);
-    cartesian_batch(
+    nominal_batch(
         python,
+        Cr3bpDynamics,
         states,
         final_times,
+        initial_time,
+        [mu],
+        options(relative_tolerance, absolute_tolerance, maximum_step),
+        integration_method(method)?,
         workers,
-        move |state, final_time| {
-            Cr3bpDynamics
-                .propagate(initial_time, state, final_time, mu, options)
-                .map(|result| result.state)
-        },
     )
 }
 
@@ -1923,7 +2091,9 @@ fn propagate_cr3bp_batch<'py>(
     relative_tolerance = 1e-12,
     absolute_tolerance = 1e-12,
     maximum_step = None,
-    workers = 0
+    workers = 0,
+    *,
+    method = "taylor"
 ))]
 #[allow(clippy::too_many_arguments)]
 fn propagate_bcp_batch<'py>(
@@ -1939,19 +2109,18 @@ fn propagate_bcp_batch<'py>(
     absolute_tolerance: f64,
     maximum_step: Option<f64>,
     workers: usize,
+    method: &str,
 ) -> PyResult<Bound<'py, PyArray2<f64>>> {
-    let parameters = [mu, mu_sun, rho_sun, omega_sun];
-    let options = options(relative_tolerance, absolute_tolerance, maximum_step);
-    cartesian_batch(
+    nominal_batch(
         python,
+        BcpDynamics,
         states,
         final_times,
+        initial_time,
+        [mu, mu_sun, rho_sun, omega_sun],
+        options(relative_tolerance, absolute_tolerance, maximum_step),
+        integration_method(method)?,
         workers,
-        move |state, final_time| {
-            BcpDynamics
-                .propagate(initial_time, state, final_time, parameters, options)
-                .map(|result| result.state)
-        },
     )
 }
 

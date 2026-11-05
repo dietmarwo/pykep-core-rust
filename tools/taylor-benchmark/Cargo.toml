@@ -1,5 +1,6 @@
 [package]
 name = "pykep-taylor-benchmark"
+default-run = "pykep-taylor-benchmark"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -1,5 +1,8 @@
 # Native astrodynamics in Rust
 
+Release 0.1.5 adds a [trajectory gym](trajectory-gym.md)
+and [matched PyKEP benchmarks](matched-benchmarks.md).
+
 `pykep-rust` is an independent native Rust port of the numerical C++ library
 in pykep version 3 (`kep3`). The reusable `pykep-core` crate contains the
 astrodynamics implementation without a C or C++ runtime dependency. The

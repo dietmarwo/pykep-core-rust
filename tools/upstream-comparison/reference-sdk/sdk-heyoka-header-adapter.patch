@@ -1,0 +1,53 @@
+diff --git a/include/heyoka/detail/ranges_to.hpp b/include/heyoka/detail/ranges_to.hpp
+index 7794418..f25b775 100644
+--- a/include/heyoka/detail/ranges_to.hpp
++++ b/include/heyoka/detail/ranges_to.hpp
+@@ -36,6 +36,7 @@ constexpr decltype(auto) ranges_to(R &&r, Args &&...args)
+     using C_value_t = std::ranges::range_value_t<C>;
+     using R_ref_t = std::ranges::range_reference_t<R>;
+ 
++#if defined(__cpp_lib_ranges_to_container)
+     if constexpr (std::convertible_to<R_ref_t, C_value_t>) {
+         return std::ranges::to<C>(std::forward<R>(r), std::forward<Args>(args)...);
+     } else if constexpr (std::constructible_from<C_value_t, R_ref_t> && std::movable<C_value_t>) {
+@@ -46,6 +47,17 @@ constexpr decltype(auto) ranges_to(R &&r, Args &&...args)
+         static_assert(always_false_v<C>,
+                       "Unable to convert the range reference type to the container value type in ranges_to().");
+     }
++#else
++    C result(std::forward<Args>(args)...);
++    if constexpr (std::ranges::sized_range<R> && requires { result.reserve(std::ranges::size(r)); }) {
++        result.reserve(std::ranges::size(r));
++    }
++    for (auto &&value : r) {
++        result.insert(result.end(), C_value_t(std::forward<decltype(value)>(value)));
++    }
++    return result;
++#endif
++
+ }
+ 
+ template <typename C, typename T, typename... Args>
+diff --git a/include/heyoka/detail/tanuki_impl.hpp b/include/heyoka/detail/tanuki_impl.hpp
+index 95e4d92..6489aa7 100644
+--- a/include/heyoka/detail/tanuki_impl.hpp
++++ b/include/heyoka/detail/tanuki_impl.hpp
+@@ -1006,7 +1006,8 @@ concept valid_ref_iface = std::is_class_v<RefIFace> && std::same_as<RefIFace, st
+ // NOTE: the DefaultValueType is subject to the constraints for valid value types.
+ template <typename DefaultValueType = void, typename RefIFace = no_ref_iface>
+     requires(std::same_as<DefaultValueType, void> || valid_value_type<DefaultValueType>) && valid_ref_iface<RefIFace>
+-struct TANUKI_VISIBLE config final : detail::config_base {
++struct TANUKI_VISIBLE config final {
++    using tanuki_config_tag = void;
+     using default_value_type = DefaultValueType;
+ 
+     // Size of the static storage.
+@@ -1046,7 +1047,7 @@ concept power_of_two = (N > 0u) && ((N & (N - 1u)) == 0u);
+ template <auto Cfg>
+ concept valid_config =
+     // This checks that decltype(Cfg) is a specialisation from the primary config template.
+-    std::derived_from<std::remove_const_t<decltype(Cfg)>, detail::config_base> &&
++    requires { typename std::remove_const_t<decltype(Cfg)>::tanuki_config_tag; } &&
+     // The static alignment value must be a power of 2.
+     detail::power_of_two<Cfg.static_align> &&
+     // Cfg.explicit_ctor must be set to one of the valid enumerators.

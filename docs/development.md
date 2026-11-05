@@ -1,5 +1,9 @@
 # Development
 
+See the [reference SDK and benchmark instructions](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/upstream-comparison/README.md)
+for the pinned comparative studies. Normal Cargo and Maturin builds use the
+Rust evaluator and bundled gym data.
+
 The workspace MSRV is Rust 1.88.0. The normal local quality gate is:
 
 ```bash

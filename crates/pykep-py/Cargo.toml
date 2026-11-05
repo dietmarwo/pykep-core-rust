@@ -18,7 +18,13 @@ name = "_pykep_rust"
 crate-type = ["cdylib"]
 doc = false
 
+[features]
+trajopt = ["dep:pykep-trajopt", "dep:serde", "dep:serde_json"]
+
 [dependencies]
 numpy = "0.29"
 pykep-core = { workspace = true }
 pyo3 = { version = "0.29", features = ["extension-module"] }
+pykep-trajopt = { workspace = true, optional = true }
+serde = { version = "1", optional = true }
+serde_json = { version = "1", optional = true }

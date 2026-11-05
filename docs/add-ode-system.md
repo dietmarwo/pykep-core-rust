@@ -172,8 +172,8 @@ let result = Dop853.propagate(
 )?;
 ```
 
-Taylor event location is not implemented. Event-driven propagation must use
-`Dop853`, even for a built-in Taylor-capable model.
+Use DOP853 for a general event callback. Built-in Cartesian models can also
+opt in to Taylor's analytic plane, sphere, and radial events.
 
 ## 3. Add Jacobians and sensitivity support
 
@@ -216,10 +216,9 @@ existing scale-aware helper and list every strictly positive state or
 parameter index. Numerical differentiation must not step across a mass,
 radius, barrier, or other one-sided domain.
 
-DOP853 integrates these Jacobians directly. The current Taylor sensitivity
-path uses centered differences of complete Taylor propagations and scales as
-`2W + 1` propagations for `W` seed directions. Keep DOP853 as the default for
-wide sensitivity matrices unless measurement supports a different choice.
+DOP853 integrates these Jacobians directly. The Taylor path differentiates
+the coefficient recurrence using seeded tangent scalars and uses the
+tangent coefficients in its step controller.
 
 ## 4. Add convenience APIs
 
@@ -250,6 +249,17 @@ private coefficient contract and the public sealed marker:
 
 ```rust
 impl TaylorCoefficientModel<2, 1> for OscillatorDynamics {
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 2],
+        parameters: &[T; 1],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 2],
+    ) {
+        generated::oscillator(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -259,7 +269,7 @@ impl TaylorCoefficientModel<2, 1> for OscillatorDynamics {
         jet: &mut [[f64; MAX_ORDER + 1]; 2],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        oscillator_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
@@ -267,7 +277,11 @@ impl TaylorCoefficientModel<2, 1> for OscillatorDynamics {
 impl TaylorDynamicsModel<2, 1> for OscillatorDynamics {}
 ```
 
-There are two implementation strategies.
+Register the model graph and dimensions in the ignored
+`export_taylor_graphs` developer task. Run
+`python tools/taylor-codegen/regenerate.py` and validate the generated jet
+against the tape and an independent reference. A separately measured
+handwritten recurrence can still serve the nominal scalar path.
 
 ### Specialized recurrence
 

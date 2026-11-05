@@ -10,7 +10,10 @@ use pykep_core::dynamics::zoh::{
     propagate_schedule_with_sensitivities,
 };
 use pykep_core::dynamics::{Cr3bpDynamics, KeplerDynamics};
-use pykep_core::integration::{DynamicsModel, IntegratorOptions};
+use pykep_core::integration::{
+    AdaptiveIntegrator, DifferentiableDynamicsModel, DynamicsModel, InitialValueProblem,
+    IntegrationMethod, IntegratorOptions, SensitivityProblem,
+};
 use serde_json::Value;
 
 const OPTIONS: IntegratorOptions = IntegratorOptions {
@@ -628,4 +631,211 @@ fn encoded_values(value: &Value) -> Vec<f64> {
         .iter()
         .map(|value| parse(value.as_str().unwrap()))
         .collect()
+}
+
+/// Fourth-order Richardson-extrapolated central difference of the RHS.
+fn richardson_jacobians<M, const N: usize, const P: usize>(
+    model: &M,
+    state: &[f64; N],
+    parameters: &[f64; P],
+) -> ([[f64; N]; N], [[f64; P]; N])
+where
+    M: DynamicsModel<N, P>,
+{
+    let rhs = |x: &[f64; N], p: &[f64; P]| {
+        let mut out = [0.0; N];
+        model.rhs(0.0, x, p, &mut out).unwrap();
+        out
+    };
+    let central = |f: &dyn Fn(f64) -> [f64; N], h: f64| -> [f64; N] {
+        let (a, b, c, d) = (f(h), f(-h), f(h / 2.0), f(-h / 2.0));
+        core::array::from_fn(|row| {
+            let coarse = (a[row] - b[row]) / (2.0 * h);
+            let fine = (c[row] - d[row]) / h;
+            (4.0 * fine - coarse) / 3.0
+        })
+    };
+    let mut state_jacobian = [[0.0; N]; N];
+    let mut parameter_jacobian = [[0.0; P]; N];
+    for column in 0..N {
+        let h = 1e-5 * state[column].abs().max(1e-2);
+        let column_values = central(
+            &|delta| {
+                let mut x = *state;
+                x[column] += delta;
+                rhs(&x, parameters)
+            },
+            h,
+        );
+        for row in 0..N {
+            state_jacobian[row][column] = column_values[row];
+        }
+    }
+    for column in 0..P {
+        let h = 1e-4 * parameters[column].abs().max(1e-2);
+        let column_values = central(
+            &|delta| {
+                let mut p = *parameters;
+                p[column] += delta;
+                rhs(state, &p)
+            },
+            h,
+        );
+        for row in 0..N {
+            parameter_jacobian[row][column] = column_values[row];
+        }
+    }
+    (state_jacobian, parameter_jacobian)
+}
+
+fn assert_jacobian_close<const N: usize, const C: usize>(
+    analytic: &[[f64; C]; N],
+    reference: &[[f64; C]; N],
+    tolerance: f64,
+    label: &str,
+) {
+    let scale = reference
+        .iter()
+        .flatten()
+        .fold(1.0_f64, |m, value| m.max(value.abs()));
+    for (row, (a, r)) in analytic.iter().zip(reference).enumerate() {
+        for (column, (a, r)) in a.iter().zip(r).enumerate() {
+            assert!(
+                (a - r).abs() <= tolerance * scale,
+                "{label} [{row}][{column}]: {a:.17e} != {r:.17e}"
+            );
+        }
+    }
+}
+
+#[test]
+fn cartesian_model_jacobians_are_analytic_near_the_secondary() {
+    let kepler_parameters = [0.03, 0.6, -0.48, 0.64, 1.2];
+    for state in [
+        [1.2, 0.1, -0.05, 0.02, 0.9, 0.1, 0.8],
+        [0.05, -0.02, 0.01, 3.0, 4.0, 0.1, 0.3],
+    ] {
+        let mut sx = [[0.0; 7]; 7];
+        let mut sp = [[0.0; 5]; 7];
+        ZohKeplerDynamics
+            .jacobians(0.0, &state, &kepler_parameters, &mut sx, &mut sp)
+            .unwrap();
+        let (rx, rp) = richardson_jacobians(&ZohKeplerDynamics, &state, &kepler_parameters);
+        assert_jacobian_close(&sx, &rx, 1e-8, "Kepler state");
+        assert_jacobian_close(&sp, &rp, 1e-8, "Kepler parameters");
+    }
+
+    let mu = 0.012_150_585_609_624_04;
+    let cr3bp_parameters = [0.3, 0.6, -0.48, 0.64, 0.086, mu];
+    // The last state is 1e-3 normalized units from the secondary. The former
+    // fixed-step centered differences lose several digits there.
+    for state in [
+        [1.08, 0.0, -0.2, 0.0, -0.18, 0.0, 0.9],
+        [-0.3, 0.6, 0.05, 0.2, -0.1, 0.03, 0.7],
+        [1.0 - mu + 6e-4, 4e-4, -6e-4, 0.4, 1.1, -0.2, 0.75],
+    ] {
+        let mut sx = [[0.0; 7]; 7];
+        let mut sp = [[0.0; 6]; 7];
+        ZohCr3bpDynamics
+            .jacobians(0.0, &state, &cr3bp_parameters, &mut sx, &mut sp)
+            .unwrap();
+        let (rx, rp) = richardson_jacobians(&ZohCr3bpDynamics, &state, &cr3bp_parameters);
+        assert_jacobian_close(&sx, &rx, 1e-7, "CR3BP state");
+        assert_jacobian_close(&sp, &rp, 1e-7, "CR3BP parameters");
+    }
+}
+
+#[test]
+fn dop853_and_taylor_state_transitions_agree_through_a_close_lunar_pass() {
+    // One backward segment of a moving halo-to-halo TOPS stress vector that
+    // passes close to the Moon. With centered-difference model Jacobians the
+    // DOP853 transition matrix differed from Taylor and from finite
+    // differences of the nominal flow by 43%.
+    let mu = 0.012_150_585_609_624_04;
+    let start = [
+        0.911_950_266_364_334_7,
+        -0.007_679_657_308_297_578,
+        0.034_787_691_382_455_9,
+        -0.325_139_833_795_781_4,
+        0.058_395_941_474_550_93,
+        0.080_094_213_233_054_35,
+        0.757_229_357_408_824_2,
+    ];
+    let control = [
+        0.063_166_139_366_109_96,
+        0.624_677_605_023_807_2,
+        0.468_453_165_684_622_03,
+        -0.174_153_729_049_298_32,
+    ];
+    let parameters = [
+        control[0],
+        control[1],
+        control[2],
+        control[3],
+        0.086_467_837_687_800_35,
+        mu,
+    ];
+    let (t0, t1) = (7.4375, 6.90625);
+    let options = IntegratorOptions {
+        relative_tolerance: 1e-13,
+        absolute_tolerance: 1e-13,
+        initial_step: None,
+        maximum_step: None,
+        maximum_steps: 100_000,
+        maximum_rejections: 100,
+    };
+    let mut identity = [[0.0; 7]; 7];
+    for (index, row) in identity.iter_mut().enumerate() {
+        row[index] = 1.0;
+    }
+    let problem = SensitivityProblem::<7, 6, 7> {
+        nominal: InitialValueProblem::new(t0, start, t1, parameters),
+        initial_sensitivities: identity,
+        parameter_seeds: [[0.0; 7]; 6],
+    };
+    let taylor = AdaptiveIntegrator::new(IntegrationMethod::Taylor)
+        .propagate_with_sensitivities(&ZohCr3bpDynamics, problem, options)
+        .unwrap();
+    let dop853 = AdaptiveIntegrator::new(IntegrationMethod::Dop853)
+        .propagate_with_sensitivities(&ZohCr3bpDynamics, problem, options)
+        .unwrap();
+    let closest = {
+        let samples = AdaptiveIntegrator::new(IntegrationMethod::Taylor)
+            .propagate_dense(
+                &ZohCr3bpDynamics,
+                InitialValueProblem::new(t0, start, t1, parameters),
+                &(0..=2000)
+                    .map(|i| t0 + (t1 - t0) * f64::from(i) / 2000.0)
+                    .collect::<Vec<_>>(),
+                options,
+            )
+            .unwrap();
+        samples
+            .states
+            .iter()
+            .map(|s| ((s[0] + mu - 1.0).powi(2) + s[1] * s[1] + s[2] * s[2]).sqrt())
+            .fold(f64::INFINITY, f64::min)
+    };
+    assert!(
+        closest < 0.01,
+        "test trajectory must pass the Moon: {closest}"
+    );
+    let scale = taylor
+        .sensitivities
+        .iter()
+        .flatten()
+        .fold(1.0_f64, |m, value| m.max(value.abs()));
+    for (row, (t, d)) in taylor
+        .sensitivities
+        .iter()
+        .zip(&dop853.sensitivities)
+        .enumerate()
+    {
+        for (column, (t, d)) in t.iter().zip(d).enumerate() {
+            assert!(
+                (t - d).abs() <= 1e-8 * scale,
+                "[{row}][{column}] Taylor {t:.17e} DOP853 {d:.17e} (closest {closest})"
+            );
+        }
+    }
 }

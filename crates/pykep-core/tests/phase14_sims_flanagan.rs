@@ -38,10 +38,7 @@ fn values(value: &Value) -> Vec<f64> {
 }
 
 fn controls(value: &Value) -> Vec<[f64; 3]> {
-    values(value)
-        .chunks_exact(3)
-        .map(|chunk| chunk.try_into().unwrap())
-        .collect()
+    values(value).as_chunks::<3>().0.to_vec()
 }
 
 fn endpoint(case: &Value, prefix: &str) -> SpacecraftEndpoint {

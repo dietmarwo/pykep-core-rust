@@ -1,0 +1,15 @@
+[package]
+name = "pykep-upstream-benchmark"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Native benchmarks on shared ESA PyKEP fixtures."
+publish = false
+
+[dependencies]
+pykep-core = { path = "../../crates/pykep-core", version = "=0.1.5", default-features = false }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

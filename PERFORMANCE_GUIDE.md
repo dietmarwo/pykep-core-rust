@@ -1,21 +1,14 @@
 # Choosing between the original and Rust fcmaes/pykep stacks
 
-The original Python/C++ stack and the native Rust stack make different
-trade-offs. There is no universal winner:
+The 0.1.5 comparison uses common inputs, PyKEP 3.1.0 and achieved
+accuracy gates. Warmed heyoka retains an advantage on several scalar
+Taylor models and on nominal ZOH mismatch. Rust leads on selected
+equinoctial and full-leg derivative workloads. Use the row for the required model, accuracy and timing boundary.
+[Current matched measurements](docs/matched-benchmarks.md)
 
-- original `pykep`/`kep3` uses heyoka's LLVM-generated Taylor kernels and is
-  currently faster for warmed propagation of the built-in Taylor systems;
-- `pykep-core` and `fcmaes-core` provide a C/C++-free numerical and optimizer
-  path with simple Cargo deployment, no runtime JIT, and no Python callback in
-  a native objective;
-- analytical astrodynamics kernels are generally much closer, and some Rust
-  implementations are faster;
-- complete optimization throughput depends on objective cost, callback
-  overhead, parallelization, integrator reuse, and the number of evaluations.
-
-This guide records the available measurements and explains when each stack is
-the better engineering choice. It does not claim complete API parity or an
-end-to-end GTOC1 speed result.
+The tables on this page record the released 0.1.4 baseline. The intermediate
+[Taylor performance follow-up](docs/taylor-performance-followup.md) compares
+the earlier development rounds with that baseline.
 
 ## The two stacks
 
@@ -29,7 +22,7 @@ end-to-end GTOC1 speed result.
 | First use | JIT and cache construction for heyoka systems | No JIT setup |
 | Best steady state | Reuse one compiled heyoka integrator per worker | Reuse native objective data and parallelize without Python |
 
-## Measurement boundary
+## Historical measurement boundary
 
 The Taylor comparison was run on 2026-07-28 on one logical core of an AMD
 Ryzen 9 9950X under Linux 6.8, using release builds, Rust 1.97.1, upstream
@@ -53,10 +46,10 @@ in `pykep-core` 0.1.4. The complete reproducible harness and raw data are in
 the development source tree described by
 [`docs/taylor-integration.md`](docs/taylor-integration.md).
 
-## Warmed Taylor propagation
+## Warmed Taylor propagation in 0.1.4
 
-At `1e-12`, the five systems with direct current-Rust versus warmed-heyoka
-measurements show a consistent original-pykep advantage:
+The five systems measured at `1e-12` in the 0.1.4 release all favored
+original PyKEP on that host.
 
 | System | `pykep-core` 0.1.4 | Warmed `kep3`/heyoka | Original-pykep advantage |
 |---|---:|---:|---:|
@@ -66,13 +59,10 @@ measurements show a consistent original-pykep advantage:
 | ZOH Kepler | 1.195 µs | 0.327 µs | 3.66× |
 | Cartesian mass-optimal | 48.302 µs | 10.663 µs | 4.53× |
 
-This is not a general “C++ beats Rust” result. Both compilers ultimately use
-LLVM. Heyoka constructs the concrete symbolic system and JIT-compiles a
-model-specific straight-line coefficient kernel. Most Rust models currently
-execute a compact fixed expression tape: the graph is simplified once, but
-runtime coefficient evaluation still performs indexed loads, convolution
-loops, and operation dispatch. Rust's ahead-of-time LLVM pass cannot see the
-runtime tape as one fixed expression graph.
+The 0.1.4 Rust release evaluated most coefficients through a fixed
+expression tape. Heyoka compiled a concrete model to a specialized
+straight-line kernel. The development Rust tree generates selected
+fixed-model coefficient kernels ahead of time.
 
 ### Low-thrust tolerance detail
 
@@ -107,24 +97,11 @@ start frequently, or applications that construct many system/tolerance
 combinations. It becomes negligible in a long optimization campaign that
 reuses one compiled integrator per worker.
 
-## Taylor systems still lacking a direct comparison
+## Coverage beyond the 0.1.4 comparison
 
-All eleven Rust models have incremental coefficient evaluators, but the live
-upstream harness has not yet been extended to six of them. Their current Rust
-`1e-12` warmed times are:
-
-| System | `pykep-core` 0.1.4 |
-|---|---:|
-| ZOH CR3BP | 6.791 µs |
-| ZOH equinoctial | 6.979 µs |
-| ZOH solar sail | 12.876 µs |
-| Cartesian time-optimal | 4.285 µs |
-| Equinoctial mass-optimal | 377.991 µs |
-| Equinoctial time-optimal | 333.640 µs |
-
-These rows must not be turned into an original-versus-Rust ratio until the
-same fixture is run through warmed upstream heyoka. The especially large
-equinoctial Pontryagin systems are the most important missing comparison.
+The [current matched measurements](docs/matched-benchmarks.md) cover all
+eleven scalar models, including both equinoctial Pontryagin objectives.
+The current and historical measurements use different fixtures and hosts.
 
 ## Analytical and transcription kernels
 
@@ -152,9 +129,12 @@ DOP853 Rust path and the upstream heyoka leg:
 | ZOH mismatch | 23.67 µs | 6.865 µs | 3.45× |
 | Complete endpoint/control/time-grid Jacobian | 493.55 µs | 182.17 µs | 2.71× |
 
-`pykep-core` 0.1.4 additionally allows the nominal ZOH mismatch and history
-paths to select Taylor explicitly. A current full-leg Taylor-versus-upstream
-measurement has not yet been recorded.
+The 0.1.5 benchmark runs the shared 20-, 40- and 80-segment PyKEP
+workloads with native Taylor mismatch and full Jacobian calls. At the
+tighter reference setting the complete Jacobian favored Rust by
+1.93–2.22×, while nominal mismatch favored heyoka by 1.23–1.54×. Its report
+records the nominal and variational tolerances for both arms.
+[Current leg comparisons](docs/matched-benchmarks.md)
 
 ## Optimizer evidence is separate
 
@@ -239,13 +219,11 @@ project than the fixed-system Taylor backend in `pykep-core`. Binding the
 existing C++ heyoka library would reduce algorithm-development work but retain
 the C++ ABI and native packaging costs.
 
-The intended long-term performance answer is ahead-of-time generation of
-straight-line Rust coefficient kernels. Such kernels would let rustc/LLVM see
-the complete fixed expression graph, removing the runtime tape dispatch while
-preserving the pure-Rust deployment model. Because `pykep-core` has eleven
-known systems rather than arbitrary user-defined ODEs, this narrower route
-targets the current performance gap without recreating heyoka's general JIT
-infrastructure.
+The development Rust backend already generates straight-line
+coefficients for selected fixed-model paths. It also shares nominal
+coefficients across practical seed widths. The complete-leg comparisons
+measure the resulting effect on segment derivatives, assembly and
+call overhead. [Current matched measurements](docs/matched-benchmarks.md)
 
 ## Decision guide
 
@@ -254,8 +232,8 @@ Prefer original `fcmaes` plus `pykep` when:
 - an existing application already depends on the original Python APIs;
 - strict behavioral compatibility with upstream pykep is more important than
   a C/C++-free deployment;
-- warmed Taylor or ZOH propagation dominates a long-running optimization;
-- one heyoka integrator can be created once and reused per worker;
+- the measured warmed nominal kernel for the required dynamics leads at
+  the application's accuracy, and each worker can reuse its integrator;
 - arbitrary symbolic ODE construction or other heyoka features are required;
 - the native C++/LLVM dependency stack is acceptable.
 
@@ -276,7 +254,7 @@ Consider a staged or hybrid workflow when:
 - a cheap Rust Lambert/flyby model must screen millions of planet-order or
   timing candidates;
 - only a small promoted set requires expensive low-thrust optimization;
-- original pykep/heyoka can perform that final warmed low-thrust stage;
+- the matched leg or objective results favor one backend for that final stage;
 - Rust DOP853 or an independent tool should validate the finalists.
 
 ## GTOC1 recommendation
@@ -286,11 +264,10 @@ For the current GTOC1 tutorial, the evidence supports a split decision:
 - the native Rust stack remains attractive for planet-order experiments,
   cheap Lambert/flyby scoring, coordinated retry, and parallel objective
   evaluation;
-- a warmed and reused original-pykep ZOH integrator should currently be faster
-  for the isolated low-thrust propagation stage;
-- the complete Rust campaign may recover some of that kernel disadvantage by
-  avoiding Python callbacks and foreign-function transitions, but this has
-  not been demonstrated by a controlled end-to-end comparison;
+- use the warmed nominal and complete-Jacobian rows for the actual
+  low-thrust workload when selecting a backend;
+- the complete GTOC1 campaign has compatibility checks. The benchmark
+  report gives optimizer comparisons for the separate gym and SF workloads;
 - every claimed trajectory still needs independent propagation and constraint
   validation, regardless of which stack optimized it.
 

@@ -8,9 +8,7 @@
 
 //! Lagrange-coefficient and universal-variable two-body propagation.
 //!
-//! The hyperbolic Lagrange solve halves the current iterate when a Newton step
-//! is non-finite or leaves `|ΔH| <= 50`, replacing the pinned C++ solver's
-//! fixed bracket while preserving its ordinary converged solutions.
+//! The Lagrange anomaly solvers safeguard Newton steps with monotone brackets.
 
 use core::f64::consts::PI;
 
@@ -33,6 +31,53 @@ fn converged(step: f64, value: f64) -> bool {
     step.abs() <= 4.0 * f64::EPSILON * value.abs().max(1.0)
 }
 
+fn solve_difference(
+    initial: f64,
+    [mut lower, mut upper]: [f64; 2],
+    residual: impl Fn(f64) -> Result<f64>,
+    derivative: impl Fn(f64) -> Result<f64>,
+    operation: &'static str,
+) -> Result<f64> {
+    if !initial.is_finite() || !lower.is_finite() || !upper.is_finite() {
+        return Err(PykepError::NumericalOverflow {
+            operation: "propagate_lagrangian",
+        });
+    }
+    let mut anomaly = initial.clamp(lower, upper);
+    for _ in 0..MAX_ITERATIONS {
+        let value = residual(anomaly)?;
+        if value == 0.0 {
+            return Ok(anomaly);
+        }
+        let step = value / derivative(anomaly)?;
+        let next = anomaly - step;
+        if (lower..=upper).contains(&next) && converged(step, anomaly) {
+            return Ok(next);
+        }
+        if value < 0.0 {
+            lower = anomaly;
+        } else {
+            upper = anomaly;
+        }
+        if lower < next && next < upper {
+            anomaly = next;
+            continue;
+        }
+        let middle = f64::midpoint(lower, upper);
+        if middle == lower || middle == upper {
+            if residual(lower)? <= 0.0 && residual(upper)? >= 0.0 {
+                return Ok(anomaly);
+            }
+            break;
+        }
+        anomaly = middle;
+    }
+    Err(PykepError::ConvergenceFailure {
+        operation,
+        iterations: MAX_ITERATIONS,
+    })
+}
+
 fn solve_elliptic_difference(
     initial: f64,
     mean_difference: f64,
@@ -41,26 +86,14 @@ fn solve_elliptic_difference(
     a: f64,
     radius: f64,
 ) -> Result<f64> {
-    let mut anomaly = initial;
-    for _ in 0..MAX_ITERATIONS {
-        let residual =
-            elliptic_difference_residual(anomaly, mean_difference, sigma0, sqrt_a, a, radius)?;
-        let derivative = elliptic_difference_derivative(anomaly, sigma0, sqrt_a, a, radius)?;
-        let step = residual / derivative;
-        anomaly -= step;
-        if !anomaly.is_finite() {
-            return Err(PykepError::NumericalOverflow {
-                operation: "propagate_lagrangian",
-            });
-        }
-        if converged(step, anomaly) {
-            return Ok(anomaly);
-        }
-    }
-    Err(PykepError::ConvergenceFailure {
-        operation: "propagate_lagrangian_elliptic",
-        iterations: MAX_ITERATIONS,
-    })
+    // The sum of the two trigonometric terms has magnitude at most 2e.
+    solve_difference(
+        initial,
+        [mean_difference - PI, mean_difference + PI],
+        |x| elliptic_difference_residual(x, mean_difference, sigma0, sqrt_a, a, radius),
+        |x| elliptic_difference_derivative(x, sigma0, sqrt_a, a, radius),
+        "propagate_lagrangian_elliptic",
+    )
 }
 
 fn solve_hyperbolic_difference(
@@ -71,32 +104,19 @@ fn solve_hyperbolic_difference(
     a: f64,
     radius: f64,
 ) -> Result<f64> {
-    let mut anomaly = initial;
-    for _ in 0..MAX_ITERATIONS {
-        let residual = hyperbolic_difference_residual(
-            anomaly,
-            mean_difference,
-            sigma0,
-            sqrt_abs_a,
-            a,
-            radius,
-        )?;
-        let derivative = hyperbolic_difference_derivative(anomaly, sigma0, sqrt_abs_a, a, radius)?;
-        let step = residual / derivative;
-        let next = anomaly - step;
-        if !next.is_finite() || next.abs() > 50.0 {
-            anomaly *= 0.5;
-            continue;
-        }
-        anomaly = next;
-        if converged(step, anomaly) {
-            return Ok(anomaly);
-        }
-    }
-    Err(PykepError::ConvergenceFailure {
-        operation: "propagate_lagrangian_hyperbolic",
-        iterations: MAX_ITERATIONS,
-    })
+    // At zero the residual is -ΔM. The root has the direction of propagation.
+    let bounds = if initial > 0.0 {
+        [0.0, 50.0]
+    } else {
+        [-50.0, 0.0]
+    };
+    solve_difference(
+        initial,
+        bounds,
+        |x| hyperbolic_difference_residual(x, mean_difference, sigma0, sqrt_abs_a, a, radius),
+        |x| hyperbolic_difference_derivative(x, sigma0, sqrt_abs_a, a, radius),
+        "propagate_lagrangian_hyperbolic",
+    )
 }
 
 pub(super) fn solve_lagrangian(

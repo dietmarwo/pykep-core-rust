@@ -1,5 +1,9 @@
 # Numerical validation
 
+The [matched PyKEP 3.1.0 report](matched-benchmarks.md) records the
+development gym and shared-input benchmarks. The sections below describe
+the core's existing oracle and independent numerical checks.
+
 The evidence hierarchy for each numerical API is:
 
 1. direct unit cases and invalid-input tests;

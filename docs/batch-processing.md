@@ -1,5 +1,9 @@
 # Ordered parallel batch processing
 
+The [trajectory gym](trajectory-gym.md) also provides ordered fitness
+batches. The [matched report](matched-benchmarks.md) separates those
+measurements from single-call timings.
+
 `pykep-core` and `pykep_rust` deliberately extend the scalar-oriented pykep
 surface with ordered parallel batches. This is not an upstream compatibility
 claim. Experience optimizing large Lambert-transfer populations during the
@@ -12,9 +16,9 @@ The extension addresses two independent costs:
 1. one Python-to-native transition replaces thousands of scalar calls; and
 2. independent native evaluations can use several CPU cores.
 
-Every batch returns results in input order. A successful row is numerically
-the same scalar computation; batching does not change the physical model,
-units, frame, tolerances, Lambert branch order, or error criteria.
+Every batch returns results in input order and uses the declared physical
+model, units, frame, tolerances, and error criteria. SIMD Taylor evaluations
+can differ from scalar results at the level of floating-point rounding.
 
 ## Worker contract
 
@@ -40,6 +44,12 @@ parallel optimizer or task scheduler, pass `workers=1` at the inner level to
 avoid oversubscription. Cheap arithmetic often benefits from one native batch
 because it removes Python-call overhead but may not benefit from multiple
 threads. Measure representative batch sizes.
+
+Enable `pykep-core/simd` for the built-in Taylor batches that support four
+lanes. Groups of four use a shared vector coefficient jet with separate lane
+steps. Smaller batches and the remaining jobs in a partial group use scalar
+propagation. The benchmark's `--batch-sweep` mode measures crossover sizes
+and reports lane utilization with the same worker policy.
 
 ## Rust interfaces
 

@@ -66,6 +66,18 @@ documentation required by the definition of done are complete.
 The C++-specific visibility, serialization, and type-erasure support headers
 are reviewed for semantics but are not port targets.
 
+## Current gym and benchmark sources
+
+| PyKEP 3.1.0 source | Development counterpart |
+|---|---|
+| `pykep/trajopt/gym` and fixed/moving ZOH UDPs | `crates/pykep-trajopt`, embedded TOPS data and `pykep_rust.trajopt.gym` |
+| MGA, MGA-1DSM, N-impulse, launcher tables | Reusable Rust formulations and six launcher models |
+| `benchmark/` | Shared C++ exporter, native Rust and C++ runners, Python study scripts |
+| Benchmark notebooks | Symbolic SF validation and separately identified ephemeris interface studies |
+
+The [gym guide](trajectory-gym.md) and [benchmark report](matched-benchmarks.md)
+record the exact scope and oracle results.
+
 ## Explicitly unavailable upstream ecosystem areas
 
 These are not unchecked source-map rows. They are technically outside the
@@ -78,9 +90,8 @@ native numerical-core product and have stable internal tracking identifiers:
   Taylor-integrator objects remain out of scope. Native evaluated dynamics
   support DOP853 and the eleven built-in types additionally support the
   fixed-system Taylor backend.
-- `PY-ECOSYSTEM-001`: plotting, trajectory-optimization UDPs, gym utilities,
-  and third-party integrations belong to their Python ecosystems rather than
-  the numerical core.
+- `PY-ECOSYSTEM-001`: general Python trajectory callbacks, upstream plotting
+  methods and other ecosystem integrations outside the development gym.
 - `MIMA-HOP-001`: `mima_from_hop` and `mima2_from_hop` depend on an upstream
   higher-order-propagation object that the native API intentionally does not
   expose.

@@ -470,8 +470,8 @@ fn throttle_constraints(throttles: &[Vector3]) -> Vec<f64> {
 fn throttle_jacobian(throttles: &[Vector3]) -> Vec<Vec<f64>> {
     let mut result = vec![vec![0.0; throttles.len() * 3]; throttles.len()];
     for (segment, throttle) in throttles.iter().enumerate() {
-        for component in 0..3 {
-            result[segment][3 * segment + component] = 2.0 * throttle[component];
+        for (component, &value) in throttle.iter().enumerate() {
+            result[segment][3 * segment + component] = 2.0 * value;
         }
     }
     result

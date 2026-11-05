@@ -14,6 +14,11 @@ release and does not imply endorsement by ESA or the upstream authors.
   `benchmark/` trees used for the port match that commit byte-for-byte, apart
   from the generated `include/kep3/config.hpp` and notebook files excluded
   from the comparison.
+- Trajectory gym, TOPS data and matched benchmarks: upstream version `3.1.0`,
+  commit `c01e19debad5ea22b7079189f786f473046a79d5`. The `pykep-trajopt`
+  crate adapts the decision layouts and formulations of `pykep/trajopt/` at
+  that commit; its embedded data are described in the
+  [gym dataset notice](crates/pykep-trajopt/data/NOTICE.md).
 
 The upstream source and adaptations are distributed under the Mozilla Public
 License 2.0. See [LICENSE](LICENSE). Rust files translated or substantially
@@ -43,6 +48,11 @@ high-order Taylor methods* (2005), <https://eudml.org/doc/53069>. The official
 harness; no heyoka source is copied, linked, or shipped.
 
 ## Names and ownership
+
+The development benchmark and gym modules use PyKEP 3.1.0 at
+`c01e19debad5ea22b7079189f786f473046a79d5`. The catalog data notices name
+the source files, checksums and extraction procedure.
+[Gym dataset provenance](crates/pykep-trajopt/data/NOTICE.md)
 
 The independent repository is
 <https://github.com/dietmarwo/pykep-core-rust>, owned by `dietmarwo`. Cargo and

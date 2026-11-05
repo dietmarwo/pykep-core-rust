@@ -6,28 +6,105 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-05
+
 ### Added
 
+- Added the optimizer-independent trajectory gym: 14 classical PyKEP 3.1.0
+  mission problems, 34 fixed and 34 moving TOPS low-thrust problems with
+  analytic Jacobians and uniform or softmax time grids, and six launcher
+  tables. It lives in the unpublished `pykep-trajopt` workspace crate and is
+  included in the `pykep-rust` wheels as `pykep_rust.trajopt.gym`, a typed,
+  PyGMO-compatible problem protocol with ordered float64 batches.
+- Added `TopsOptions::maximum_steps` and the Python `maximum_steps` option.
+  Fixed-boundary problems keep the upstream limit of 1,000 steps; moving
+  problems, whose upstream factories impose no limit, default to 1,000,000.
+- Added the optional `simd` feature (dependency `wide`) for four-lane Taylor
+  batches with independent adaptive steps, `Taylor::propagate_batch`.
+- Added analytic Taylor plane, sphere and radial-velocity events for the
+  built-in Cartesian models: `Taylor::propagate_until_event`,
+  `Taylor::propagate_with_events`, `TaylorEvent`, `TaylorEventHit` and
+  `TaylorEventHistory`. `TaylorEvent` is `#[non_exhaustive]`.
+- Added `ZohLeg::mismatch_jacobian_with_method` for complete Taylor or DOP853
+  ZOH-leg Jacobians, and a keyword-only `method` on the Python
+  `ZohLeg.mismatch_jacobian` and `ZohLeg.mismatch_jacobian_batch`.
+- Added explicit Python backend selection for nominal dynamics, ZOH
+  schedules, and ZOH-leg mismatch and history calls.
+- Added matched PyKEP 3.1.0 benchmarks with shared fixtures, full-Jacobian
+  comparisons, bounded restartable studies, optimizer comparisons and
+  trajectory replay examples (`tools/upstream-benchmark`,
+  `tools/gym-benchmark`, `tools/upstream-comparison`,
+  `tools/taylor-comparison`, `tools/taylor-codegen`). Raw measurements are
+  attached to the GitHub release.
+- Added native regression tests for the gym: finite-difference Jacobian
+  checks for every TOPS family, boundary type and time encoding, catalog
+  midpoint evaluations, launcher values from the pinned source, ordered
+  batches, and the two moving-CR3BP close-lunar-pass vectors.
 - Added a measurement-backed guide for choosing between the original
-  Python/C++ fcmaes/pykep stack and the native Rust crates, including warmed
-  Taylor, low-thrust, analytical-kernel, and JIT lifecycle results.
+  Python/C++ fcmaes/pykep stack and the native Rust crates, plus guides for
+  the gym, TOPS, impulsive formulations and matched benchmarks.
 
 ### Changed
 
+- DOP853 sensitivity propagation for `ZohKeplerDynamics` and
+  `ZohCr3bpDynamics` now uses analytic model Jacobians instead of fixed-step
+  centered differences. The old differences lost accuracy near a primary: on
+  one backward segment of a moving CR3BP TOPS vector with a close lunar pass,
+  the DOP853 transition matrix was 43% off. Equinoctial and solar-sail ZOH
+  Jacobians still use centered differences.
+- Taylor sensitivities propagate tangent coefficient recurrences instead of
+  `2W + 1` centered propagations, share nominal coefficients across practical
+  seed widths and avoid a heap allocation for single-jet propagation.
+- Store coefficient histories only for generated Taylor recurrence operands,
+  and generate fixed-model Rust coefficient kernels ahead of time for
+  selected Taylor paths. CI checks that the generated kernels are current.
+- Sample Taylor dense output from accepted-step polynomials; on baseline x86
+  builds without FMA the polynomial evaluation is unfused.
+- The nominal Taylor step safety factor is 0.85, previously 0.75, for
+  `Cr3bpDynamics`, `ZohSolarSailDynamics`, `EquinoctialMassOptimal` and
+  `EquinoctialTimeOptimal`. Default step counts and results change within
+  tolerance.
+- With the `simd` feature, Taylor batch results may differ from scalar
+  results at rounding level.
+- The release smoke test now fails if a wheel or source distribution lacks
+  the trajectory gym, and the wheels ship `UPSTREAM_NOTICE.md` and the gym
+  dataset notice alongside the licence.
 - Updated the security policy, implementation status, validation history,
-  release instructions, package READMEs, and AI operational context to reflect
-  the published 0.1.4 artifacts, current integration defaults, ZOH method
-  selection, parallel batch semantics, and pure-Rust performance boundary.
+  release instructions, package READMEs and AI operational context for the
+  current integration defaults, ZOH method selection, parallel batch
+  semantics and pure-Rust performance boundary. The performance guide's
+  tables are framed as the 0.1.4 baseline.
 - Replaced the stale Phase 18 release-candidate status probe with a value
   derived automatically from the Cargo package version.
-- Reorganized dense landing-page, performance, and validation prose into
-  labeled sections, tables, and shorter inventories for human readers.
 
 ### Fixed
 
+- Restarting `Taylor::propagate_until_event` from a returned event state
+  could return the same event again, or fail with "event time does not
+  advance", depending on the sign of the rounding residual. Roots within
+  rounding of the initial time are now excluded as documented.
+- Safeguarded Lagrange anomaly iteration with a bracketed fallback for
+  difficult elliptic and hyperbolic cases found by the expanded benchmarks.
+- `pykep-gym-benchmark validate` now restores the recorded backend and
+  settings and exits with an error when a replay disagrees with its record.
+- `pykep-gym-benchmark` now uses fcmaes-core 0.2.1. Its MODE fixes the SBX,
+  polynomial-mutation and front-sorting defects of fcmaes-core 0.1.x; MODE
+  runs recorded with 0.1.3, including the JUICE front in the measurement
+  archive, used the older MODE.
 - Forced Python CI to install the wheel built from the current checkout rather
   than allowing an already-published wheel with the same workspace version to
   win pip's candidate selection.
+
+### Known limitations
+
+- Two moving-CR3BP stress vectors (P1, P13) differ from the PyKEP gradient
+  by a scaled `1.07e-6` and `4.23e-6`, above the strict `1e-7` gate. Both
+  pass close to the Moon; the Rust Taylor gradient varies by up to `2.4e-5`
+  across tolerances on the same vectors.
+- Moving MEE retains the documented source chain-rule discrepancies, and the
+  moving CR3BP softmax variant is a Rust-only formulation.
+- The original SPICE batch wrapper cell remains a reference-only failure in
+  the pinned source.
 
 ## [0.1.4] - 2026-07-28
 

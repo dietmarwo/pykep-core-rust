@@ -1,5 +1,10 @@
 # High-accuracy Taylor integration
 
+The [current benchmark report](matched-benchmarks.md) compares all eleven
+built-in nominal fixtures with warmed native heyoka under a shared
+endpoint-error gate. It gives separate results for full ZOH-leg Jacobians
+and the Python trajectory gym.
+
 `pykep-core` has two pure-Rust adaptive integration backends:
 
 - `Taylor` is the default for the eleven built-in dynamics types, matching
@@ -9,9 +14,8 @@
 - `Dop853` accepts arbitrary `DynamicsModel` implementations, supports event
   location, and remains the general-purpose choice.
 
-This is a focused implementation of Taylor-series integration for pykep's
-fixed systems. It is not a port of heyoka's symbolic engine, LLVM compiler,
-event machinery, batch mode, or arbitrary-precision support.
+The Taylor backend specializes its coefficient recurrences for the built-in
+astrodynamics equations. Ordinary builds compile the checked-in Rust kernels.
 
 ![Data flow from a pykep model through Taylor coefficients, adaptive stepping, and result validation](images/taylor-workflow.svg)
 
@@ -73,10 +77,26 @@ The lower-level `Taylor` and `AdaptiveIntegrator` facades also provide final,
 dense-grid, and seeded-sensitivity propagation. ZOH schedules have parallel
 `*_with_method` functions.
 
-Taylor event location is not implemented. Use
-`Dop853::propagate_until_event()` when a terminal crossing is required.
-Direct DOP853 propagation is also the supported path for arbitrary
-third-party `DynamicsModel` implementations.
+Taylor dense output samples the accepted-step polynomial and uses the same
+adaptive steps as final-state propagation. A ZOH control boundary still ends
+the segment and its polynomial. On baseline x86 builds, interior samples use
+separate multiply and add in Horner evaluation to avoid repeated FMA helper
+calls. Nonfinite results are reevaluated with fused arithmetic.
+
+Use `Taylor::propagate_until_event` for a terminal plane, sphere, or radial
+stationary point on a built-in Cartesian model. `Taylor::propagate_with_events`
+records crossings without modifying the trajectory and takes an explicit
+event limit. Crossing direction follows propagation order, including for
+backward integration. Root isolation works on the truncated event polynomial
+and reports ambiguous near-stationary roots as integration errors.
+Use `Dop853::propagate_until_event` for a general callback or external model.
+
+`Taylor::propagate_batch` preserves input order and the existing worker
+policy. The optional `simd` feature evaluates four Kepler, CR3BP, BCP, or
+ZOH Kepler coefficient jets together. Each lane has its own time and step
+size. The vector kernel extracts the coefficient tails for step selection and
+evaluates the new states directly from the vector jet. Other models and
+partial groups use scalar propagation.
 
 ## Supported models
 
@@ -131,11 +151,27 @@ cargo run --release -p pykep-taylor-benchmark \
 ## Incremental coefficient evaluators
 
 All eleven built-in models advance only the next required Taylor coefficient.
-Kepler and ZOH Kepler use compact hand-written recurrences. The other nine
-models lazily build immutable scalar-expression tapes, eliminate structural
-common subexpressions, and then reuse those tapes for every propagation.
-Trigonometric, exponential, explicit-time, and real-power nodes all have
-incremental coefficient recurrences.
+Kepler and ZOH Kepler use handwritten scalar recurrences. Solar sail uses
+its incremental tape for nominal propagation. CR3BP uses generated Rust
+through order 18 and its tape at higher orders. The other seven models use
+checked-in generated Rust. Generated kernels also supply the tangent and SIMD
+recurrences.
+
+The generator reuses the model graphs, prunes unreachable nodes while
+retaining trigonometric companions, and specializes products with factors
+constant in time. Such factors can still carry parameter derivatives. State
+histories are read from the solution jet, and local values hold intermediate
+coefficients that are used only at the current degree. Recurrence operands
+retain their coefficient histories. Run `python tools/taylor-codegen/regenerate.py --report layout.json`
+from the repository root to inspect the emitted row counts.
+
+The nominal step safety factor is 0.85 for CR3BP, solar sail, and the two
+equinoctial Pontryagin models. The other nominal paths and the augmented
+sensitivity controller use 0.75. Accuracy and performance for the expanded
+fixture corpus are documented in the [Taylor performance follow-up](taylor-performance-followup.md).
+
+The following timings describe the earlier migration to incremental
+recurrences.
 
 The table records the eight final migrations against the previous repeated
 full-series evaluator at commit `c9ecd17`. Each row is an end-to-end
@@ -161,14 +197,21 @@ performance runs.
 
 ## Sensitivities and validation boundaries
 
-`Taylor::propagate_with_sensitivities()` currently uses centered differences
-of complete Taylor propagations, one plus/minus pair per seed direction. This
-is deterministic and matches the direct DOP853 variational result and heyoka
-Kepler STM within the declared `3e-7` test tolerance, but its cost grows as
-`2W + 1` propagations. For a wide STM, DOP853's directly integrated
-variational equations are normally cheaper. The STM and ZOH sensitivity
-convenience methods retain DOP853 as their default for this reason; request
-Taylor explicitly when algorithm-family parity is more important than cost.
+`Taylor::propagate_with_sensitivities()` computes the continuous first
+variations from tangent coefficients. Up to 16 seed directions share one
+nominal coefficient evaluation in a dual jet. Wider seed matrices use
+four-direction blocks to bound kernel scratch space. Step selection includes
+the nominal state and every sensitivity component. Baseline x86 builds use
+separate multiply and add to evaluate derivative polynomials, with fused
+reevaluation for nonfinite results.
+`ZohLeg::mismatch_jacobian_with_method(IntegrationMethod::Taylor)` composes
+the segment sensitivities into endpoint, control, and time-grid derivatives.
+
+For Pontryagin systems, stop-gradient boundaries are applied when forming
+the Hamiltonian costate equations. Tangent propagation differentiates the
+resulting closed-loop equations, including the control dependence.
+Taylor sensitivities use fixed end times. Event-time and reset derivatives
+are outside this API.
 
 Validation has three independent layers:
 
@@ -185,24 +228,63 @@ CI dependency. The larger ZOH and Pontryagin families use the existing pinned
 upstream pykep fixtures plus DOP853 comparisons; they are not presented as
 direct heyoka cross-checks.
 
-## Why no LLVM or new crate?
+## Regenerating the kernels
 
-The equations are already fixed and hand-written in `pykep-core`. A symbolic
-JIT would add compilation latency and a large dependency surface without
-changing the set of systems this crate needs. Keeping the series engine
-private also avoids publishing an extension trait before it has a real
-external consumer.
+Run the generator from a workspace with the supported Rust toolchain:
 
-The four Pontryagin kernels use a smaller form of generation without LLVM.
-During lazy tape construction, the scalar Hamiltonian is differentiated in
-reverse graph order to generate the seven analytic costate expressions.
-Direction and throttle nodes are explicit stop-gradients, preserving the
-Pontryagin envelope convention used by the evaluated equations. For example,
-structural common-subexpression elimination reduces each Cartesian
-mass-optimal graph from 425–426 forward-dual operations to 153 operations.
-Runtime integration only evaluates immutable coefficient graphs; it does not
-repeat symbolic differentiation.
+```bash
+python tools/taylor-codegen/regenerate.py
+python tools/taylor-codegen/regenerate.py --check
+```
 
-If another project later needs the arithmetic and the internal model contract
-survives unchanged, the module can be extracted into a workspace crate. That
-is an API and release decision, not a prerequisite for using Taylor today.
+The ignored Rust exporter serializes private model graphs, and the developer
+tool emits and formats the Rust module. An ordinary crate or wheel build
+uses the checked-in source. The tape and full-series tests provide reference
+evaluators. See [the comparison instructions](https://github.com/dietmarwo/pykep-core-rust/blob/main/tools/taylor-comparison/README.md)
+for reproducible native and Python timings.
+
+## Population, history, and shooting workflows
+
+For a BCP population, create one `InitialValueProblem<6, 4>` per candidate.
+Keep the rotating-frame Cartesian state order `[x, y, z, vx, vy, vz]` and
+the BCP parameter order `[mu, mu_sun, rho_sun, omega_sun]`. Each candidate can
+have its own time interval. With a pool already supplied by the optimizer,
+use one inner worker.
+
+```rust
+use pykep_core::dynamics::BcpDynamics;
+use pykep_core::integration::{InitialValueProblem, IntegratorOptions, Taylor};
+
+let jobs = [0.12, 0.20, 0.25, 0.30].map(|time| {
+    InitialValueProblem::new(
+        0.0, [0.8, -0.2, 0.1, 0.03, -0.04, 0.02], time,
+        [0.01215058560962404, 328900.56, 389.172, -0.925195985520347],
+    )
+});
+let states = Taylor.propagate_batch(&BcpDynamics, &jobs, IntegratorOptions::default(), 1)?;
+# assert_eq!(states.len(), 4);
+# Ok::<(), pykep_core::PykepError>(())
+```
+
+Use the same rotating-frame scales for every position, velocity, and time in
+a batch. Validate several population endpoints with a tighter scalar solve.
+The `model_comparison` binary includes balanced and mixed-duration batches
+using this fixture.
+
+For a normalized low-thrust Cartesian leg, request
+`leg.state_history_with_method(101, IntegrationMethod::Taylor)`. The
+returned forward and backward histories each contain one list per propagated
+segment. Both endpoints belong to each segment's sampled list. Positions,
+velocities, mass, and time use the scales declared when constructing the leg.
+Compare interior points against independent endpoint solves with the same
+control over the corresponding subinterval.
+
+For single shooting, construct a `SensitivityProblem` with one column per
+decision variable. An initial-velocity seed puts a one in that component
+of `initial_sensitivities`. A gravity-parameter seed goes into
+`parameter_seeds`. Use the propagated state to form the endpoint residual
+and select the same state rows from the returned sensitivity matrix for the
+Jacobian. For a ZOH leg, the complete mismatch Jacobian can be requested
+directly with `mismatch_jacobian_with_method(IntegrationMethod::Taylor)`.
+Check the assembled Jacobian against a small perturbation of the complete
+problem, particularly when a variable moves a shared control boundary.

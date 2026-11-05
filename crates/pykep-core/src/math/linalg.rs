@@ -197,10 +197,11 @@ pub fn matrix_multiply<const M: usize, const K: usize, const N: usize>(
     for row in 0..M {
         for column in 0..N {
             let mut value = 0.0;
-            for inner in 0..K {
-                ensure_finite("left", left[row][inner])?;
-                ensure_finite("right", right[inner][column])?;
-                value = left[row][inner].mul_add(right[inner][column], value);
+            for (&left_value, right_row) in left[row].iter().zip(right) {
+                let right_value = right_row[column];
+                ensure_finite("left", left_value)?;
+                ensure_finite("right", right_value)?;
+                value = left_value.mul_add(right_value, value);
             }
             result[row][column] = ensure_finite_output("matrix_multiply", value)?;
         }
@@ -220,10 +221,10 @@ pub fn matrix_vector_multiply<const M: usize, const N: usize>(
     let mut result = [0.0; M];
     for row in 0..M {
         let mut value = 0.0;
-        for column in 0..N {
-            ensure_finite("matrix", matrix[row][column])?;
-            ensure_finite("vector", vector[column])?;
-            value = matrix[row][column].mul_add(vector[column], value);
+        for (&matrix_value, &vector_value) in matrix[row].iter().zip(vector) {
+            ensure_finite("matrix", matrix_value)?;
+            ensure_finite("vector", vector_value)?;
+            value = matrix_value.mul_add(vector_value, value);
         }
         result[row] = ensure_finite_output("matrix_vector_multiply", value)?;
     }

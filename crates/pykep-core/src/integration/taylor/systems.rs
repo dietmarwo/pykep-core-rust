@@ -16,9 +16,25 @@ use crate::integration::{DynamicsModel, TaylorDynamicsModel};
 #[cfg(test)]
 use super::series::Series;
 use super::tape::{Expression, IncrementalTape, TapeBuilder};
-use super::{MAX_ORDER, TaylorCoefficientModel};
+use super::{MAX_ORDER, TaylorCoefficientModel, generated, kernel::Coefficient};
 
 impl TaylorCoefficientModel<6, 1> for KeplerDynamics {
+    const CARTESIAN_EVENTS: bool = true;
+
+    #[cfg(feature = "simd")]
+    const SIMD_CAPABLE: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 6],
+        parameters: &[T; 1],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 6],
+    ) {
+        generated::kepler(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -58,6 +74,24 @@ impl TaylorCoefficientModel<6, 1> for KeplerDynamics {
 impl TaylorDynamicsModel<6, 1> for KeplerDynamics {}
 
 impl TaylorCoefficientModel<6, 1> for Cr3bpDynamics {
+    const NOMINAL_STEP_SAFETY: f64 = 0.85;
+
+    const CARTESIAN_EVENTS: bool = true;
+
+    #[cfg(feature = "simd")]
+    const SIMD_CAPABLE: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 6],
+        parameters: &[T; 1],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 6],
+    ) {
+        generated::cr3bp(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -67,7 +101,11 @@ impl TaylorCoefficientModel<6, 1> for Cr3bpDynamics {
         jet: &mut [[f64; MAX_ORDER + 1]; 6],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        cr3bp_tape().coefficients(time, state, parameters, order, jet);
+        if order <= 18 {
+            self.generated_coefficients(time, state, parameters, order, jet);
+        } else {
+            cr3bp_tape().coefficients(time, state, parameters, order, jet);
+        }
         Ok(())
     }
 }
@@ -110,6 +148,22 @@ fn cr3bp_expression_rhs<'a>(
 }
 
 impl TaylorCoefficientModel<6, 4> for BcpDynamics {
+    const CARTESIAN_EVENTS: bool = true;
+
+    #[cfg(feature = "simd")]
+    const SIMD_CAPABLE: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 6],
+        parameters: &[T; 4],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 6],
+    ) {
+        generated::bcp(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -119,18 +173,20 @@ impl TaylorCoefficientModel<6, 4> for BcpDynamics {
         jet: &mut [[f64; MAX_ORDER + 1]; 6],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        bcp_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
 
 impl TaylorDynamicsModel<6, 4> for BcpDynamics {}
 
+#[cfg(test)]
 fn bcp_tape() -> &'static IncrementalTape<6> {
     static TAPE: OnceLock<IncrementalTape<6>> = OnceLock::new();
     TAPE.get_or_init(build_bcp_tape)
 }
 
+#[cfg(test)]
 fn build_bcp_tape() -> IncrementalTape<6> {
     let builder = TapeBuilder::new();
     let outputs = {
@@ -175,6 +231,19 @@ fn build_bcp_tape() -> IncrementalTape<6> {
 }
 
 impl TaylorCoefficientModel<7, 6> for ZohCr3bpDynamics {
+    const CARTESIAN_EVENTS: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 7],
+        parameters: &[T; 6],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 7],
+    ) {
+        generated::zoh_cr3bp(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -184,19 +253,31 @@ impl TaylorCoefficientModel<7, 6> for ZohCr3bpDynamics {
         jet: &mut [[f64; MAX_ORDER + 1]; 7],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        zoh_cr3bp_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
 
 impl TaylorDynamicsModel<7, 6> for ZohCr3bpDynamics {}
 
+#[cfg(test)]
 fn zoh_cr3bp_tape() -> &'static IncrementalTape<7> {
     static TAPE: OnceLock<IncrementalTape<7>> = OnceLock::new();
     TAPE.get_or_init(build_zoh_cr3bp_tape)
 }
 
 impl TaylorCoefficientModel<7, 5> for ZohEquinoctialDynamics {
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 7],
+        parameters: &[T; 5],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 7],
+    ) {
+        generated::zoh_equinoctial(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -206,7 +287,7 @@ impl TaylorCoefficientModel<7, 5> for ZohEquinoctialDynamics {
         jet: &mut [[f64; MAX_ORDER + 1]; 7],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        zoh_equinoctial_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
@@ -214,6 +295,28 @@ impl TaylorCoefficientModel<7, 5> for ZohEquinoctialDynamics {
 impl TaylorDynamicsModel<7, 5> for ZohEquinoctialDynamics {}
 
 impl TaylorCoefficientModel<14, 5> for EquinoctialMassOptimal {
+    const NOMINAL_STEP_SAFETY: f64 = 0.85;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 14],
+        parameters: &[T; 5],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 14],
+    ) {
+        let positive = equinoctial_mass_positive(
+            &state.map(Coefficient::primal),
+            &parameters.map(Coefficient::primal),
+        );
+        let kernel = if positive {
+            generated::equinoctial_mass_positive
+        } else {
+            generated::equinoctial_mass_negative
+        };
+        kernel(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -223,7 +326,7 @@ impl TaylorCoefficientModel<14, 5> for EquinoctialMassOptimal {
         jet: &mut [[f64; MAX_ORDER + 1]; 14],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        equinoctial_mass_tape(state, parameters).coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
@@ -231,6 +334,19 @@ impl TaylorCoefficientModel<14, 5> for EquinoctialMassOptimal {
 impl TaylorDynamicsModel<14, 5> for EquinoctialMassOptimal {}
 
 impl TaylorCoefficientModel<14, 3> for EquinoctialTimeOptimal {
+    const NOMINAL_STEP_SAFETY: f64 = 0.85;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 14],
+        parameters: &[T; 3],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 14],
+    ) {
+        generated::equinoctial_time(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -240,18 +356,20 @@ impl TaylorCoefficientModel<14, 3> for EquinoctialTimeOptimal {
         jet: &mut [[f64; MAX_ORDER + 1]; 14],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        equinoctial_time_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
 
 impl TaylorDynamicsModel<14, 3> for EquinoctialTimeOptimal {}
 
+#[cfg(test)]
 fn zoh_equinoctial_tape() -> &'static IncrementalTape<7> {
     static TAPE: OnceLock<IncrementalTape<7>> = OnceLock::new();
     TAPE.get_or_init(build_zoh_equinoctial_tape)
 }
 
+#[cfg(test)]
 fn build_zoh_equinoctial_tape() -> IncrementalTape<7> {
     let builder = TapeBuilder::new();
     let outputs = {
@@ -296,6 +414,21 @@ fn build_zoh_equinoctial_tape() -> IncrementalTape<7> {
 }
 
 impl TaylorCoefficientModel<6, 3> for ZohSolarSailDynamics {
+    const NOMINAL_STEP_SAFETY: f64 = 0.85;
+
+    const CARTESIAN_EVENTS: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 6],
+        parameters: &[T; 3],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 6],
+    ) {
+        generated::solar_sail(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -358,6 +491,7 @@ fn build_zoh_solar_sail_tape() -> IncrementalTape<6> {
     builder.finish(outputs)
 }
 
+#[cfg(test)]
 fn build_zoh_cr3bp_tape() -> IncrementalTape<7> {
     let builder = TapeBuilder::new();
     let outputs = {
@@ -388,6 +522,22 @@ fn build_zoh_cr3bp_tape() -> IncrementalTape<7> {
 }
 
 impl TaylorCoefficientModel<7, 5> for ZohKeplerDynamics {
+    const CARTESIAN_EVENTS: bool = true;
+
+    #[cfg(feature = "simd")]
+    const SIMD_CAPABLE: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 7],
+        parameters: &[T; 5],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 7],
+    ) {
+        generated::zoh_kepler(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -435,6 +585,28 @@ impl TaylorCoefficientModel<7, 5> for ZohKeplerDynamics {
 impl TaylorDynamicsModel<7, 5> for ZohKeplerDynamics {}
 
 impl TaylorCoefficientModel<14, 5> for CartesianMassOptimal {
+    const CARTESIAN_EVENTS: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 14],
+        parameters: &[T; 5],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 14],
+    ) {
+        let positive = cartesian_mass_positive(
+            &state.map(Coefficient::primal),
+            &parameters.map(Coefficient::primal),
+        );
+        let kernel = if positive {
+            generated::cartesian_mass_positive
+        } else {
+            generated::cartesian_mass_negative
+        };
+        kernel(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -444,7 +616,7 @@ impl TaylorCoefficientModel<14, 5> for CartesianMassOptimal {
         jet: &mut [[f64; MAX_ORDER + 1]; 14],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        cartesian_mass_tape(state, parameters).coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
@@ -452,6 +624,19 @@ impl TaylorCoefficientModel<14, 5> for CartesianMassOptimal {
 impl TaylorDynamicsModel<14, 5> for CartesianMassOptimal {}
 
 impl TaylorCoefficientModel<14, 3> for CartesianTimeOptimal {
+    const CARTESIAN_EVENTS: bool = true;
+
+    fn generated_coefficients<T: Coefficient>(
+        &self,
+        time: T,
+        state: &[T; 14],
+        parameters: &[T; 3],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; 14],
+    ) {
+        generated::cartesian_time(time, state, parameters, order, jet);
+    }
+
     fn coefficients(
         &self,
         time: f64,
@@ -461,7 +646,7 @@ impl TaylorCoefficientModel<14, 3> for CartesianTimeOptimal {
         jet: &mut [[f64; MAX_ORDER + 1]; 14],
     ) -> Result<()> {
         self.validate(time, state, parameters)?;
-        cartesian_time_tape().coefficients(time, state, parameters, order, jet);
+        self.generated_coefficients(time, state, parameters, order, jet);
         Ok(())
     }
 }
@@ -731,6 +916,7 @@ fn regularized_mass_flow(
     -coefficient * thrust * (-Series::constant(1.0, mass.order()) / mass / regularization).exp()
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy)]
 enum Objective {
     Mass,
@@ -767,24 +953,30 @@ fn cartesian_mass_rhs(
     )
 }
 
+#[cfg(test)]
 fn cartesian_mass_tape(state: &[f64; 14], parameters: &[f64; 5]) -> &'static IncrementalTape<14> {
     static POSITIVE_TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
     static NEGATIVE_TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
-    let primer_norm = (state[10].powi(2) + state[11].powi(2) + state[12].powi(2)).sqrt();
-    let switching_function =
-        1.0 - primer_norm * parameters[2] / state[6] / parameters[4] - state[13] / parameters[4];
-    if switching_function >= 0.0 {
+    if cartesian_mass_positive(state, parameters) {
         POSITIVE_TAPE.get_or_init(|| build_cartesian_tape(Objective::Mass, true))
     } else {
         NEGATIVE_TAPE.get_or_init(|| build_cartesian_tape(Objective::Mass, false))
     }
 }
+fn cartesian_mass_positive(state: &[f64; 14], parameters: &[f64; 5]) -> bool {
+    let primer_norm = (state[10].powi(2) + state[11].powi(2) + state[12].powi(2)).sqrt();
+    let switching_function =
+        1.0 - primer_norm * parameters[2] / state[6] / parameters[4] - state[13] / parameters[4];
+    switching_function >= 0.0
+}
 
+#[cfg(test)]
 fn cartesian_time_tape() -> &'static IncrementalTape<14> {
     static TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
     TAPE.get_or_init(|| build_cartesian_tape(Objective::Time, false))
 }
 
+#[cfg(test)]
 fn build_cartesian_tape(
     objective: Objective,
     positive_switching_function: bool,
@@ -851,19 +1043,24 @@ fn build_cartesian_tape(
     builder.finish(outputs)
 }
 
+#[cfg(test)]
 fn equinoctial_mass_tape(state: &[f64; 14], parameters: &[f64; 5]) -> &'static IncrementalTape<14> {
     static POSITIVE_TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
     static NEGATIVE_TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
-    let primer_norm = equinoctial_primer_norm(state, parameters[0]);
-    let switching_function =
-        1.0 - primer_norm * parameters[2] / state[6] / parameters[4] - state[13] / parameters[4];
-    if switching_function >= 0.0 {
+    if equinoctial_mass_positive(state, parameters) {
         POSITIVE_TAPE.get_or_init(|| build_equinoctial_tape(Objective::Mass, true))
     } else {
         NEGATIVE_TAPE.get_or_init(|| build_equinoctial_tape(Objective::Mass, false))
     }
 }
+fn equinoctial_mass_positive(state: &[f64; 14], parameters: &[f64; 5]) -> bool {
+    let primer_norm = equinoctial_primer_norm(state, parameters[0]);
+    let switching_function =
+        1.0 - primer_norm * parameters[2] / state[6] / parameters[4] - state[13] / parameters[4];
+    switching_function >= 0.0
+}
 
+#[cfg(test)]
 fn equinoctial_time_tape() -> &'static IncrementalTape<14> {
     static TAPE: OnceLock<IncrementalTape<14>> = OnceLock::new();
     TAPE.get_or_init(|| build_equinoctial_tape(Objective::Time, false))
@@ -900,6 +1097,7 @@ fn expression_norm_value<const N: usize>(vector: [f64; N]) -> f64 {
         .sqrt()
 }
 
+#[cfg(test)]
 fn build_equinoctial_tape(
     objective: Objective,
     positive_switching_function: bool,
@@ -968,6 +1166,7 @@ fn build_equinoctial_tape(
     builder.finish(outputs)
 }
 
+#[cfg(test)]
 fn equinoctial_b_expression<'a>(
     builder: &'a TapeBuilder,
     state: [Expression<'a>; 7],
@@ -1470,6 +1669,108 @@ mod tests {
         }
     }
 
+    fn assert_generated_matches<M, const N: usize, const P: usize>(
+        model: &M,
+        time: f64,
+        state: [f64; N],
+        parameters: [f64; P],
+    ) where
+        M: TaylorCoefficientModel<N, P>,
+    {
+        for order in [8, 15, MAX_ORDER] {
+            let mut generated = [[0.0; MAX_ORDER + 1]; N];
+            model.generated_coefficients::<f64>(time, &state, &parameters, order, &mut generated);
+            let mut validated = [[0.0; MAX_ORDER + 1]; N];
+            model
+                .coefficients(time, &state, &parameters, order, &mut validated)
+                .unwrap();
+            assert_jets_match(&generated, &validated, order, 1e-12);
+        }
+    }
+
+    /// Every ahead-of-time kernel, which drives SIMD batches and Taylor
+    /// sensitivities, matches the series-validated coefficient path.
+    #[test]
+    fn generated_kernels_match_validated_coefficients() {
+        let mu = 0.012_150_585_609_624_04;
+        assert_generated_matches(
+            &KeplerDynamics,
+            0.3,
+            [0.8, -0.4, 0.3, 0.2, 0.9, -0.1],
+            [1.0],
+        );
+        assert_generated_matches(&Cr3bpDynamics, 0.3, [0.8, -0.2, 0.1, 0.03, 1.0, 0.02], [mu]);
+        assert_generated_matches(
+            &BcpDynamics,
+            0.3,
+            [0.8, -0.2, 0.1, 0.03, 1.0, 0.02],
+            [mu, 328_900.56, 389.172, -0.925_195_985_520_347],
+        );
+        assert_generated_matches(
+            &ZohKeplerDynamics,
+            0.3,
+            [0.9, -0.2, 0.1, 0.15, 0.95, -0.04, 1.2],
+            [0.07, 0.3, -0.4, 0.5, 0.025],
+        );
+        assert_generated_matches(
+            &ZohCr3bpDynamics,
+            0.3,
+            [0.9, -0.2, 0.1, 0.15, 0.95, -0.04, 1.2],
+            [0.07, 0.3, -0.4, 0.5, 0.025, mu],
+        );
+        assert_generated_matches(
+            &ZohEquinoctialDynamics,
+            0.3,
+            [1.1, 0.1, -0.05, 0.02, -0.03, 0.4, 1.1],
+            [0.02, 0.3, -0.4, 0.5, 0.01],
+        );
+        assert_generated_matches(
+            &ZohSolarSailDynamics,
+            0.3,
+            [0.8, -0.4, 0.3, 0.2, 0.9, -0.1],
+            [0.25, -1.1, 0.04],
+        );
+        assert_generated_matches(
+            &CartesianTimeOptimal,
+            0.0,
+            [
+                1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ],
+            [1.0, 0.01, 1.0],
+        );
+        assert_generated_matches(
+            &EquinoctialTimeOptimal,
+            0.0,
+            [
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            ],
+            [1.0, 1e-4, 1.0],
+        );
+        // Both smoothed-throttle branches of the mass-optimal models.
+        for costate in [1.0, -1.0] {
+            let mut cartesian = [
+                1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            ];
+            cartesian[13] = costate;
+            assert_generated_matches(
+                &CartesianMassOptimal,
+                0.0,
+                cartesian,
+                [1.0, 0.01, 1.0, 0.5, 1.0],
+            );
+            let mut equinoctial = [
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            ];
+            equinoctial[13] = if costate > 0.0 { 0.5 } else { -1.0 };
+            assert_generated_matches(
+                &EquinoctialMassOptimal,
+                0.0,
+                equinoctial,
+                [1.0, 1e-4, 1.0, 1.0, 1e-4],
+            );
+        }
+    }
+
     #[test]
     fn incremental_cr3bp_matches_series_reference() {
         let state = [0.8, -0.2, 0.1, 0.03, 1.0, 0.02];
@@ -1790,4 +2091,60 @@ mod tests {
             }
         }
     }
+}
+
+#[cfg(test)]
+fn build_kepler_tape<const N: usize>(controlled: bool) -> IncrementalTape<N> {
+    let builder = TapeBuilder::new();
+    let state: [Expression<'_>; N] = core::array::from_fn(|i| builder.state(i));
+    let r2 = expression_squared_norm([state[0], state[1], state[2]]);
+    let mu = if controlled {
+        builder.constant(1.0)
+    } else {
+        builder.parameter(0)
+    };
+    let gravity = -mu * r2.powf(-1.5);
+    let outputs = if controlled {
+        let [thrust, ix, iy, iz, c] = core::array::from_fn(|i| builder.parameter(i));
+        let inverse_mass = state[6].powf(-1.0);
+        let regularization = (inverse_mass * (-1e-16)).exp();
+        let direction = [ix, iy, iz];
+        core::array::from_fn(|i| match i {
+            0..=2 => state[i + 3].index(),
+            3..=5 => (gravity * state[i - 3] + thrust * direction[i - 3] * inverse_mass).index(),
+            _ => (-c * thrust * regularization).index(),
+        })
+    } else {
+        core::array::from_fn(|i| match i {
+            0..=2 => state[i + 3].index(),
+            _ => (gravity * state[i - 3]).index(),
+        })
+    };
+    builder.finish(outputs)
+}
+
+#[cfg(test)]
+#[test]
+#[ignore = "developer-only export of private Taylor graph definitions"]
+fn export_taylor_graphs() {
+    let output = std::env::var_os("PYKEP_TAYLOR_GRAPH_OUTPUT").expect("set output path");
+    let graph = serde_json::json!({
+        "schema": 1,
+        "models": {
+            "kepler": build_kepler_tape::<6>(false).manifest(1),
+            "zoh_kepler": build_kepler_tape::<7>(true).manifest(5),
+            "cr3bp": cr3bp_tape().manifest(1),
+            "bcp": bcp_tape().manifest(4),
+            "zoh_cr3bp": zoh_cr3bp_tape().manifest(6),
+            "zoh_equinoctial": zoh_equinoctial_tape().manifest(5),
+            "solar_sail": zoh_solar_sail_tape().manifest(3),
+            "cartesian_mass_positive": build_cartesian_tape(Objective::Mass, true).manifest(5),
+            "cartesian_mass_negative": build_cartesian_tape(Objective::Mass, false).manifest(5),
+            "cartesian_time": cartesian_time_tape().manifest(3),
+            "equinoctial_mass_positive": build_equinoctial_tape(Objective::Mass, true).manifest(5),
+            "equinoctial_mass_negative": build_equinoctial_tape(Objective::Mass, false).manifest(5),
+            "equinoctial_time": equinoctial_time_tape().manifest(3),
+        }
+    });
+    std::fs::write(output, serde_json::to_vec(&graph).unwrap()).unwrap();
 }

@@ -1,6 +1,9 @@
 # Implementation status
 
-Evidence-backed status as of 2026-08-03:
+Release 0.1.5 adds the [trajectory gym](trajectory-gym.md) and
+[PyKEP 3.1.0 comparisons](matched-benchmarks.md). Those reports give the
+current scope, numerical discrepancies and timing boundaries. The core
+inventory below records the module status as of 2026-08-03.
 
 | Module | Rust core | Python API | Golden parity | Independent tests | Benchmarked | Docs |
 |---|---|---|---|---|---|---|
@@ -32,12 +35,12 @@ CPython 3.11–3.13 on Linux, macOS, and Windows. The upstream migration matrix
 records renames, deliberate contract changes, deferrals, and unsupported
 ecosystem modules.
 
-The runnable example matrix covers every major public module in Rust and
-through the installed Python extension. Each example states units, expected
-behavior, runtime orientation, and required features; CI compiles all Rust
-examples and executes all Python scripts.
+The example matrix covers the major public modules in Rust and through the
+installed Python extension. CI compiles the Rust examples and executes the
+basic Python examples. The gym has separate API, packaging, finite-difference
+Jacobian and replay checks.
 
-The synchronized 0.1.4 release is published as `pykep-core` on crates.io and
+The synchronized 0.1.5 release is published as `pykep-core` on crates.io and
 `pykep-rust` on PyPI. The internal `pykep-py` implementation crate remains
 `publish = false` by design. Tag-gated trusted-publishing workflows, clean
 crate/wheel/source-distribution consumption, docs.rs, and GitHub Pages are part
@@ -45,10 +48,12 @@ of the release process. Performance regression, Miri, fuzz, Valgrind,
 dependency, MSRV, cross-platform wheel, and API-documentation checks remain
 maintained quality gates rather than claims of formal verification.
 
-Version 0.1.4 includes incremental Taylor coefficient evaluation for all
-eleven built-in models and Rust-only method selection for nominal ZOH-leg
-mismatch/history calculations. Existing no-suffix ZOH-leg methods, Jacobians,
-and the Python ZOH-leg surface retain their DOP853 behavior. See the
+Version 0.1.4 introduced incremental Taylor coefficient evaluation for all
+eleven built-in models. Version 0.1.5 adds the trajectory gym, Taylor events
+and four-lane batches, tangent Taylor sensitivities, analytic DOP853 model
+Jacobians for the Kepler and CR3BP ZOH models, and Taylor or DOP853 selection
+for ZOH-leg mismatch, history and Jacobian calls in Rust and Python. Calls
+without a selector retain their DOP853 behavior. See the
 [performance decision guide](https://github.com/dietmarwo/pykep-core-rust/blob/main/PERFORMANCE_GUIDE.md)
 for the measured boundary between the ahead-of-time Rust backend and warmed
 upstream heyoka.

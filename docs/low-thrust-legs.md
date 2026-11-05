@@ -1,5 +1,8 @@
 # Sims–Flanagan low-thrust legs
 
+The [matched benchmarks](matched-benchmarks.md) cover direct leg calls,
+complete optimizer-facing gradients and PyGMO SLSQP convergence.
+
 `pykep-core::leg` provides the fixed-duration `SimsFlanaganLeg` and the
 variable-duration `SimsFlanaganAlphaLeg`. Both are immutable after validated
 construction, use native Rust two-body propagation, and have no C or C++

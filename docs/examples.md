@@ -63,11 +63,16 @@ at `float64`; see [python-api.md](python-api.md) and
 | CR3BP/ZOH | `dynamics` | `dynamics.py` | Normalized; finite six-/seven-state propagation | Two short adaptive solves, normally <1 ms; default |
 | Batch throughput | core Criterion benches | `batch.py` | Normalized; newly owned 4096 × 6 output | One native O(N) call; NumPy |
 
-Every Rust binary is compiled by the workspace test and clippy gates. Every
-Python script is executed by `python/tests/test_examples.py`, including from
-the clean-wheel CI matrix.
+The workspace test and Clippy gates compile the Rust binaries.
+`python/tests/test_examples.py` runs the basic Python examples from the
+installed wheel. The gym has separate installed-wheel tests and replay
+commands.
 
 ## Complete trajectory-optimization tutorial
+
+The local [trajectory gym](trajectory-gym.md) includes native CLI examples,
+[four feasible TOPS replays](tops.md) and
+[impulsive mission and JUICE examples](trajectory-formulations.md).
 
 For an end-to-end application, see the
 [GTOC1 “Save the Earth” Rust tutorial](https://github.com/dietmarwo/fcmaes-rust/tree/main/tutorials/gtoc1).

@@ -53,17 +53,21 @@ segment remains exactly zero until that segment becomes active. Runtime is
 linear in the segment count for a fixed seed width; the DOP853 implementation
 does not repropagate every prior segment for every control.
 
-Taylor's current seeded-sensitivity implementation uses centered complete
-propagations and therefore costs `2W + 1` nominal solves per segment. Prefer
-DOP853 for wide ZOH Jacobians until direct Taylor variational recurrences are
-implemented.
+The Taylor backend propagates the tangent coefficients directly and shares
+nominal coefficients across practical seed widths. Complete
+Jacobians and mismatch timings are reported separately in the
+[matched benchmarks](matched-benchmarks.md).
 
-Model Jacobians use fixed-size, allocation-free central differentiation of
-the evaluated source equations. They are checked against C++ Taylor
-variations and end-to-end schedule finite differences. The longest CR3BP
-reference uses a `2e-5` relative/absolute variation comparison; nominal state
-parity remains `3e-10`. This looser derivative tolerance is explicit and will
-be revisited if later leg gradients require analytic Jacobians.
+For DOP853, the Kepler and CR3BP models supply analytic state and parameter
+Jacobians. Since 0.1.5 they replace the earlier fixed-step central
+differences, which lost accuracy near a primary: on one backward segment of a
+moving CR3BP TOPS vector with a close lunar pass, the old DOP853 transition
+matrix differed from Taylor and from differences of the nominal flow by 43%.
+The equinoctial and solar-sail models still use fixed-size, allocation-free
+central differentiation of the evaluated source equations. All four are
+checked against C++ Taylor variations and end-to-end schedule finite
+differences. The longest CR3BP reference uses a `2e-5` relative/absolute
+variation comparison; nominal state parity remains `3e-10`.
 
 ## Python API
 

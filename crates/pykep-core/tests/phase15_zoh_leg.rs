@@ -48,10 +48,7 @@ fn array<const N: usize>(value: &Value) -> [f64; N] {
 }
 
 fn controls<const C: usize>(value: &Value) -> Vec<[f64; C]> {
-    values(value)
-        .chunks_exact(C)
-        .map(|chunk| chunk.try_into().unwrap())
-        .collect()
+    values(value).as_chunks::<C>().0.to_vec()
 }
 
 fn assert_scaled(actual: &[f64], expected: &[f64], tolerance: f64) {

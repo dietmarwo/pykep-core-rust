@@ -23,6 +23,14 @@ parallel = pk.propagate_lagrangian_batch(
 assert np.array_equal(parallel, propagated)
 ```
 
+## Trajectory gym
+
+Release wheels from 0.1.5, built with the `trajopt` feature, include
+`pykep_rust.trajopt.gym`. The problem protocol exposes raw fitness,
+flattened TOPS gradients, metadata, decoding and ordered float64 batches.
+See [gym constructors and examples](trajectory-gym.md) and
+[Python timing boundaries](matched-benchmarks.md).
+
 ## Units, shapes, and defaults
 
 - Angles are radians. Epoch and ephemeris arguments are MJD2000 days.
@@ -58,20 +66,20 @@ Objects copy constructor inputs and can outlive those Python sequences.
 `Planet` and immutable leg objects can be reused from multiple Python threads.
 Batch conversion, anomaly, Stumpff, ephemeris, mission, propagation, dynamics,
 and leg workloads release the GIL while executing the native loop. Python
-wrappers only validate and convert data; all astrodynamics formulas live in
-`pykep-core`.
+wrappers validate and convert data for the Rust libraries.
 
-The evaluated model propagators currently keep their established DOP853
-backend in Python. Runtime selection of the new fixed-system Taylor backend is
-Rust-only in this release; Python does not expose an integrator object or a
-backend-name string whose compatibility would need to be frozen.
+The nominal Kepler, CR3BP, BCP, Pontryagin, and ZOH propagators accept the
+keyword-only `method="taylor"` or `method="dop853"` in their scalar and batch
+forms. Kepler, CR3BP, and BCP default to Taylor. Pontryagin and ZOH schedule
+calls default to DOP853. `ZohLeg` mismatch, history and Jacobian calls,
+including their batch forms, accept the selector and default to DOP853.
 
 See [batch-processing.md](batch-processing.md) for the complete batch matrix,
 array shapes, worker-pool contract, SpOC 4 motivation, and guidance for
 avoiding nested parallelism.
 
 The complete callable surface and defaults are statically described by the
-shipped `py.typed` marker and `_pykep_rust.pyi`. See
+shipped `py.typed` marker, `_pykep_rust.pyi` and `trajopt/gym.pyi`. See
 [python-migration.md](python-migration.md) for the upstream name and behavior
 mapping, [conventions.md](conventions.md) for numerical conventions, and the
 model-specific dynamics and leg guides for parameter layouts.

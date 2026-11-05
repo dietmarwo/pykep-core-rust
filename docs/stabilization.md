@@ -4,8 +4,8 @@ This document is the historical Phase 18, pre-0.1.0 evidence snapshot that
 complements numerical parity and invariant testing. Its artifact versions and
 then-open blockers are intentionally preserved as the record of that release
 candidate; they do not describe the current release state. The synchronized
-0.1.4 artifacts are now published. See [Implementation status](status.md) and
-the
+0.1.4 artifacts were subsequently published, followed by 0.1.5. See
+[Implementation status](status.md) and the
 [release procedure](https://github.com/dietmarwo/pykep-core-rust/blob/main/RELEASE.md)
 for the current state and procedure.
 

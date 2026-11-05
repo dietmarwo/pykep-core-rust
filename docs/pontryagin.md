@@ -1,5 +1,8 @@
 # Pontryagin low-thrust dynamics
 
+The [matched benchmark report](matched-benchmarks.md) includes native
+mass- and time-optimal scalar fixtures in both coordinate systems.
+
 Phase 13 provides evaluated Cartesian and modified-equinoctial canonical
 dynamics for indirect low-thrust optimization. The implementation is native
 Rust and uses the common integration and sensitivity contracts; it does not

@@ -7,7 +7,10 @@ The public repository produces two synchronized artifacts:
 | crates.io / docs.rs | `pykep-core` | `[workspace.package].version` |
 | PyPI | `pykep-rust` | derived by Maturin from `pykep-py` |
 
-The `pykep-py` binding implementation crate remains `publish = false`.
+The `pykep-py` and `pykep-trajopt` workspace crates use `publish = false`.
+The wheel builds the trajectory catalog through the Maturin feature list.
+Verify the installed gym and bundled data in both the wheel and rebuilt
+source distribution.
 Publication is irreversible: never reuse a version after uploading it to
 either registry.
 
@@ -73,7 +76,10 @@ environments with `LD_LIBRARY_PATH` and `PYTHONPATH` unset.
 
 The release commit must have the intended version in `Cargo.toml` and
 `Cargo.lock`, a dated changelog entry, a clean working tree, passing hosted
-CI, and no uncommitted generated artifacts.
+CI, and no uncommitted generated artifacts. Besides `[workspace.package]`,
+update the exact `=x.y.z` pins in `[workspace.dependencies]` and in
+`crates/pykep-trajopt`, `tools/gym-benchmark` and `tools/upstream-benchmark`
+(`grep -rn '"=0\.' --include=Cargo.toml .` lists them).
 
 ## First crates.io release for a new registry project
 
