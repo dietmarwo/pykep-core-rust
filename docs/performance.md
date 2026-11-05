@@ -1,8 +1,11 @@
 # Performance methodology
 
 See the [shared-input PyKEP 3.1.0 report](matched-benchmarks.md) for the
-development comparison. The measurements below are historical orientation
-runs on the published core and earlier implementation milestones.
+0.1.5 release comparison and the
+[performance decision guide](https://github.com/dietmarwo/pykep-core-rust/blob/main/PERFORMANCE_GUIDE.md)
+for how to use it. The measurements below are historical orientation runs
+from the implementation phases before 0.1.0, with later notes where a
+release changed the result.
 
 Benchmarks use release mode and Criterion. They contain no file or console I/O
 inside the measured loop. Raw Criterion state is build output under `target/`
@@ -133,7 +136,10 @@ does not perform a segment-count-dependent control search.
 The Phase 13 propagation covers 1.2345 normalized time units. Rust uses a
 `0.01` maximum step to meet the recorded oracle tolerance, whereas the C++
 Taylor solve has no equivalent limit. Treat this as an identified performance
-target, not as a like-for-like algorithm comparison.
+target, not as a like-for-like algorithm comparison. Since 0.1.3 the
+built-in Pontryagin models can also use the Taylor backend. With Taylor, the
+0.1.5 shared-input study measured its own Cartesian mass-optimal fixture at
+8.88 µs in Rust and 4.02 µs with warmed heyoka.
 
 ## Low-thrust legs
 
@@ -150,8 +156,12 @@ validation are outside both timings.
 
 The Phase 15 comparison uses the same states, chronological controls, time
 grid, constants, cut, and `1e-12` tolerance, with no maximum step. Rust
-integrates every segment independently and uses fixed-size numerical dynamics
-Jacobians. Both operations therefore remain visible optimization targets.
+integrated every segment independently and used fixed-size numerical dynamics
+Jacobians. Release 0.1.5 added the Taylor backend for ZOH legs and analytic
+DOP853 model Jacobians for the Kepler and CR3BP ZOH models. With Taylor
+selected, the 0.1.5 study measured the 20-segment complete Jacobian at
+272 µs in Rust against 556 µs upstream, and the mismatch at 36.9 µs against
+23.9 µs; see [complete ZOH legs](matched-benchmarks.md#complete-zoh-legs).
 
 ## Python batch throughput
 

@@ -38,8 +38,10 @@ and [migration matrix](docs/python-migration.md).
 
 ## Current release behavior
 
-Version 0.1.3 changed nominal propagation of all eleven built-in evaluated
-dynamics types to the pure-Rust adaptive Taylor backend. DOP853 remains an
+Version 0.1.3 added the pure-Rust adaptive Taylor backend for all eleven
+built-in evaluated dynamics types and made it the default of
+`AdaptiveIntegrator` and of nominal Kepler, CR3BP and BCP propagation. The
+Python Pontryagin and ZOH schedule propagators default to DOP853. DOP853 remains an
 explicitly selectable general-purpose backend and is still used for arbitrary
 user models, user-defined terminal events, and the no-selector compatibility
 methods. Since 0.1.5, built-in Cartesian models also support analytic Taylor
@@ -218,8 +220,9 @@ comparison establishes two different performance boundaries:
 | Boundary | Evidence |
 |---|---|
 | Warmed built-in Taylor propagation | In the 0.1.5 shared-input study, warmed upstream heyoka was 1.67× to 2.57× faster on nine fixtures, and Rust was 1.28× and 1.20× faster on the equinoctial mass- and time-optimal fixtures. The 0.1.4 study had measured 2.83× to 4.53× on five fixtures. |
-| First cache miss | Heyoka JIT setup took approximately 50–742 ms across those fixtures. |
-| Analytical and transcription kernels | Results were generally much closer; some measured Rust kernels were faster. |
+| First cache miss | In the 0.1.5 study, heyoka integrator construction with JIT compilation took a median of 167 ms to 1.49 s per fixture. Rust has no setup phase. |
+| Analytical and transcription kernels | In the seven upstream benchmark programs, Rust was faster on Lagrange propagation, STMs and the Sims–Flanagan Jacobian, upstream was faster on Lambert, and anomaly conversion was mixed. |
+| Complete ZOH legs | With Taylor selected, Rust computed the complete Jacobian 1.9–2.2× faster; warmed heyoka computed the nominal mismatch 1.2–1.5× faster. |
 | Deployment | Rust requires no runtime JIT, C++ ABI, or LLVM installation. |
 
 Prefer warmed upstream heyoka when a long-lived built-in Taylor workload
