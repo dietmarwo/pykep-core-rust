@@ -6,6 +6,15 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ## [Unreleased]
 
+### Added
+
+- Added an optional heyoka example, `python/examples/heyoka/`. pykep-rust
+  and fcmaes find a Cassini1 route in patched conics. heyoka re-propagates
+  each leg with VSOP2013 ephemerides and planetary perturbations, locates
+  the closest approaches with events, and retargets the legs with
+  variational equations. heyoka is not a dependency of the crate or the
+  wheel, and the example is not run in CI.
+
 ## [0.1.5] - 2026-11-05
 
 ### Added
