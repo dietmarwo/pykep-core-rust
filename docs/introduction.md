@@ -9,6 +9,11 @@ astrodynamics implementation without a C or C++ runtime dependency. The
 optional `pykep-rust` Python distribution exposes the same implementation
 through PyO3.
 
+New to orbital mechanics? Start with
+[Astrodynamics for programmers](astrodynamics-introduction.md), which builds
+from gravity and orbits to gravity assists, low thrust and trajectory
+optimization with fcmaes, AI agents and multi-machine campaigns.
+
 This book connects the narrative material for both interfaces:
 
 - [examples and quick starts](examples.md) provide runnable Rust and Python

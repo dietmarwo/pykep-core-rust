@@ -1,6 +1,7 @@
 # Summary
 
 - [Introduction](introduction.md)
+- [Astrodynamics for programmers](astrodynamics-introduction.md)
 - [Documentation map](README.md)
 
 # User guides

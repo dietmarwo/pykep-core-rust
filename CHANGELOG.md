@@ -40,6 +40,11 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
   checks for every TOPS family, boundary type and time encoding, catalog
   midpoint evaluations, launcher values from the pinned source, ordered
   batches, and the two moving-CR3BP close-lunar-pass vectors.
+- Added "Astrodynamics for programmers", an introduction from orbits,
+  Lambert arcs and gravity assists to low thrust and trajectory optimization
+  with fcmaes-rust, optimization-jobs and experiment-craft, with a runnable
+  tour (`python/examples/astrodynamics_tour.py`), a Python fcmaes example,
+  the Rust `cassini1_retry` example and the figure script.
 - Added a measurement-backed guide for choosing between the original
   Python/C++ fcmaes/pykep stack and the native Rust crates, plus guides for
   the gym, TOPS, impulsive formulations and matched benchmarks.
