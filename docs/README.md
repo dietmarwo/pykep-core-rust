@@ -19,15 +19,22 @@ Python interface:
   module guides;
 - [trajectory-gym.md](trajectory-gym.md), [tops.md](tops.md) and
   [trajectory-formulations.md](trajectory-formulations.md) cover the
-  trajectory catalog, optimizer examples and trajectory replay.
+  trajectory catalog, optimizer examples and trajectory replay;
 - [matched-benchmarks.md](matched-benchmarks.md) separates current native,
-  Python and optimizer evidence.
+  Python and optimizer evidence, and the
+  [performance decision guide](https://github.com/dietmarwo/pykep-core-rust/blob/main/PERFORMANCE_GUIDE.md)
+  explains how to choose a stack from it;
 - [python-api.md](python-api.md): Python units, arrays, defaults, errors,
   ownership, GIL, and typing contract;
 - [python-migration.md](python-migration.md): upstream C++/Python names,
   deliberate differences, deferrals, and unsupported ecosystem modules;
+- [batch-processing.md](batch-processing.md): ordered serial and parallel
+  batch APIs and nested-parallelism guidance;
 - `decisions/`: architecture and dependency decisions;
-- [performance.md](performance.md): benchmark methodology and results;
+- [performance.md](performance.md): benchmark methodology and historical
+  per-phase results;
+- [taylor-performance-followup.md](taylor-performance-followup.md): the
+  Taylor implementation rounds between 0.1.4 and 0.1.5;
 - [stabilization.md](stabilization.md): historical pre-0.1.0 matched
   distributions, profiling, regression limits, Miri/fuzz/Valgrind evidence,
   and resolved release blockers;

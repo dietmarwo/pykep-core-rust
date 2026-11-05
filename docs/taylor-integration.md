@@ -170,7 +170,7 @@ equinoctial Pontryagin models. The other nominal paths and the augmented
 sensitivity controller use 0.75. Accuracy and performance for the expanded
 fixture corpus are documented in the [Taylor performance follow-up](taylor-performance-followup.md).
 
-The following timings describe the earlier migration to incremental
+The following timings describe the 0.1.4 migration to incremental
 recurrences.
 
 The table records the eight final migrations against the previous repeated

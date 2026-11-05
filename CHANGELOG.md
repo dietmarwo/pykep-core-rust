@@ -15,6 +15,17 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
   variational equations. heyoka is not a dependency of the crate or the
   wheel, and the example is not run in CI.
 
+### Changed
+
+- PERFORMANCE_GUIDE.md now uses the 0.1.5 measurements against PyKEP
+  3.1.0: all eleven Taylor fixtures with their heyoka setup times, the
+  seven upstream analytical benchmark programs, complete ZOH legs, Python
+  gym evaluation and the Sims–Flanagan optimizer comparison. The 0.1.4
+  tables are replaced by a short note. `docs/performance.md`,
+  `ai-context.md`, ADR 0005, the Taylor guide and the documentation map
+  now point to the 0.1.5 results instead of describing them as
+  development work.
+
 ## [0.1.5] - 2026-11-05
 
 ### Added
