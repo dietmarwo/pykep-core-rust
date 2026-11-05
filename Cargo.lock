@@ -233,6 +233,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "fcmaes-core"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2988aa70f2100b5c17472701648c1cb90a3feed58ca01612a16c36e1c9b525b7"
+dependencies = [
+ "libm",
+ "nalgebra",
+ "rand",
+ "rand_distr",
+ "rand_pcg",
+ "rayon",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -499,7 +513,7 @@ dependencies = [
 name = "pykep-gym-benchmark"
 version = "0.1.5"
 dependencies = [
- "fcmaes-core",
+ "fcmaes-core 0.2.1",
  "pykep-core",
  "pykep-trajopt",
  "serde",
@@ -510,7 +524,7 @@ dependencies = [
 name = "pykep-lambert-optimization-benchmark"
 version = "0.1.5"
 dependencies = [
- "fcmaes-core",
+ "fcmaes-core 0.1.3",
  "pykep-core",
 ]
 

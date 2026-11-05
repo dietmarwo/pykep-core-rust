@@ -452,7 +452,9 @@ impl TopsProblem {
             }
         });
         let controls = x[layout.controls..layout.tof]
-            .chunks_exact(C)
+            .as_chunks::<C>()
+            .0
+            .iter()
             .map(|c| {
                 core::array::from_fn(|i| {
                     if C == 4 && i == 0 {
@@ -533,7 +535,7 @@ impl TopsProblem {
                     }
                     row[layout.controls..layout.tof].copy_from_slice(&jac.controls[r]);
                     if C == 4 {
-                        for control in row[layout.controls..layout.tof].chunks_exact_mut(C) {
+                        for control in row[layout.controls..layout.tof].as_chunks_mut::<C>().0 {
                             control[0] *= self.thrust;
                         }
                     }

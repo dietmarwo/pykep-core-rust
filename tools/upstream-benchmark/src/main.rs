@@ -140,7 +140,7 @@ fn measure<T>(
 fn sf(row: &[f64], controls: &[f64], tof: f64, mf: f64) -> Result<SimsFlanaganLeg> {
     SimsFlanaganLeg::new(
         SpacecraftEndpoint::new(array(&row[..6]), row[6])?,
-        controls.chunks_exact(3).map(array).collect(),
+        controls.as_chunks::<3>().0.to_vec(),
         SpacecraftEndpoint::new(array(&row[7..13]), mf)?,
         SimsFlanaganSettings::new(tof, row[15], row[16], row[17], row[18])?,
     )
@@ -192,7 +192,7 @@ fn zoh(row: &[f64], n: usize, tol: f64) -> Result<ZohKeplerLeg> {
     ZohKeplerLeg::new(
         ZohKeplerDynamics,
         array(row),
-        row[15 + n..].chunks_exact(4).map(array).collect(),
+        row[15 + n..].as_chunks::<4>().0.to_vec(),
         array(&row[7..]),
         row[14..15 + n].to_vec(),
         [1.0 / 3000.0],

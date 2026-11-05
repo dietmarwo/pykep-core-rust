@@ -32,11 +32,14 @@ fn main() -> AnyResult<()> {
         }
         return Ok(());
     }
-    let pairs = argv[2..].chunks_exact(2);
-    if !pairs.remainder().is_empty() {
+    let (pairs, remainder) = argv[2..].as_chunks::<2>();
+    if !remainder.is_empty() {
         return Err("expected --option value pairs".into());
     }
-    let flags: BTreeMap<_, _> = pairs.map(|p| (p[0].as_str(), p[1].as_str())).collect();
+    let flags: BTreeMap<_, _> = pairs
+        .iter()
+        .map(|p| (p[0].as_str(), p[1].as_str()))
+        .collect();
     let flag = |name, default| flags.get(name).copied().unwrap_or(default);
     let integer = |name, default| flag(name, default).parse::<usize>();
     let number = |name, default| flag(name, default).parse::<f64>();
@@ -223,7 +226,7 @@ fn main() -> AnyResult<()> {
                 "best":best,"artifacts":artifacts,
                 "pykep":{"problem":spec.id,"settings":spec.settings,"optimizer":optimizer,"work_of_successful_calls":result.work,
                     "equality_tolerance":1e-6,"inequality_tolerance":1e-8,"wall_budget_seconds":seconds,
-                    "reference_revision":spec.source,"fcmaes_core":"0.1.3","pareto_points":result.pareto.len()}
+                    "reference_revision":spec.source,"fcmaes_core":"0.2.1","pareto_points":result.pareto.len()}
             });
             write_json(&folder.join("run.json"), &record)?;
             println!(

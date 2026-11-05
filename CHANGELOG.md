@@ -87,6 +87,10 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
   difficult elliptic and hyperbolic cases found by the expanded benchmarks.
 - `pykep-gym-benchmark validate` now restores the recorded backend and
   settings and exits with an error when a replay disagrees with its record.
+- `pykep-gym-benchmark` now uses fcmaes-core 0.2.1. Its MODE fixes the SBX,
+  polynomial-mutation and front-sorting defects of fcmaes-core 0.1.x; MODE
+  runs recorded with 0.1.3, including the JUICE front in the measurement
+  archive, used the older MODE.
 - Forced Python CI to install the wheel built from the current checkout rather
   than allowing an already-published wheel with the same workspace version to
   win pip's candidate selection.

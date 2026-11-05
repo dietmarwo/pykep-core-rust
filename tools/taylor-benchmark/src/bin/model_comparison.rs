@@ -451,7 +451,9 @@ fn batch_workload(state: [f64; 6], mu: f64, options: IntegratorOptions) {
                 let tag = if irregular { "mixed" } else { "balanced" };
                 if sweep {
                     let vector_calls: usize = actual
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .map(|group| {
                             group
                                 .iter()
@@ -461,7 +463,9 @@ fn batch_workload(state: [f64; 6], mu: f64, options: IntegratorOptions) {
                         })
                         .sum();
                     let active: usize = actual
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .flatten()
                         .map(|lane| lane.stats.accepted_steps)
                         .sum();
