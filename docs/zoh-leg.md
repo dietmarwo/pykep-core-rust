@@ -62,12 +62,16 @@ The leg composes those matrices from each side of the cut and includes the
 dynamics jump at every switching time. Constant model parameters are fixed
 leg configuration and therefore are not a returned derivative group.
 
-The four built-in models compute their local RHS Jacobians with fixed-size
+Use `mismatch_jacobian_with_method(IntegrationMethod::Taylor)` for direct
+Taylor tangent propagation on the built-in models. The DOP853 path computes
+local RHS Jacobians with fixed-size
 centered differences using a relative step of `3e-6`. Consequently,
 integrator tolerances such as `1e-12` do not imply `1e-12` derivative
 accuracy: the pinned end-to-end validation uses scaled tolerances up to
 `3e-5`. See [zero-order-hold.md](zero-order-hold.md#sensitivities) for the
-model-level contract and validation evidence.
+model-level contract and validation evidence. The
+[matched report](matched-benchmarks.md) covers the measured full Jacobians
+and nominal mismatch calls at 20, 40 and 80 segments.
 
 ## Integration and failures
 
@@ -93,7 +97,8 @@ legs in input order.
 `pykep_rust.ZohLeg` accepts a `ZohModel` value: `Kepler`, `Cr3bp`,
 `Equinoctial`, or `SolarSail`. The constructor validates dynamic state,
 control, and constant dimensions for that selection. Mismatch, Jacobian, and
-history evaluation release the Python GIL.
+history evaluation release the Python GIL. Pass `method="taylor"` to use
+the Taylor path.
 
 The ZOH-leg batch methods clone the small immutable leg descriptors, release
 the GIL once, and return results in input order. `workers=0` uses the shared

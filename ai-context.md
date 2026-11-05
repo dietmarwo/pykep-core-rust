@@ -29,12 +29,12 @@ the VSOP2013 coefficient data; use `default-features = false` when only the
 smaller numerical core, Keplerian ephemerides, and JPL low-precision
 ephemerides are needed.
 
-Do not infer complete pykep ecosystem parity from the numerical surface.
-SPICE kernels, TLE parsing, Python-defined ephemeris providers, plotting,
-trajectory-optimization UDPs, gym helpers, arbitrary heyoka expression
-graphs, and several legacy aliases are intentionally unavailable. Consult
-[`docs/python-migration.md`](docs/python-migration.md) before promising
-drop-in compatibility with `pykep` or `kep3`.
+Development wheels add `pykep_rust.trajopt.gym` with the PyKEP 3.1.0
+classical missions, four fixed and four moving TOPS formulations and launcher
+tables. The runtime uses Rust evaluators and optional optimizer adapters.
+SPICE, TLE, Python-defined ephemerides and symbolic heyoka expression graphs
+are outside the supported catalog. See the [gym guide](docs/trajectory-gym.md)
+and [migration matrix](docs/python-migration.md).
 
 ## Current release behavior
 
@@ -60,6 +60,15 @@ The original no-suffix methods remain DOP853 for compatibility, and
 `mismatch_jacobian()` retains the established DOP853 variational path with
 centered model Jacobians. The Python ZOH-leg surface likewise retains its
 established behavior; it does not expose these Rust-only method selectors.
+
+## Development benchmarks and backend selection
+
+Current native measurements cover eleven scalar fixtures and complete
+randomized ZOH legs. Select a backend from results for the exact model,
+output and error gate. The historical release results remain in the
+[performance decision guide](PERFORMANCE_GUIDE.md). Current comparisons
+and separate Python and optimizer studies are in the
+[matched benchmark report](docs/matched-benchmarks.md).
 
 Use [`PERFORMANCE_GUIDE.md`](PERFORMANCE_GUIDE.md) before choosing between the
 original Python/C++ fcmaes/pykep stack and the Rust stack. Use

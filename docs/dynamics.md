@@ -26,10 +26,10 @@ Each model exposes `evaluate`, `propagate`, and `propagate_with_stm`. Nominal
 `ta` families; `propagate_with_method` can select DOP853 explicitly.
 State-transition matrices are row-major, with output state components in rows
 and initial state components in columns. `propagate_with_stm` retains the
-generic DOP853 direct-variational sensitivity contract; Taylor sensitivities
-currently use centered complete propagations and remain available through
-`propagate_with_stm_method`. See
-[High-accuracy Taylor integration](taylor-integration.md).
+generic DOP853 direct-variational sensitivity contract.
+`propagate_with_stm_method` selects the Taylor tangent recurrence explicitly.
+See [Taylor integration](taylor-integration.md) and
+[matched native benchmarks](matched-benchmarks.md).
 
 For comparisons with the pinned C++ Taylor-adaptive implementation, the test
 profile uses relative and absolute tolerances of `2e-13` and a maximum step

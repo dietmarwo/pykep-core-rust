@@ -5,6 +5,10 @@
 element conversion, two-body propagation and STMs, mission-design utilities,
 Lambert problems, ephemerides, evaluated dynamics, and low-thrust legs.
 
+Development wheels include the native `pykep_rust.trajopt.gym` catalog.
+See the [gym guide](../docs/trajectory-gym.md) for examples and the
+[matched report](../docs/matched-benchmarks.md) for Python and native timings.
+
 ```python
 import pykep_rust as pk
 

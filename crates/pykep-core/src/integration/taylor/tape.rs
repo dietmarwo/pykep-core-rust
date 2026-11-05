@@ -513,6 +513,36 @@ impl<const N: usize> IncrementalTape<N> {
     }
 
     #[cfg(test)]
+    pub(super) fn manifest(&self, parameters: usize) -> serde_json::Value {
+        use serde_json::json;
+        let operations: Vec<_> = self
+            .operations
+            .iter()
+            .map(|op| match *op {
+                Operation::Constant(value) => json!(["constant", value.to_bits()]),
+                Operation::Time => json!(["time"]),
+                Operation::State(index) => json!(["state", index]),
+                Operation::Parameter(index) => json!(["parameter", index]),
+                Operation::Add(a, b) => json!(["add", a, b]),
+                Operation::Subtract(a, b) => json!(["subtract", a, b]),
+                Operation::Multiply(a, b) => json!(["multiply", a, b]),
+                Operation::Negate(a) => json!(["negate", a]),
+                Operation::Power(a, power) => json!(["power", a, power.to_bits()]),
+                Operation::Exponential(a) => json!(["exp", a]),
+                Operation::Sine(a) => json!(["sin", a]),
+                Operation::Cosine(a) => json!(["cos", a]),
+                Operation::StopGradient(a) => json!(["identity", a]),
+            })
+            .collect();
+        json!({
+            "parameters": parameters,
+            "operations": operations,
+            "companions": self.trig_companions,
+            "outputs": self.outputs.as_slice(),
+        })
+    }
+
+    #[cfg(test)]
     pub(super) fn operation_count(&self) -> usize {
         self.operations.len()
     }
@@ -539,8 +569,8 @@ mod tests {
             reference[n + 1] =
                 ((series * series + series.sqrt()) / 3.0).coefficient(n) / (n + 1) as f64;
         }
-        for coefficient in 0..=8 {
-            assert!((jet[0][coefficient] - reference[coefficient]).abs() < 2e-15);
+        for (actual, expected) in jet[0][..=8].iter().zip(&reference[..=8]) {
+            assert!((actual - expected).abs() < 2e-15);
         }
     }
 
@@ -587,13 +617,13 @@ mod tests {
             reference[n + 1] =
                 (state.exp() + angle.sin() - angle.cos()).coefficient(n) / (n + 1) as f64;
         }
-        for coefficient in 0..=12 {
-            let scale = reference[coefficient].abs().max(1.0);
+        for (coefficient, (actual, expected)) in
+            jet[0][..=12].iter().zip(&reference[..=12]).enumerate()
+        {
+            let scale = expected.abs().max(1.0);
             assert!(
-                (jet[0][coefficient] - reference[coefficient]).abs() <= 2e-14 * scale,
-                "coefficient={coefficient}: incremental={:.17e}, reference={:.17e}",
-                jet[0][coefficient],
-                reference[coefficient],
+                (actual - expected).abs() <= 2e-14 * scale,
+                "coefficient={coefficient}: incremental={actual:.17e}, reference={expected:.17e}",
             );
         }
     }

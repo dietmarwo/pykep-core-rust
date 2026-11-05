@@ -1,10 +1,12 @@
 // Copyright (c) 2026 pykep-rust contributors
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::dynamics::integration_method;
 use crate::error::to_python;
 use pykep_core::dynamics::zoh::{
     ZohCr3bpDynamics, ZohEquinoctialDynamics, ZohKeplerDynamics, ZohSolarSailDynamics,
 };
+use pykep_core::integration::IntegrationMethod;
 use pykep_core::integration::IntegratorOptions;
 use pykep_core::leg::{
     SimsFlanaganAlphaLeg as CoreAlphaLeg, SimsFlanaganLeg as CoreLeg, SimsFlanaganMismatchJacobian,
@@ -500,12 +502,12 @@ type PythonZohJacobian = (Vec<Vec<f64>>, Vec<Vec<f64>>, Vec<Vec<f64>>, Vec<Vec<f
 type PythonZohHistory = (Vec<Vec<Vec<f64>>>, Vec<Vec<Vec<f64>>>);
 
 impl CoreZohLeg {
-    fn mismatch_constraints(&self) -> Result<Vec<f64>, PykepError> {
+    fn mismatch_constraints(&self, method: IntegrationMethod) -> Result<Vec<f64>, PykepError> {
         match self {
-            Self::Kepler(leg) => leg.mismatch_constraints().map(Vec::from),
-            Self::Cr3bp(leg) => leg.mismatch_constraints().map(Vec::from),
-            Self::Equinoctial(leg) => leg.mismatch_constraints().map(Vec::from),
-            Self::SolarSail(leg) => leg.mismatch_constraints().map(Vec::from),
+            Self::Kepler(leg) => leg.mismatch_constraints_with_method(method).map(Vec::from),
+            Self::Cr3bp(leg) => leg.mismatch_constraints_with_method(method).map(Vec::from),
+            Self::Equinoctial(leg) => leg.mismatch_constraints_with_method(method).map(Vec::from),
+            Self::SolarSail(leg) => leg.mismatch_constraints_with_method(method).map(Vec::from),
         }
     }
 
@@ -526,7 +528,11 @@ impl CoreZohLeg {
         }
     }
 
-    fn state_history(&self, samples: usize) -> Result<PythonZohHistory, PykepError> {
+    fn state_history(
+        &self,
+        samples: usize,
+        method: IntegrationMethod,
+    ) -> Result<PythonZohHistory, PykepError> {
         fn convert<const N: usize>(history: ZohLegHistory<N>) -> PythonZohHistory {
             let side = |segments: Vec<Vec<[f64; N]>>| {
                 segments
@@ -537,10 +543,10 @@ impl CoreZohLeg {
             (side(history.forward), side(history.backward))
         }
         match self {
-            Self::Kepler(leg) => leg.state_history(samples).map(convert),
-            Self::Cr3bp(leg) => leg.state_history(samples).map(convert),
-            Self::Equinoctial(leg) => leg.state_history(samples).map(convert),
-            Self::SolarSail(leg) => leg.state_history(samples).map(convert),
+            Self::Kepler(leg) => leg.state_history_with_method(samples, method).map(convert),
+            Self::Cr3bp(leg) => leg.state_history_with_method(samples, method).map(convert),
+            Self::Equinoctial(leg) => leg.state_history_with_method(samples, method).map(convert),
+            Self::SolarSail(leg) => leg.state_history_with_method(samples, method).map(convert),
         }
     }
 
@@ -675,10 +681,12 @@ impl PyZohLeg {
     }
 
     /// Evaluate `forward_state - backward_state` while releasing the GIL.
-    fn mismatch_constraints(&self, python: Python<'_>) -> PyResult<Vec<f64>> {
+    #[pyo3(signature = (*, method = "dop853"))]
+    fn mismatch_constraints(&self, python: Python<'_>, method: &str) -> PyResult<Vec<f64>> {
+        let method = integration_method(method)?;
         let inner = self.inner.clone();
         python
-            .detach(move || inner.mismatch_constraints())
+            .detach(move || inner.mismatch_constraints(method))
             .map_err(to_python)
     }
 
@@ -695,33 +703,37 @@ impl PyZohLeg {
     }
 
     /// Sample every propagated segment, releasing the GIL.
-    #[pyo3(signature = (samples_per_segment = 2))]
+    #[pyo3(signature = (samples_per_segment = 2, *, method = "dop853"))]
     fn state_history(
         &self,
         python: Python<'_>,
         samples_per_segment: usize,
+        method: &str,
     ) -> PyResult<PythonZohHistory> {
+        let method = integration_method(method)?;
         let inner = self.inner.clone();
         python
-            .detach(move || inner.state_history(samples_per_segment))
+            .detach(move || inner.state_history(samples_per_segment, method))
             .map_err(to_python)
     }
 
     /// Evaluate multiple legs in input order while releasing the GIL.
     #[staticmethod]
-    #[pyo3(signature = (legs, workers=0))]
+    #[pyo3(signature = (legs, workers=0, *, method = "dop853"))]
     fn mismatch_constraints_batch(
         python: Python<'_>,
         legs: Vec<PyRef<'_, Self>>,
         workers: usize,
+        method: &str,
     ) -> PyResult<Vec<Vec<f64>>> {
+        let method = integration_method(method)?;
         let legs = legs
             .into_iter()
             .map(|leg| leg.inner.clone())
             .collect::<Vec<_>>();
         python
             .detach(move || {
-                pykep_core::batch::try_map(&legs, workers, CoreZohLeg::mismatch_constraints)
+                pykep_core::batch::try_map(&legs, workers, |leg| leg.mismatch_constraints(method))
             })
             .map_err(to_python)
     }
@@ -747,13 +759,15 @@ impl PyZohLeg {
 
     /// Sample multiple leg histories in input order while releasing the GIL.
     #[staticmethod]
-    #[pyo3(signature = (legs, samples_per_segment=2, workers=0))]
+    #[pyo3(signature = (legs, samples_per_segment=2, workers=0, *, method = "dop853"))]
     fn state_history_batch(
         python: Python<'_>,
         legs: Vec<PyRef<'_, Self>>,
         samples_per_segment: usize,
         workers: usize,
+        method: &str,
     ) -> PyResult<Vec<PythonZohHistory>> {
+        let method = integration_method(method)?;
         let legs = legs
             .into_iter()
             .map(|leg| leg.inner.clone())
@@ -761,7 +775,7 @@ impl PyZohLeg {
         python
             .detach(move || {
                 pykep_core::batch::try_map(&legs, workers, |leg| {
-                    leg.state_history(samples_per_segment)
+                    leg.state_history(samples_per_segment, method)
                 })
             })
             .map_err(to_python)

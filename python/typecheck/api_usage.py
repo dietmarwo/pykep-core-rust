@@ -8,6 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import pykep_rust as pk
+from pykep_rust.trajopt import gym
 
 
 epoch = pk.Epoch(0.0, "mjd2000")
@@ -43,3 +44,7 @@ leg = pk.ZohLeg(
     [0.0],
 )
 assert_type(leg.mismatch_constraints(), list[float])
+
+tops = gym.tops_twobody("P4", nseg=16, time_encoding="softmax")
+assert_type(tops.get_bounds(), tuple[list[float], list[float]])
+assert_type(tops.gradient(tops.get_bounds()[0]), list[float])

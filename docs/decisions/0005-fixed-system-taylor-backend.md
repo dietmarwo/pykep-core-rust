@@ -41,6 +41,11 @@ seeded sensitivities use centered complete propagations. Document their cost
 instead of claiming the not-yet-implemented polynomial interpolation and
 direct Taylor variational optimizations.
 
+The later development backend implements both polynomial interpolation and
+direct tangent recurrences. The original release decision is recorded here.
+[Current Taylor guide](../taylor-integration.md) ·
+[Current measurements](../matched-benchmarks.md)
+
 ## Consequences
 
 - No C/C++ runtime, LLVM, JIT latency, or new runtime dependency is added.

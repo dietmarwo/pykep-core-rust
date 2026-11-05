@@ -7,7 +7,10 @@ The public repository produces two synchronized artifacts:
 | crates.io / docs.rs | `pykep-core` | `[workspace.package].version` |
 | PyPI | `pykep-rust` | derived by Maturin from `pykep-py` |
 
-The `pykep-py` binding implementation crate remains `publish = false`.
+The `pykep-py` and `pykep-trajopt` workspace crates use `publish = false`.
+The wheel builds the trajectory catalog through the Maturin feature list.
+Verify the installed gym and bundled data in both the wheel and rebuilt
+source distribution.
 Publication is irreversible: never reuse a version after uploading it to
 either registry.
 

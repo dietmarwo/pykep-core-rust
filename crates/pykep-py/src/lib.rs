@@ -11,6 +11,8 @@ mod leg;
 mod mission;
 mod propagation;
 mod time_anomalies;
+#[cfg(feature = "trajopt")]
+mod trajopt;
 
 /// Return the implementation status of the native core.
 #[pyfunction]
@@ -31,5 +33,7 @@ fn _pykep_rust(module: &Bound<'_, PyModule>) -> PyResult<()> {
     mission::register(module)?;
     propagation::register(module)?;
     time_anomalies::register(module)?;
+    #[cfg(feature = "trajopt")]
+    trajopt::register(module)?;
     Ok(())
 }

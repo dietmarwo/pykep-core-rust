@@ -193,7 +193,7 @@ class ZohLeg:
         maximum_step: float | None = None,
         maximum_steps: int = 100_000,
     ) -> None: ...
-    def mismatch_constraints(self) -> list[float]: ...
+    def mismatch_constraints(self, *, method: str = "dop853") -> list[float]: ...
     def mismatch_jacobian(
         self,
     ) -> tuple[
@@ -208,11 +208,15 @@ class ZohLeg:
         validation uses scaled bounds up to 3e-5.
         """
     def state_history(
-        self, samples_per_segment: int = 2
+        self, samples_per_segment: int = 2,
+        *,
+        method: str = "dop853",
     ) -> tuple[list[list[list[float]]], list[list[list[float]]]]: ...
     @staticmethod
     def mismatch_constraints_batch(
-        legs: Sequence[ZohLeg], workers: int = 0
+        legs: Sequence[ZohLeg], workers: int = 0,
+        *,
+        method: str = "dop853",
     ) -> list[list[float]]: ...
     @staticmethod
     def mismatch_jacobian_batch(
@@ -230,6 +234,8 @@ class ZohLeg:
         legs: Sequence[ZohLeg],
         samples_per_segment: int = 2,
         workers: int = 0,
+        *,
+        method: str = "dop853",
     ) -> list[
         tuple[list[list[list[float]]], list[list[list[float]]]]
     ]: ...
@@ -532,6 +538,8 @@ def propagate_pontryagin_cartesian(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate Cartesian Pontryagin state/costate dynamics."""
 
@@ -544,6 +552,8 @@ def propagate_pontryagin_equinoctial(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate modified-equinoctial Pontryagin state/costate dynamics."""
 
@@ -589,6 +599,8 @@ def propagate_zoh_kepler(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate a piecewise-constant low-thrust Kepler schedule."""
 
@@ -602,6 +614,8 @@ def propagate_zoh_cr3bp(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate a piecewise-constant low-thrust CR3BP schedule."""
 
@@ -614,6 +628,8 @@ def propagate_zoh_equinoctial(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate a piecewise-constant modified-equinoctial schedule."""
 
@@ -626,6 +642,8 @@ def propagate_zoh_solar_sail(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "dop853",
 ) -> list[float]:
     """Propagate a piecewise-constant ideal solar-sail schedule."""
 
@@ -707,6 +725,8 @@ def propagate_pontryagin_cartesian_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_pontryagin_equinoctial_batch(
@@ -719,6 +739,8 @@ def propagate_pontryagin_equinoctial_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def zoh_kepler_rhs_batch(
@@ -764,6 +786,8 @@ def propagate_zoh_kepler_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_zoh_cr3bp_batch(
@@ -777,6 +801,8 @@ def propagate_zoh_cr3bp_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_zoh_equinoctial_batch(
@@ -789,6 +815,8 @@ def propagate_zoh_equinoctial_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_zoh_solar_sail_batch(
@@ -801,6 +829,8 @@ def propagate_zoh_solar_sail_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "dop853",
 ) -> npt.NDArray[np.float64]: ...
 
 def jd_to_mjd(value: float) -> float:
@@ -1224,6 +1254,8 @@ def propagate_kepler_dynamics(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "taylor",
 ) -> list[float]:
     """Adaptively propagate evaluated two-body dynamics."""
 
@@ -1235,6 +1267,8 @@ def propagate_cr3bp(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "taylor",
 ) -> list[float]:
     """Adaptively propagate CR3BP dynamics."""
 
@@ -1249,6 +1283,8 @@ def propagate_bcp(
     relative_tolerance: float = 1e-12,
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
+    *,
+    method: str = "taylor",
 ) -> list[float]:
     """Adaptively propagate time-dependent bicircular dynamics."""
 
@@ -1315,6 +1351,8 @@ def propagate_kepler_dynamics_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "taylor",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_cr3bp_batch(
@@ -1326,6 +1364,8 @@ def propagate_cr3bp_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "taylor",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_bcp_batch(
@@ -1340,6 +1380,8 @@ def propagate_bcp_batch(
     absolute_tolerance: float = 1e-12,
     maximum_step: float | None = None,
     workers: int = 0,
+    *,
+    method: str = "taylor",
 ) -> npt.NDArray[np.float64]: ...
 
 def propagate_kepler_dynamics_with_stm_batch(

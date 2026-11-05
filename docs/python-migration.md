@@ -27,6 +27,7 @@ upstream version recorded in `UPSTREAM_NOTICE.md`.
 | `alpha2direct`, `direct2alpha`, `eta2direct`, `direct2eta` | `alpha_to_direct`, `direct_to_alpha`, `eta_to_direct`, `direct_to_eta` | Descriptive direction |
 | `fb_con`, `fb_dv`, `fb_vout` | `flyby_constraints`, `flyby_delta_v`, `flyby_outgoing_velocity` | Jacobian has a separate named function |
 | `leg.sims_flanagan`, `leg.sims_flanagan_alpha`, `leg.zoh` | `SimsFlanaganLeg`, `SimsFlanaganAlphaLeg`, `ZohLeg` | Same numerical cores, immutable validated construction |
+| Selected `trajopt.gym` and `trajopt.launchers` from PyKEP 3.1.0 | `pykep_rust.trajopt.gym` in development wheels | Stable IDs, raw PyGMO-compatible fitness and analytic TOPS gradients |
 
 ## Intentionally different
 
@@ -47,8 +48,8 @@ core and are not emulated:
 
 - SPICE kernels, TLE parsing, and Python-defined UDPLA providers
   (`PY-EXT-001`);
-- plotting helpers, trajectory-optimization UDPs, gym utilities, and optional
-  ecosystem integrations (`PY-ECOSYSTEM-001`);
+- general-purpose Python trajectory callbacks and the upstream plotting API
+  (`PY-ECOSYSTEM-001`);
 - symbolic heyoka dynamics/integrator construction and arbitrary user-supplied
   expression graphs (`TA-SYMBOLIC-001`);
 - `mima_from_hop` and `mima2_from_hop` (`MIMA-HOP-001`);
@@ -58,3 +59,7 @@ Use `has_acceleration()` and the VSOP2013 availability/threshold queries when
 code depends on an optional provider capability. Unsupported provider
 operations raise `UnsupportedCapabilityError`; unsupported ecosystem modules
 are absent rather than silently approximated.
+
+The [trajectory gym guide](trajectory-gym.md) lists the implemented
+formulations. [Matched benchmarks](matched-benchmarks.md) records
+source-specific differences and separates Python from native speed.

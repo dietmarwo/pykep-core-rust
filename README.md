@@ -28,6 +28,14 @@ For a measurement-backed choice between the original Python/C++ fcmaes/pykep
 stack and the native Rust crates, see
 [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md).
 
+The development tree includes a shared-input benchmark suite against PyKEP
+3.1.0. At the same endpoint-error gate, warmed native heyoka was about
+1.7–2.6× faster on nine scalar Taylor fixtures. Rust was about 1.2–1.3×
+faster on the two equinoctial Pontryagin fixtures. The complete ZOH
+Jacobian pilots favored Rust by about 1.9–2.2× at the tighter reference
+setting. Python calls and optimizer runs have separate results.
+[Current measurements](docs/matched-benchmarks.md)
+
 ## Implemented scope
 
 - **Foundations:** epochs, anomalies, element conversions, two-body
@@ -43,15 +51,18 @@ stack and the native Rust crates, see
   models, events, and direct variational solves.
 - **Low-thrust legs:** fixed- and variable-duration Sims–Flanagan legs plus a
   generic ZOH leg for the four built-in controlled dynamics families.
+- **Trajectory gym in the development tree:** 14 classical mission problems,
+  34 fixed and 34 moving TOPS instances, and six launcher tables.
 
-Built-in Rust ZOH legs can select Taylor or DOP853 for nominal mismatch and
-history evaluation. Compatibility methods, Jacobians, and the Python surface
-retain DOP853. Do not infer full upstream pykep parity from this scope.
+Built-in ZOH legs offer explicit Taylor and DOP853 selection for mismatch,
+history and full Jacobian evaluation. Compatibility methods use DOP853.
+The TOPS gym defaults to Taylor and records both tolerances in its metadata.
 
 ## Layout
 
 - `crates/pykep-core`: C/C++-free Rust numerical library.
-- `crates/pykep-py`: thin PyO3 extension over `pykep-core`.
+- `crates/pykep-trajopt`: optimizer-independent mission and TOPS formulations.
+- `crates/pykep-py`: thin PyO3 extension over the Rust libraries.
 - `python/pykep_rust`: typed Python package and extension stub.
 - `examples`: runnable deterministic Rust examples.
 - `docs`: Rust-specific design and usage documentation.
@@ -65,6 +76,9 @@ retain DOP853. Do not infer full upstream pykep parity from this scope.
   policy.
 - `tools/release-benchmark`: fixed-protocol release regression benchmark.
 - `tools/taylor-benchmark`: matched-accuracy DOP853/Taylor benchmark.
+- `tools/upstream-comparison` and `tools/upstream-benchmark`: pinned fixtures,
+  native and Python comparisons and restartable reports.
+- `tools/gym-benchmark`: native gym replay and fcmaes optimizer studies.
 - `tools/lambert-optimization-benchmark`: native KTTSP Lambert objective and
   `fcmaes-core` optimization benchmark.
 
@@ -88,6 +102,8 @@ the ephemeris limitations of the resulting model score.
 | Integration | [Taylor](docs/taylor-integration.md) and [zero-order hold](docs/zero-order-hold.md) |
 | Indirect optimal control | [Pontryagin models](docs/pontryagin.md) |
 | Low-thrust transcriptions | [Sims–Flanagan](docs/low-thrust-legs.md) and [generic ZOH legs](docs/zoh-leg.md) |
+| Trajectory optimization | [Gym catalog](docs/trajectory-gym.md), [TOPS](docs/tops.md) and [classical formulations](docs/trajectory-formulations.md) |
+| Upstream benchmark coverage | [Matched benchmark results](docs/matched-benchmarks.md) |
 | Ordered parallel computation | [Batch processing](docs/batch-processing.md) |
 | Python use and migration | [Python contract](docs/python-api.md) and [upstream mapping](docs/python-migration.md) |
 | Runnable examples | [Rust and Python quick starts](docs/examples.md) |
@@ -97,8 +113,7 @@ the ephemeris limitations of the resulting model score.
 ## Intended properties
 
 - Native Rust algorithms with no C or C++ runtime dependency.
-- One numerical implementation in `pykep-core`; Python wrappers contain no
-  duplicate astrodynamics logic.
+- The Rust libraries own the numerical implementation used by Python.
 - Numerical parity checked against the pinned `kep3` C++ tests and generated
   reference vectors.
 - Explicit units, shapes, branch ordering, error behavior, and tolerances.

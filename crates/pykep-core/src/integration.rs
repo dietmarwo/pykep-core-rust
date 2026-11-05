@@ -134,6 +134,45 @@ pub enum EventDirection {
     Decreasing,
 }
 
+/// An analytic Taylor event for models whose first six states are Cartesian position and velocity.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum TaylorEvent {
+    /// A plane defined by `normal · position - offset = 0`.
+    Plane {
+        /// Cartesian plane normal.
+        normal: [f64; 3],
+        /// Signed offset in the plane equation.
+        offset: f64,
+    },
+    /// A sphere defined by `|position - center|² - radius² = 0`.
+    Sphere {
+        /// Center in the model's coordinate frame.
+        center: [f64; 3],
+        /// Positive radius in the model's length units.
+        radius: f64,
+    },
+    /// A radial stationary point defined by `position · velocity = 0`.
+    RadialVelocity,
+}
+
+/// A state sampled at a Taylor event.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TaylorEventHit<const N: usize> {
+    /// Time of the event.
+    pub time: f64,
+    /// State at the event.
+    pub state: [f64; N],
+}
+
+/// Final propagation and observed Taylor events.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TaylorEventHistory<const N: usize> {
+    /// Propagation to the requested final time.
+    pub propagation: Propagation<N>,
+    /// Observations in propagation order.
+    pub hits: Vec<TaylorEventHit<N>>,
+}
+
 /// A scalar zero-crossing condition for a fixed-size state.
 pub trait Event<const N: usize> {
     /// Crossing direction to detect.
@@ -709,6 +748,27 @@ impl Taylor {
         taylor::propagate(model, problem, options)
     }
 
+    /// Propagates independent problems in input order.
+    ///
+    /// With the `simd` feature, supported models evaluate groups of four
+    /// coefficient jets together. Each problem uses its own adaptive steps.
+    /// See [`crate::batch::try_map`] for the worker policy.
+    ///
+    /// # Errors
+    /// Returns the first propagation error in input order or an invalid worker count.
+    pub fn propagate_batch<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problems: &[InitialValueProblem<N, P>],
+        options: IntegratorOptions,
+        workers: usize,
+    ) -> Result<Vec<Propagation<N>>>
+    where
+        M: TaylorDynamicsModel<N, P> + Sync,
+    {
+        taylor::propagate_batch(model, problems, options, workers)
+    }
+
     /// Propagates a supported built-in model and samples requested times.
     ///
     /// # Errors
@@ -728,12 +788,72 @@ impl Taylor {
         taylor::propagate_dense(model, problem, evaluation_times, options)
     }
 
+    /// Propagates until the first qualifying root of a supported event polynomial.
+    ///
+    /// Direction is measured in propagation order. A root exactly at the
+    /// start of a step is excluded. Stationary roots qualify for
+    /// [`EventDirection::Either`] when they can be resolved.
+    ///
+    /// # Errors
+    /// Returns a propagation error, an invalid event/model error, or an
+    /// integration error if a near-stationary event cannot be resolved.
+    pub fn propagate_until_event<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        options: IntegratorOptions,
+        event: TaylorEvent,
+        direction: EventDirection,
+    ) -> Result<Propagation<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        taylor::events::propagate(model, problem, options, event, direction, |_, _| Ok(true))
+    }
+
+    /// Records qualifying events while propagating to the requested final time.
+    ///
+    /// Uses the same event and direction conventions as
+    /// [`Self::propagate_until_event`]. Observations do not modify the state.
+    ///
+    /// # Errors
+    /// Returns propagation and event errors, including an error if the number
+    /// of events would exceed `maximum_events`.
+    pub fn propagate_with_events<M, const N: usize, const P: usize>(
+        &self,
+        model: &M,
+        problem: InitialValueProblem<N, P>,
+        options: IntegratorOptions,
+        event: TaylorEvent,
+        direction: EventDirection,
+        maximum_events: usize,
+    ) -> Result<TaylorEventHistory<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        let mut hits = Vec::new();
+        let propagation =
+            taylor::events::propagate(model, problem, options, event, direction, |time, state| {
+                if hits.len() == maximum_events {
+                    return Err(PykepError::IntegrationFailure {
+                        model: M::NAME,
+                        reason: "Taylor event limit exceeded".into(),
+                    });
+                }
+                hits.try_reserve(1)
+                    .map_err(|_| PykepError::NumericalOverflow {
+                        operation: "Taylor event history allocation",
+                    })?;
+                hits.push(TaylorEventHit { time, state });
+                Ok(false)
+            })?;
+        Ok(TaylorEventHistory { propagation, hits })
+    }
+
     /// Propagates arbitrary first-order seed directions for a supported model.
     ///
-    /// This first implementation obtains derivatives with centered
-    /// propagation differences. It is deterministic and useful for
-    /// cross-validation, but DOP853's direct variational equations are usually
-    /// cheaper for wide sensitivity matrices.
+    /// Integrates the continuous first variations using tangent coefficients.
+    /// Step control includes the nominal state and the propagated derivatives.
     ///
     /// # Errors
     ///

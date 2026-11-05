@@ -1,0 +1,17 @@
+[package]
+name = "pykep-trajopt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Native PyKEP trajectory optimization problems and reference datasets."
+publish = false
+
+[dependencies]
+pykep-core = { path = "../pykep-core", version = "=0.1.4", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

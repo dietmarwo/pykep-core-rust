@@ -44,6 +44,11 @@ harness; no heyoka source is copied, linked, or shipped.
 
 ## Names and ownership
 
+The development benchmark and gym modules use PyKEP 3.1.0 at
+`c01e19debad5ea22b7079189f786f473046a79d5`. The catalog data notices name
+the source files, checksums and extraction procedure.
+[Gym dataset provenance](crates/pykep-trajopt/data/NOTICE.md)
+
 The independent repository is
 <https://github.com/dietmarwo/pykep-core-rust>, owned by `dietmarwo`. Cargo and
 Python package metadata point there rather than to the upstream ESA

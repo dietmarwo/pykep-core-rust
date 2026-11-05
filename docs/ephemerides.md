@@ -1,5 +1,8 @@
 # Ephemerides
 
+The [matched report](matched-benchmarks.md) measures Keplerian, JPL
+low-precision and VSOP2013 wrapper dispatch and batch calls separately.
+
 ## JPL low-precision planets
 
 `JplLowPrecision` and `Planet.jpl_low_precision()` evaluate the eight

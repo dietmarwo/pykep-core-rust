@@ -54,3 +54,13 @@ irregular-duration alpha legs. It has SHA-256
 `phase15-v1.json` covers generic ZOH-leg mismatches and endpoint, control, and
 time-grid gradients for all four built-in ZOH dynamics. It has SHA-256
 `9d8d424c2af10ceee497f74f62acb30c53924f78f7be8a528dbe44bf14767935`.
+
+## All-model Taylor reference
+
+`taylor-pykep-v1.json` contains endpoint states from the official PyKEP
+3.0.1 Taylor factories with heyoka.py 7.10.1 and a requested tolerance of
+`2.22e-16`. The Rust benchmark exports the shared initial states and
+parameters. Reproduce the reference with
+`tools/taylor-comparison/upstream.py --reference-only --references`.
+The output uses double precision. Its endpoints are cross-implementation
+reference values and retain double-precision roundoff.

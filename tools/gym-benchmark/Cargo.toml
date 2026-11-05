@@ -1,0 +1,18 @@
+[package]
+name = "pykep-gym-benchmark"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Native trajectory gym replay and fcmaes optimization."
+publish = false
+
+[dependencies]
+pykep-core = { path = "../../crates/pykep-core", version = "=0.1.4", default-features = false }
+pykep-trajopt = { path = "../../crates/pykep-trajopt" }
+fcmaes-core = "=0.1.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

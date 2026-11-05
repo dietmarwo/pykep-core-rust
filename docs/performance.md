@@ -1,5 +1,9 @@
 # Performance methodology
 
+See the [shared-input PyKEP 3.1.0 report](matched-benchmarks.md) for the
+development comparison. The measurements below are historical orientation
+runs on the published core and earlier implementation milestones.
+
 Benchmarks use release mode and Criterion. They contain no file or console I/O
 inside the measured loop. Raw Criterion state is build output under `target/`
 and is not committed.

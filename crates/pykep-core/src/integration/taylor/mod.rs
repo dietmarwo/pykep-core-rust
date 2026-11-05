@@ -3,10 +3,19 @@
 
 //! Internal implementation of adaptive Taylor integration.
 
+pub(super) mod events;
+mod generated;
+mod kernel;
+#[cfg(test)]
+mod profiling;
 #[cfg(test)]
 mod series;
+#[cfg(feature = "simd")]
+mod simd;
 mod systems;
+#[cfg_attr(not(test), allow(dead_code))]
 mod tape;
+mod variational;
 
 use crate::integration::{
     DenseTrajectory, DynamicsModel, InitialValueProblem, IntegrationStats, IntegratorOptions,
@@ -18,10 +27,29 @@ use crate::{PykepError, Result};
 const MAX_ORDER: usize = 24;
 const SAFETY_FACTOR: f64 = 0.75;
 const MIN_ORDER: usize = 8;
+const BASELINE_X86: bool = cfg!(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    not(target_feature = "fma")
+));
 
 pub(crate) trait TaylorCoefficientModel<const N: usize, const P: usize>:
     DynamicsModel<N, P>
 {
+    const CARTESIAN_EVENTS: bool = false;
+    const NOMINAL_STEP_SAFETY: f64 = SAFETY_FACTOR;
+
+    #[cfg(feature = "simd")]
+    const SIMD_CAPABLE: bool = false;
+
+    fn generated_coefficients<T: kernel::Coefficient>(
+        &self,
+        time: T,
+        state: &[T; N],
+        parameters: &[T; P],
+        order: usize,
+        jet: &mut [[T; MAX_ORDER + 1]; N],
+    );
+
     fn coefficients(
         &self,
         time: f64,
@@ -70,6 +98,33 @@ where
     })
 }
 
+pub(crate) fn propagate_batch<M, const N: usize, const P: usize>(
+    model: &M,
+    problems: &[InitialValueProblem<N, P>],
+    options: IntegratorOptions,
+    workers: usize,
+) -> Result<Vec<Propagation<N>>>
+where
+    M: TaylorCoefficientModel<N, P> + Sync,
+{
+    #[cfg(feature = "simd")]
+    if M::SIMD_CAPABLE && problems.len() >= 4 {
+        let (groups, remainder) = problems.as_chunks::<4>();
+        let groups = crate::batch::try_map(groups, workers, |group| {
+            simd::propagate_group(model, group, options)
+        })?;
+        let mut results = Vec::with_capacity(problems.len());
+        results.extend(groups.into_iter().flatten());
+        for &problem in remainder {
+            results.push(propagate(model, problem, options)?);
+        }
+        return Ok(results);
+    }
+    crate::batch::try_map(problems, workers, |&problem| {
+        propagate(model, problem, options)
+    })
+}
+
 pub(crate) fn propagate_dense<M, const N: usize, const P: usize>(
     model: &M,
     problem: InitialValueProblem<N, P>,
@@ -93,27 +148,34 @@ where
     let mut workspace = Workspace::new(problem.initial_time, problem.initial_state);
     let mut stats = IntegrationStats::default();
     let mut states = Vec::with_capacity(evaluation_times.len());
-    for &evaluation_time in evaluation_times {
-        integrate_to(
+    let order = selected_order(options);
+    while direction * (problem.final_time - workspace.time) > 0.0 {
+        let start = workspace.time;
+        let step = advance(
             model,
             &problem.parameters,
-            evaluation_time,
+            problem.final_time,
             options,
-            direction,
+            order,
             &mut workspace,
             &mut stats,
         )?;
-        states.push(workspace.state);
+        let remaining = &evaluation_times[states.len()..];
+        let count = remaining.partition_point(|&time| direction * (time - workspace.time) <= 0.0);
+        for &time in &remaining[..count] {
+            let state = if time == workspace.time {
+                workspace.state
+            } else if time == start {
+                workspace.jet.each_ref().map(|row| row[0])
+            } else {
+                let offset = (time - start).abs().min(step.abs()).copysign(step);
+                evaluate_dense(&workspace.jet, order, offset)
+            };
+            ensure_finite_state(M::NAME, &state)?;
+            model.validate(time, &state, &problem.parameters)?;
+            states.push(state);
+        }
     }
-    integrate_to(
-        model,
-        &problem.parameters,
-        problem.final_time,
-        options,
-        direction,
-        &mut workspace,
-        &mut stats,
-    )?;
     Ok(DenseTrajectory {
         times: evaluation_times.to_vec(),
         states,
@@ -148,36 +210,7 @@ where
         });
     }
 
-    let nominal = propagate(model, problem.nominal, options)?;
-    let mut sensitivities = [[0.0; W]; N];
-    let mut statistics = nominal.stats;
-    for column in 0..W {
-        let step = sensitivity_step(&problem, column);
-        let mut plus = problem.nominal;
-        let mut minus = problem.nominal;
-        for row in 0..N {
-            plus.initial_state[row] += step * problem.initial_sensitivities[row][column];
-            minus.initial_state[row] -= step * problem.initial_sensitivities[row][column];
-        }
-        for row in 0..P {
-            plus.parameters[row] += step * problem.parameter_seeds[row][column];
-            minus.parameters[row] -= step * problem.parameter_seeds[row][column];
-        }
-        let plus = propagate(model, plus, options)?;
-        let minus = propagate(model, minus, options)?;
-        add_stats(&mut statistics, plus.stats);
-        add_stats(&mut statistics, minus.stats);
-        for row in 0..N {
-            sensitivities[row][column] = (plus.state[row] - minus.state[row]) / (2.0 * step);
-        }
-    }
-    ensure_finite_matrix("sensitivities", &sensitivities)?;
-    Ok(SensitivityPropagation {
-        time: nominal.time,
-        state: nominal.state,
-        sensitivities,
-        stats: statistics,
-    })
+    variational::propagate(model, problem, options)
 }
 
 struct Workspace<const N: usize> {
@@ -210,38 +243,130 @@ where
 {
     let order = selected_order(options);
     while direction * (target_time - workspace.time) > 0.0 {
-        if stats.accepted_steps + stats.rejected_steps >= options.maximum_steps {
-            return integration_failure(M::NAME, "maximum step count exceeded");
-        }
-        model.coefficients(
-            workspace.time,
-            &workspace.state,
+        advance(
+            model,
             parameters,
+            target_time,
+            options,
             order,
-            &mut workspace.jet,
+            workspace,
+            stats,
         )?;
-        stats.rhs_evaluations += order;
-
-        let mut step = suggested_step(&workspace.jet, &workspace.state, order, options);
-        if stats.accepted_steps == 0 {
-            step = step.min(options.initial_step.unwrap_or(f64::INFINITY));
-        }
-        if let Some(maximum) = options.maximum_step {
-            step = step.min(maximum);
-        }
-        step = step.min((target_time - workspace.time).abs()) * direction;
-        if !step.is_finite() || step == 0.0 || workspace.time + step == workspace.time {
-            return integration_failure(M::NAME, "Taylor step size underflow");
-        }
-
-        workspace.state = evaluate(&workspace.jet, order, step);
-        workspace.time += step;
-        ensure_finite_state(M::NAME, &workspace.state)?;
-        model.validate(workspace.time, &workspace.state, parameters)?;
-        stats.accepted_steps += 1;
     }
-    workspace.time = target_time;
     Ok(())
+}
+
+fn advance<M, const N: usize, const P: usize>(
+    model: &M,
+    parameters: &[f64; P],
+    target_time: f64,
+    options: IntegratorOptions,
+    order: usize,
+    workspace: &mut Workspace<N>,
+    stats: &mut IntegrationStats,
+) -> Result<f64>
+where
+    M: TaylorCoefficientModel<N, P>,
+{
+    if stats.accepted_steps >= options.maximum_steps {
+        return integration_failure(M::NAME, "maximum step count exceeded");
+    }
+    model.coefficients(
+        workspace.time,
+        &workspace.state,
+        parameters,
+        order,
+        &mut workspace.jet,
+    )?;
+    accept_jet(
+        model,
+        parameters,
+        target_time,
+        options,
+        order,
+        workspace,
+        stats,
+    )
+}
+
+fn accept_jet<M, const N: usize, const P: usize>(
+    model: &M,
+    parameters: &[f64; P],
+    target_time: f64,
+    options: IntegratorOptions,
+    order: usize,
+    workspace: &mut Workspace<N>,
+    stats: &mut IntegrationStats,
+) -> Result<f64>
+where
+    M: TaylorCoefficientModel<N, P>,
+{
+    let remaining = target_time - workspace.time;
+    let step = select_step(
+        M::NAME,
+        remaining,
+        workspace.time,
+        M::NOMINAL_STEP_SAFETY * suggested_step(&workspace.jet, &workspace.state, order, options),
+        options,
+        stats,
+    )?;
+    workspace.state = evaluate(&workspace.jet, order, step);
+    workspace.time = accept_state(
+        model,
+        parameters,
+        workspace.time,
+        target_time,
+        step,
+        &workspace.state,
+    )?;
+    stats.rhs_evaluations += order;
+    stats.accepted_steps += 1;
+    Ok(step)
+}
+
+fn accept_state<M, const N: usize, const P: usize>(
+    model: &M,
+    parameters: &[f64; P],
+    time: f64,
+    target: f64,
+    step: f64,
+    state: &[f64; N],
+) -> Result<f64>
+where
+    M: TaylorCoefficientModel<N, P>,
+{
+    let next_time = if step == target - time {
+        target
+    } else {
+        time + step
+    };
+    ensure_finite_state(M::NAME, state)?;
+    model.validate(next_time, state, parameters)?;
+    Ok(next_time)
+}
+
+fn select_step(
+    model: &'static str,
+    remaining: f64,
+    time: f64,
+    mut magnitude: f64,
+    options: IntegratorOptions,
+    stats: &IntegrationStats,
+) -> Result<f64> {
+    if stats.accepted_steps >= options.maximum_steps {
+        return integration_failure(model, "maximum step count exceeded");
+    }
+    if stats.accepted_steps == 0 {
+        magnitude = magnitude.min(options.initial_step.unwrap_or(f64::INFINITY));
+    }
+    if let Some(maximum) = options.maximum_step {
+        magnitude = magnitude.min(maximum);
+    }
+    let step = magnitude.min(remaining.abs()).copysign(remaining);
+    if !step.is_finite() || step == 0.0 || time + step == time {
+        return integration_failure(model, "Taylor step size underflow");
+    }
+    Ok(step)
 }
 
 fn selected_order(options: IntegratorOptions) -> usize {
@@ -255,65 +380,95 @@ fn suggested_step<const N: usize>(
     order: usize,
     options: IntegratorOptions,
 ) -> f64 {
+    suggested_step_from_coefficients(state, order, options, |component, degree| {
+        jet[component][degree]
+    })
+}
+
+fn suggested_step_from_coefficients<const N: usize>(
+    state: &[f64; N],
+    order: usize,
+    options: IntegratorOptions,
+    coefficient: impl Fn(usize, usize) -> f64,
+) -> f64 {
     let scaled_norm = |coefficient_order: usize| {
         (0..N)
             .map(|component| {
                 let scale = options.absolute_tolerance
                     + options.relative_tolerance * state[component].abs().max(1.0);
-                jet[component][coefficient_order].abs() / scale
+                coefficient(component, coefficient_order).abs() / scale
             })
             .fold(0.0, f64::max)
     };
-    let previous = scaled_norm(order - 1);
-    let last = scaled_norm(order);
-    let previous_step = if previous > 0.0 {
-        previous.powf(-1.0 / (order - 1) as f64)
-    } else {
-        f64::INFINITY
+    step_from_norms([scaled_norm(order - 1), scaled_norm(order)], order)
+}
+
+fn scaled_coefficient(value: f64, initial: f64, options: IntegratorOptions) -> Result<f64> {
+    if !value.is_finite() || !initial.is_finite() {
+        return Err(PykepError::NumericalOverflow {
+            operation: "Taylor coefficients",
+        });
+    }
+    Ok(value.abs()
+        / (options.absolute_tolerance + options.relative_tolerance * initial.abs().max(1.0)))
+}
+
+fn step_from_norms(norms: [f64; 2], order: usize) -> f64 {
+    let bound = |norm: f64, degree| {
+        if norm > 0.0 {
+            norm.powf(-1.0 / degree as f64)
+        } else {
+            f64::INFINITY
+        }
     };
-    let last_step = if last > 0.0 {
-        last.powf(-1.0 / order as f64)
-    } else {
-        f64::INFINITY
-    };
-    SAFETY_FACTOR * previous_step.min(last_step)
+    bound(norms[0], order - 1).min(bound(norms[1], order))
 }
 
 fn evaluate<const N: usize>(jet: &[[f64; MAX_ORDER + 1]; N], order: usize, step: f64) -> [f64; N] {
+    evaluate_horner::<N, true>(jet, order, step)
+}
+
+fn evaluate_dense<const N: usize>(
+    jet: &[[f64; MAX_ORDER + 1]; N],
+    order: usize,
+    step: f64,
+) -> [f64; N] {
+    // On baseline x86 builds each scalar mul_add may call a runtime helper.
+    // Keep the fused evaluation for accepted steps and for exceptional samples.
+    if BASELINE_X86 {
+        let state = evaluate_horner::<N, false>(jet, order, step);
+        if state.iter().all(|value| value.is_finite()) {
+            return state;
+        }
+    }
+    evaluate(jet, order, step)
+}
+
+fn evaluate_horner<const N: usize, const FUSED: bool>(
+    jet: &[[f64; MAX_ORDER + 1]; N],
+    order: usize,
+    step: f64,
+) -> [f64; N] {
     core::array::from_fn(|component| {
-        (0..=order).rev().fold(0.0_f64, |value, coefficient| {
-            value.mul_add(step, jet[component][coefficient])
-        })
+        jet[component][..=order]
+            .iter()
+            .rev()
+            .fold(0.0_f64, |value, &coefficient| {
+                if FUSED {
+                    value.mul_add(step, coefficient)
+                } else {
+                    value * step + coefficient
+                }
+            })
     })
 }
 
 fn propagation_direction(initial_time: f64, final_time: f64) -> f64 {
-    (final_time - initial_time).signum()
-}
-
-fn sensitivity_step<const N: usize, const P: usize, const W: usize>(
-    problem: &SensitivityProblem<N, P, W>,
-    column: usize,
-) -> f64 {
-    let state_norm = (0..N)
-        .map(|row| {
-            problem.initial_sensitivities[row][column].abs()
-                / problem.nominal.initial_state[row].abs().max(1.0)
-        })
-        .fold(0.0, f64::max);
-    let parameter_norm = (0..P)
-        .map(|row| {
-            problem.parameter_seeds[row][column].abs()
-                / problem.nominal.parameters[row].abs().max(1.0)
-        })
-        .fold(0.0, f64::max);
-    3e-6 / state_norm.max(parameter_norm).max(1.0)
-}
-
-fn add_stats(total: &mut IntegrationStats, increment: IntegrationStats) {
-    total.rhs_evaluations += increment.rhs_evaluations;
-    total.accepted_steps += increment.accepted_steps;
-    total.rejected_steps += increment.rejected_steps;
+    if final_time == initial_time {
+        0.0
+    } else {
+        (final_time - initial_time).signum()
+    }
 }
 
 fn integration_failure<T>(model: &'static str, reason: &'static str) -> Result<T> {
@@ -455,7 +610,7 @@ mod tests {
             propagate_dense(&KeplerDynamics, problem, &[0.25, 0.75], options(1e-12)).unwrap();
         let full = propagate(&KeplerDynamics, problem, options(1e-12)).unwrap();
         assert_eq!(dense.times, [0.25, 0.75]);
-        assert!(dense.stats.accepted_steps >= full.stats.accepted_steps);
+        assert_eq!(dense.stats, full.stats);
     }
 
     #[test]

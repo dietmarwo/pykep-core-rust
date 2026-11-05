@@ -20,6 +20,7 @@ all-features = true
 [features]
 default = ["vsop2013"]
 vsop2013 = []
+simd = ["dep:wide"]
 
 [lib]
 name = "pykep_core"
@@ -30,6 +31,7 @@ workspace = true
 [dependencies]
 differential-equations = { version = "0.6.1", default-features = false }
 rayon = "1.12"
+wide = { version = "0.7.33", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }

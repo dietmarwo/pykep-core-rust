@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "upstream": "c01e19debad5ea22b7079189f786f473046a79d5",
+  "fixture_format": "PYKEP_BENCH_V1",
+  "maximum_file_bytes": 134217728,
+  "portable_flags": {"rust": "", "native": "-O3 -march=x86-64"},
+  "full": {
+    "anomaly0": 1000000, "anomaly1": 1000000, "anomaly2": 1000000,
+    "anomaly0-error": 100000, "anomaly1-error": 100000, "anomaly2-error": 100000,
+    "lagrangian0": 1000000, "lagrangian1": 1000000, "lagrangian2": 1000000, "lagrangian3": 1000000,
+    "roundtrip0": 100000, "roundtrip1": 100000, "roundtrip2": 100000,
+    "stm0": 100000, "stm1": 100000, "stm2": 100000,
+    "lambert0": 50000, "lambert20": 50000,
+    "sf-simple": 1, "sf5": 1000, "sf10": 1000, "sf20": 1000, "sf40": 1000,
+    "sf-conv5": 100, "sf-conv10": 100, "sf-conv15": 100,
+    "zoh20": 200, "zoh40": 200, "zoh80": 200
+  },
+  "tolerance": {"zoh_nominal": 1e-14, "zoh_variational_upstream": 1e-8, "sf_feasibility": 1e-8},
+  "sampling": {"smoke_max_cases": 8, "zoh_passes": 5, "paired_rounds": 10},
+  "notebooks": {
+    "sf_gradient": "symbolic heyoka and two leg implementations",
+    "benchmarkudplaiface": "upstream TLE/SPICE reference and separately identified JPL/Keplerian/VSOP wrapper measurements"
+  }
+}

@@ -485,6 +485,7 @@ dependencies = [
  "differential-equations",
  "rayon",
  "serde_json",
+ "wide",
 ]
 
 [[package]]
@@ -492,6 +493,17 @@ name = "pykep-examples"
 version = "0.1.4"
 dependencies = [
  "pykep-core",
+]
+
+[[package]]
+name = "pykep-gym-benchmark"
+version = "0.1.4"
+dependencies = [
+ "fcmaes-core",
+ "pykep-core",
+ "pykep-trajopt",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -508,7 +520,10 @@ version = "0.1.4"
 dependencies = [
  "numpy",
  "pykep-core",
+ "pykep-trajopt",
  "pyo3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -523,6 +538,23 @@ name = "pykep-taylor-benchmark"
 version = "0.1.4"
 dependencies = [
  "pykep-core",
+]
+
+[[package]]
+name = "pykep-trajopt"
+version = "0.1.4"
+dependencies = [
+ "pykep-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "pykep-upstream-benchmark"
+version = "0.1.4"
+dependencies = [
+ "pykep-core",
+ "serde_json",
 ]
 
 [[package]]

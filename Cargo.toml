@@ -3,10 +3,13 @@ resolver = "2"
 members = [
     "crates/pykep-core",
     "crates/pykep-py",
+    "crates/pykep-trajopt",
     "examples",
     "tools/lambert-optimization-benchmark",
     "tools/release-benchmark",
     "tools/taylor-benchmark",
+    "tools/upstream-benchmark",
+    "tools/gym-benchmark",
 ]
 exclude = ["fuzz"]
 

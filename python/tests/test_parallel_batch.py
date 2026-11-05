@@ -754,3 +754,37 @@ def test_batch_workers_shapes_and_error_order_are_explicit() -> None:
             np.asarray([[0.0, 0.0, 0.0], [np.nan, 0.0, 0.0]]),
             workers=2,
         )
+
+
+def test_taylor_method_selector_on_scalar_batch_and_zoh_history() -> None:
+    state = [0.8, -0.2, 0.1, 0.03, 1.0, 0.02]
+    times = np.asarray([0.5, -0.2, 0.1, 0.0, 0.25])
+    states = np.tile(state, (times.size, 1))
+    for method in ("taylor", "dop853"):
+        actual = pk.propagate_kepler_dynamics_batch(states, times, 1.0, workers=2, method=method)
+        expected = [pk.propagate_kepler_dynamics(state, t, 1.0, method=method) for t in times]
+        assert_array_close(actual, expected)
+    with pytest.raises(ValueError, match="method"):
+        pk.propagate_kepler_dynamics(state, 0.5, 1.0, method="invalid")
+
+    leg = pk.ZohLeg(
+        pk.ZohModel.Kepler, [*state, 1.1],
+        [[0.02, 0.3, -0.4, 0.5], [0.01, 0.0, 1.0, 0.0]],
+        [0.4, 0.9, 0.08, -0.8, 0.3, -0.04, 1.0],
+        [0.0, 0.1, 0.25], [0.01],
+    )
+    forward, backward = pk.ZohLeg.state_history_batch([leg], 64, workers=1, method="taylor")[0]
+    sample = 33
+    forward_time = 0.1 * sample / 63
+    backward_time = 0.25 - 0.15 * sample / 63
+    # Independent endpoint solves avoid the error of a second interpolant.
+    forward_reference = pk.propagate_zoh_kepler(
+        [*state, 1.1], [0.0, forward_time], [[0.02, 0.3, -0.4, 0.5]], 0.01,
+        method="dop853",
+    )
+    backward_reference = pk.propagate_zoh_kepler(
+        [0.4, 0.9, 0.08, -0.8, 0.3, -0.04, 1.0], [backward_time, 0.25],
+        [[0.01, 0.0, 1.0, 0.0]], 0.01, backward=True, method="dop853",
+    )
+    assert_array_close(forward[0][sample], forward_reference)
+    assert_array_close(backward[0][sample], backward_reference)

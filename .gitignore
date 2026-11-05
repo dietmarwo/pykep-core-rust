@@ -11,3 +11,6 @@
 *.dylib
 __pycache__/
 .pytest_cache/
+
+/artifacts/taylor-followup/
+/artifacts/gym/

@@ -8,11 +8,31 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ### Added
 
+- Added an optimizer-independent trajectory gym with 14 classical problems,
+  68 TOPS problems, six launcher models, and a typed Python interface.
+- Added matched PyKEP 3.1.0 benchmark fixtures, full-Jacobian comparisons,
+  bounded studies and trajectory replay examples with fcmaes.
+- Added optional four-lane Taylor batches with independent adaptive steps.
+- Added terminal and observational Taylor events for built-in Cartesian models.
+- Added explicit Python backend selection for nominal dynamics, ZOH schedules,
+  and ZOH leg mismatch and history calls.
+- Added direct Taylor ZOH leg mismatch Jacobians with explicit backend selection.
+
 - Added a measurement-backed guide for choosing between the original
   Python/C++ fcmaes/pykep stack and the native Rust crates, including warmed
   Taylor, low-thrust, analytical-kernel, and JIT lifecycle results.
 
 ### Changed
+
+- Store coefficient histories only for generated Taylor recurrence operands.
+- Evaluate dense samples and four-lane batches with less polynomial and
+  workspace overhead.
+- Share the nominal Taylor coefficients across practical seed widths and
+  avoid a heap allocation for single-jet sensitivity propagation.
+- Generate fixed-model Rust coefficient kernels ahead of time for selected
+  Taylor paths.
+- Sample Taylor histories from accepted-step polynomials and compute seeded
+  derivatives from tangent coefficients.
 
 - Updated the security policy, implementation status, validation history,
   release instructions, package READMEs, and AI operational context to reflect
@@ -25,6 +45,8 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ### Fixed
 
+- Safeguarded Lagrange anomaly iteration for difficult elliptic and
+  hyperbolic cases found by the expanded benchmarks.
 - Forced Python CI to install the wheel built from the current checkout rather
   than allowing an already-published wheel with the same workspace version to
   win pip's candidate selection.

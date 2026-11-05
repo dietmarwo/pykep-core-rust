@@ -388,3 +388,58 @@ mod tests {
         ));
     }
 }
+#[test]
+fn safeguarded_lagrange_anomalies_match_difficult_upstream_cases() {
+    // Shared fixtures that exhausted the unguarded Newton loops.
+    let cases = [
+        (
+            [
+                -0.5105475957054315,
+                -0.24695866407902,
+                -0.09214334393614007,
+                0.6425206363696538,
+                1.6504566922225103,
+                -1.0782956320024866,
+            ],
+            60.512156100263454,
+            [
+                53.29373874426924,
+                16.391_652_557_815_24,
+                17.986794142459914,
+                0.8399988456415085,
+                0.24552618894840483,
+                0.29494293193137355,
+            ],
+        ),
+        (
+            [
+                0.280991871761186,
+                0.1293761716448722,
+                -0.5200096154643924,
+                0.5228167631854874,
+                -0.25992334358248226,
+                -1.6641340790070254,
+            ],
+            71.26157765684957,
+            [
+                -0.2310011866530397,
+                -1.3134947805736723,
+                -1.2521238744900538,
+                -0.012442007185008652,
+                0.5382390819045787,
+                0.7799071256158006,
+            ],
+        ),
+    ];
+    for (state, duration, expected) in cases {
+        let (actual, stm) = propagate_lagrangian_with_stm(&state, duration, 1.0).unwrap();
+        for (value, reference) in actual.into_iter().zip(expected) {
+            assert!((value - reference).abs() < 1e-10 * reference.abs().max(1.0));
+        }
+        assert!(stm.iter().flatten().all(|v| v.is_finite()));
+        let back = propagate_lagrangian(&actual, -duration, 1.0).unwrap();
+        for (value, reference) in back.into_iter().zip(state) {
+            assert!((value - reference).abs() < 1e-8);
+        }
+    }
+}

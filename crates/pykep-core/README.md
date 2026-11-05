@@ -39,6 +39,11 @@ module-level sensitivity documentation before tightly converged optimization.
 
 The crate has no C or C++ runtime dependency.
 
+The development tree adds explicit Taylor Jacobians and a separate
+`pykep-trajopt` workspace crate. See the
+[matched report](../../docs/matched-benchmarks.md) for current Taylor and
+full-leg comparisons with PyKEP 3.1.0.
+
 ## Example
 
 ```rust

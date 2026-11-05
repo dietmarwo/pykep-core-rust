@@ -53,12 +53,12 @@ segment remains exactly zero until that segment becomes active. Runtime is
 linear in the segment count for a fixed seed width; the DOP853 implementation
 does not repropagate every prior segment for every control.
 
-Taylor's current seeded-sensitivity implementation uses centered complete
-propagations and therefore costs `2W + 1` nominal solves per segment. Prefer
-DOP853 for wide ZOH Jacobians until direct Taylor variational recurrences are
-implemented.
+The development Taylor backend propagates the tangent coefficients directly
+and shares nominal coefficients across practical seed widths. Complete
+Jacobians and mismatch timings are reported separately in the
+[matched benchmarks](matched-benchmarks.md).
 
-Model Jacobians use fixed-size, allocation-free central differentiation of
+The DOP853 path uses fixed-size, allocation-free central differentiation of
 the evaluated source equations. They are checked against C++ Taylor
 variations and end-to-end schedule finite differences. The longest CR3BP
 reference uses a `2e-5` relative/absolute variation comparison; nominal state

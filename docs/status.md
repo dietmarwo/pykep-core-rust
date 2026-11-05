@@ -1,6 +1,9 @@
 # Implementation status
 
-Evidence-backed status as of 2026-08-03:
+The development checkout adds the [trajectory gym](trajectory-gym.md) and
+[PyKEP 3.1.0 comparisons](matched-benchmarks.md). Those reports give the
+current scope, numerical discrepancies and timing boundaries. The core
+release inventory below records the status as of 2026-08-03.
 
 | Module | Rust core | Python API | Golden parity | Independent tests | Benchmarked | Docs |
 |---|---|---|---|---|---|---|
@@ -32,10 +35,10 @@ CPython 3.11–3.13 on Linux, macOS, and Windows. The upstream migration matrix
 records renames, deliberate contract changes, deferrals, and unsupported
 ecosystem modules.
 
-The runnable example matrix covers every major public module in Rust and
-through the installed Python extension. Each example states units, expected
-behavior, runtime orientation, and required features; CI compiles all Rust
-examples and executes all Python scripts.
+The example matrix covers the major public modules in Rust and through the
+installed Python extension. CI compiles the Rust examples and executes the
+basic Python examples. The development gym has separate API, packaging and
+replay checks.
 
 The synchronized 0.1.4 release is published as `pykep-core` on crates.io and
 `pykep-rust` on PyPI. The internal `pykep-py` implementation crate remains
@@ -45,7 +48,7 @@ of the release process. Performance regression, Miri, fuzz, Valgrind,
 dependency, MSRV, cross-platform wheel, and API-documentation checks remain
 maintained quality gates rather than claims of formal verification.
 
-Version 0.1.4 includes incremental Taylor coefficient evaluation for all
+Published version 0.1.4 includes incremental Taylor coefficient evaluation for all
 eleven built-in models and Rust-only method selection for nominal ZOH-leg
 mismatch/history calculations. Existing no-suffix ZOH-leg methods, Jacobians,
 and the Python ZOH-leg surface retain their DOP853 behavior. See the

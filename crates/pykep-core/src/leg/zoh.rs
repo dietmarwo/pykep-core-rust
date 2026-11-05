@@ -16,7 +16,7 @@ use crate::dynamics::zoh::{
 use crate::error::ensure_finite;
 use crate::integration::{
     AdaptiveIntegrator, Dop853, DynamicsModel, InitialValueProblem, IntegrationMethod,
-    IntegratorOptions, SensitivityProblem, TaylorDynamicsModel,
+    IntegratorOptions, SensitivityProblem, SensitivityPropagation, TaylorDynamicsModel,
 };
 use crate::{PykepError, Result};
 
@@ -284,18 +284,46 @@ where
     /// Returns an integration error containing direction, segment index, and
     /// segment time interval.
     pub fn mismatch_jacobian(&self) -> Result<ZohLegMismatchJacobian<N>> {
+        self.mismatch_jacobian_using(|problem| {
+            Dop853.propagate_with_sensitivities(&self.model, problem, self.options)
+        })
+    }
+
+    /// Computes the complete mismatch Jacobian with the selected backend.
+    ///
+    /// Taylor propagates the seeded derivatives within each segment.
+    /// The existing segment composition produces state, control, and time-grid derivatives.
+    ///
+    /// # Errors
+    /// Returns the segment error if propagation or derivative evaluation fails.
+    pub fn mismatch_jacobian_with_method(
+        &self,
+        method: IntegrationMethod,
+    ) -> Result<ZohLegMismatchJacobian<N>>
+    where
+        M: TaylorDynamicsModel<N, P>,
+    {
+        self.mismatch_jacobian_using(|problem| {
+            AdaptiveIntegrator::new(method).propagate_with_sensitivities(
+                &self.model,
+                problem,
+                self.options,
+            )
+        })
+    }
+
+    fn mismatch_jacobian_using(
+        &self,
+        propagate: impl Fn(SensitivityProblem<N, P, W>) -> Result<SensitivityPropagation<N, W>>,
+    ) -> Result<ZohLegMismatchJacobian<N>> {
         let segment_count = self.segment_count();
         let mut initial_state = identity();
         let mut final_state = identity();
         let mut controls = vec![vec![0.0; C * segment_count]; N];
         let mut time_grid = vec![vec![0.0; segment_count + 1]; N];
 
-        let forward = self.segment_variations(true)?;
-        let forward_maps = forward
-            .iter()
-            .map(|segment| segment.transition)
-            .collect::<Vec<_>>();
-        let forward_suffix = suffix_products(&forward_maps);
+        let forward = self.segment_variations(true, &propagate)?;
+        let forward_suffix = suffix_products(&forward);
         if !forward.is_empty() {
             initial_state = forward_suffix[0];
             for (index, segment) in forward.iter().enumerate() {
@@ -326,12 +354,8 @@ where
             }
         }
 
-        let backward = self.segment_variations(false)?;
-        let backward_maps = backward
-            .iter()
-            .map(|segment| segment.transition)
-            .collect::<Vec<_>>();
-        let backward_suffix = suffix_products(&backward_maps);
+        let backward = self.segment_variations(false, &propagate)?;
+        let backward_suffix = suffix_products(&backward);
         if !backward.is_empty() {
             final_state = backward_suffix[0].map(|row| row.map(|value| -value));
             for (index, segment) in backward.iter().enumerate() {
@@ -514,7 +538,11 @@ where
             .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))
     }
 
-    fn segment_variations(&self, forward: bool) -> Result<Vec<SegmentVariation<N, C>>> {
+    fn segment_variations(
+        &self,
+        forward: bool,
+        propagate: &impl Fn(SensitivityProblem<N, P, W>) -> Result<SensitivityPropagation<N, W>>,
+    ) -> Result<Vec<SegmentVariation<N, C>>> {
         let mut state = if forward {
             self.initial_state
         } else {
@@ -541,17 +569,12 @@ where
                 values[N + row] = 1.0;
             }
             let parameters = M::parameters(self.schedule.controls()[index], self.constants);
-            let result = Dop853
-                .propagate_with_sensitivities(
-                    &self.model,
-                    SensitivityProblem {
-                        nominal: InitialValueProblem::new(start, state, end, parameters),
-                        initial_sensitivities,
-                        parameter_seeds: M::parameter_seeds(control_seeds, [[0.0; W]; K]),
-                    },
-                    self.options,
-                )
-                .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))?;
+            let result = propagate(SensitivityProblem {
+                nominal: InitialValueProblem::new(start, state, end, parameters),
+                initial_sensitivities,
+                parameter_seeds: M::parameter_seeds(control_seeds, [[0.0; W]; K]),
+            })
+            .map_err(|error| segment_error::<M, N, P>(forward, index, start, end, error))?;
             state = result.state;
             let transition = core::array::from_fn(|row| {
                 core::array::from_fn(|column| result.sensitivities[row][column])
@@ -776,10 +799,12 @@ fn matrix_product<const N: usize>(left: &[[f64; N]; N], right: &[[f64; N]; N]) -
     })
 }
 
-fn suffix_products<const N: usize>(matrices: &[[[f64; N]; N]]) -> Vec<[[f64; N]; N]> {
-    let mut suffix = vec![identity(); matrices.len() + 1];
-    for index in (0..matrices.len()).rev() {
-        suffix[index] = matrix_product(&suffix[index + 1], &matrices[index]);
+fn suffix_products<const N: usize, const C: usize>(
+    segments: &[SegmentVariation<N, C>],
+) -> Vec<[[f64; N]; N]> {
+    let mut suffix = vec![identity(); segments.len() + 1];
+    for index in (0..segments.len()).rev() {
+        suffix[index] = matrix_product(&suffix[index + 1], &segments[index].transition);
     }
     suffix
 }

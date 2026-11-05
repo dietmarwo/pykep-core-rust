@@ -23,3 +23,6 @@ diagnostic examples retained from earlier phases.
 Equivalent installed-wheel scripts are under `python/examples`. See
 [`docs/examples.md`](../docs/examples.md) for the complete example matrix and
 quick starts.
+
+The separate [trajectory gym examples](../docs/trajectory-gym.md) cover
+complete optimization problems and replayable trajectories.

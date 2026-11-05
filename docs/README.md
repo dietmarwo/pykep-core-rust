@@ -14,6 +14,11 @@ Python interface:
   [zero-order-hold.md](zero-order-hold.md), [ephemerides.md](ephemerides.md),
   [low-thrust-legs.md](low-thrust-legs.md), and [zoh-leg.md](zoh-leg.md):
   module guides;
+- [trajectory-gym.md](trajectory-gym.md), [tops.md](tops.md) and
+  [trajectory-formulations.md](trajectory-formulations.md) cover the
+  development catalog, optimizer examples and trajectory replay.
+- [matched-benchmarks.md](matched-benchmarks.md) separates current native,
+  Python and optimizer evidence.
 - [python-api.md](python-api.md): Python units, arrays, defaults, errors,
   ownership, GIL, and typing contract;
 - [python-migration.md](python-migration.md): upstream C++/Python names,

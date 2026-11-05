@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+project(pykep_native_comparison LANGUAGES CXX)
+find_package(kep3 CONFIG REQUIRED)
+add_executable(pykep-native-comparison main.cpp)
+target_compile_features(pykep-native-comparison PRIVATE cxx_std_23)
+target_link_libraries(pykep-native-comparison PRIVATE kep3::kep3)
