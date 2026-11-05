@@ -277,6 +277,8 @@ registry patch:
 
 Neither downstream manifest was changed during that pre-release rehearsal;
 both pinned `pykep-core = "=0.1.2"` at the time. They were subsequently moved
-to published versions and retested: the GTOC1 tutorial now pins 0.1.4, while
-`pykep-lambert` pins 0.1.3 because its analytical ephemeris/Lambert workload
-does not exercise the 0.1.4 Taylor and ZOH-leg changes.
+to published versions and retested: the two GTOC1 tutorials in fcmaes-rust
+now pin 0.1.5, while `pykep-lambert` pins 0.1.3 because its analytical
+ephemeris/Lambert workload does not exercise the later Taylor and ZOH-leg
+changes. With 0.1.5 the GTOC1 tests pass and the stored solution evaluates to
+the same score, mismatch and DOP853 validation as with 0.1.4.
