@@ -74,6 +74,13 @@ The local [trajectory gym](trajectory-gym.md) includes native CLI examples,
 [four feasible TOPS replays](tops.md) and
 [impulsive mission and JUICE examples](trajectory-formulations.md).
 
+When the patched-conic search model is not enough, the optional
+[heyoka high-fidelity check](https://github.com/dietmarwo/pykep-core-rust/blob/main/python/examples/heyoka/README.md)
+re-propagates a Cassini1 route found with pykep-rust and fcmaes in a
+VSOP2013 model with planetary perturbations, closest-approach events and
+variational-equation retargeting. It needs `pip install heyoka`, which is
+not a pykep-rust dependency.
+
 For an end-to-end application, see the
 [GTOC1 “Save the Earth” Rust tutorial](https://github.com/dietmarwo/fcmaes-rust/tree/main/tutorials/gtoc1).
 It combines `pykep-core` ephemerides, propagation, multi-revolution Lambert

@@ -671,6 +671,9 @@ and the report keeps them separate from any conclusion the agent draws.
   problem.
 - [Sims–Flanagan legs](low-thrust-legs.md) and [ZOH legs](zoh-leg.md)
   explain the low-thrust transcriptions and their derivatives.
+- The optional [heyoka high-fidelity check](https://github.com/dietmarwo/pykep-core-rust/blob/main/python/examples/heyoka/README.md)
+  verifies the Cassini1 route of section 6 in a VSOP2013 model with
+  planetary perturbations, and finds the fragile Venus–Venus leg.
 - [fcmaes-rust examples](https://github.com/dietmarwo/fcmaes-rust/blob/main/docs/examples.md)
   and its [GTOC1 tutorial](https://github.com/dietmarwo/fcmaes-rust/blob/main/tutorials/gtoc1/README.md)
   go further with real competition problems.
