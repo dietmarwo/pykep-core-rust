@@ -17,6 +17,7 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ### Changed
 
+- README: links the [overview of the 18 related repositories](https://github.com/dietmarwo/fcmaes-rust/blob/main/docs/repositories.md).
 - PERFORMANCE_GUIDE.md now uses the 0.1.5 measurements against PyKEP
   3.1.0: all eleven Taylor fixtures with their heyoka setup times, the
   seven upstream analytical benchmark programs, complete ZOH legs, Python
