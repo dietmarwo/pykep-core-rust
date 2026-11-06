@@ -13,6 +13,8 @@
 [![PyPI](https://img.shields.io/pypi/v/pykep_rust.svg?cacheSeconds=300)](https://pypi.org/project/pykep-rust/)
 [![mdBook guide](https://img.shields.io/badge/guide-mdBook-blue)](https://dietmarwo.github.io/pykep-core-rust/)
 
+> **One of 18 related repositories.** The [repository overview](https://github.com/dietmarwo/fcmaes-rust/blob/main/docs/repositories.md) shows what each one does and how they connect.
+
 [Slides (PDF)](https://github.com/dietmarwo/pykep-core-rust/blob/main/docs/pykep-rust-slides.pdf)
 · [Book (PDF)](https://github.com/dietmarwo/pykep-core-rust/blob/main/docs/pykep-rust-book.pdf)
 · [YouTube video](https://youtu.be/bbxdj9rmX7M)
