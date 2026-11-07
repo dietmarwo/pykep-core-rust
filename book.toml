@@ -12,6 +12,7 @@ create-missing = false
 [output.html]
 site-url = "/pykep-core-rust/"
 git-repository-url = "https://github.com/dietmarwo/pykep-core-rust"
+mathjax-support = true
 
 [output.html.fold]
 enable = true
