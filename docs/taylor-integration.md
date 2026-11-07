@@ -146,6 +146,7 @@ Reproduce the data with:
 ```bash
 cargo run --release -p pykep-taylor-benchmark \
   > docs/data/taylor-kepler-benchmark.csv
+python tools/taylor_results_svg.py   # redraws docs/images/taylor-results.svg
 ```
 
 ## Incremental coefficient evaluators
