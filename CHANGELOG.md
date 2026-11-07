@@ -27,6 +27,12 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
   now point to the 0.1.5 results instead of describing them as
   development work.
 
+### Fixed
+
+- The documentation site loads MathJax (`mathjax-support` in `book.toml`), so the
+  Taylor-series formula in the Taylor integration guide renders instead of
+  showing its TeX source.
+
 ## [0.1.5] - 2026-11-05
 
 ### Added
