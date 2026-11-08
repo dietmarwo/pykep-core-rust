@@ -29,6 +29,7 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ### Fixed
 
+- `ai-context.md`'s API table said only Rust nominal mismatch/history can select Taylor and that Python stays DOP853. Rust and Python select Taylor or DOP853 for mismatch, history and the full Jacobian, as the same guide and the README say elsewhere; the table now agrees and names which model Jacobians are numerical.
 - The error panel of `docs/images/taylor-results.svg` contradicted the table beside it. Its Taylor bars were taller than the DOP853 bars under "lower is better", although Taylor's error is smaller at every tolerance. It also had no axis values, and bars covered its title and legend. The new script `tools/taylor_results_svg.py` redraws the figure from `docs/data/taylor-kepler-benchmark.csv`, with the errors on a labelled log axis. The speed-up panel is unchanged.
 - The documentation site loads MathJax (`mathjax-support` in `book.toml`), so the
   Taylor-series formula in the Taylor integration guide renders instead of
