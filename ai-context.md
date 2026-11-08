@@ -282,7 +282,7 @@ numbers.
 | ZOH schedules | `dynamics::zoh` | scalar and batch `propagate_zoh_*` | Switch ownership, row widths, and model constants are explicit. |
 | Pontryagin dynamics | `dynamics::pontryagin` | scalar and batch `pontryagin_*`, `Optimality` | Costates and normalization belong to the user's indirect formulation. |
 | Sims–Flanagan legs | `leg::SimsFlanagan*` | immutable classes with scalar and batch evaluations | Constraint and Jacobian ordering must match the optimizer. |
-| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel`, and batch evaluations | Rust nominal mismatch/history can select Taylor; no-suffix and Python methods remain DOP853, while numerical model Jacobians limit derivative accuracy. |
+| Generic ZOH legs | `leg::ZohLeg` and aliases | `ZohLeg`, `ZohModel`, and batch evaluations | Rust `*_with_method()` and Python `method=` select Taylor or DOP853 for mismatch, history and the full Jacobian; calls without a selector stay DOP853. Equinoctial and solar-sail model Jacobians use centered differences, which limits derivative accuracy. |
 
 ## Epochs, calendars, and anomalies
 
