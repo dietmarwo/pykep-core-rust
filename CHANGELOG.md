@@ -8,6 +8,16 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ### Added
 
+- Fixed-duration Sims–Flanagan multiple shooting: `pykep_trajopt::SimsFlanaganChain`
+  and `pykep_rust.trajopt.SimsFlanaganChain` (with a type stub). Each arc has
+  seven matching rows and its squared throttle norms; the total duration,
+  impulse model and global forward/backward cut equal the single leg's. The
+  constraint Jacobian is analytic in a fixed CSR pattern, `elements` gives
+  the arc row groups for a partitioned SQP Hessian, and `lift` builds node
+  states from a single-leg decision. SQP-craft's SQP5 scaling study uses it
+  up to 4,994 variables.
+- `SimsFlanaganLeg::matchpoint_states` returns the two endpoints propagated
+  independently to the cut.
 - Added an optional heyoka example, `python/examples/heyoka/`. pykep-rust
   and fcmaes find a Cassini1 route in patched conics. heyoka re-propagates
   each leg with VSOP2013 ephemerides and planetary perturbations, locates

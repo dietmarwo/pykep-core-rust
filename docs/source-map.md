@@ -71,6 +71,7 @@ are reviewed for semantics but are not port targets.
 | PyKEP 3.1.0 source | Development counterpart |
 |---|---|
 | `pykep/trajopt/gym` and fixed/moving ZOH UDPs | `crates/pykep-trajopt`, embedded TOPS data and `pykep_rust.trajopt.gym` |
+| Native multiple shooting for one Sims–Flanagan leg | `crates/pykep-trajopt/src/shooting.rs` and `pykep_rust.trajopt.SimsFlanaganChain` |
 | MGA, MGA-1DSM, N-impulse, launcher tables | Reusable Rust formulations and six launcher models |
 | `benchmark/` | Shared C++ exporter, native Rust and C++ runners, Python study scripts |
 | Benchmark notebooks | Symbolic SF validation and separately identified ephemeris interface studies |

@@ -2,7 +2,8 @@
 
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2, ndarray::Array2};
 use pykep_core::integration::IntegrationMethod;
-use pykep_trajopt::{GymProblem, Launcher, Problem, TopsOptions};
+use pykep_core::leg::{SimsFlanaganSettings, SpacecraftEndpoint};
+use pykep_trajopt::{GymProblem, Launcher, Problem, SimsFlanaganChain, TopsOptions};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 
@@ -135,8 +136,91 @@ fn _launcher_mass(name: &str, speed_kms: f64, declination_deg: f64) -> PyResult<
         .map_err(to_python)
 }
 
+#[pyclass(
+    name = "SimsFlanaganChain",
+    module = "pykep_rust.trajopt",
+    frozen,
+    skip_from_py_object
+)]
+struct PySimsFlanaganChain {
+    inner: SimsFlanaganChain,
+}
+
+#[pymethods]
+impl PySimsFlanaganChain {
+    #[new]
+    #[pyo3(signature=(departure, arrival, initial_mass, arcs, segments_per_arc, time_of_flight,
+        maximum_thrust, exhaust_velocity, mu, cut=0.5))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        departure: [f64; 6],
+        arrival: [f64; 6],
+        initial_mass: f64,
+        arcs: usize,
+        segments_per_arc: usize,
+        time_of_flight: f64,
+        maximum_thrust: f64,
+        exhaust_velocity: f64,
+        mu: f64,
+        cut: f64,
+    ) -> PyResult<Self> {
+        let departure = SpacecraftEndpoint::new(departure, initial_mass).map_err(to_python)?;
+        let settings =
+            SimsFlanaganSettings::new(time_of_flight, maximum_thrust, exhaust_velocity, mu, cut)
+                .map_err(to_python)?;
+        Ok(Self {
+            inner: SimsFlanaganChain::new(departure, arrival, arcs, segments_per_arc, settings)
+                .map_err(to_python)?,
+        })
+    }
+
+    #[getter]
+    fn dimension(&self) -> usize {
+        self.inner.dimension()
+    }
+
+    #[getter]
+    fn jacobian_indptr(&self) -> Vec<usize> {
+        self.inner.jacobian_pattern().0.to_vec()
+    }
+
+    #[getter]
+    fn jacobian_indices(&self) -> Vec<usize> {
+        self.inner.jacobian_pattern().1.to_vec()
+    }
+
+    #[getter]
+    fn elements(&self) -> Vec<Vec<usize>> {
+        self.inner.elements().to_vec()
+    }
+
+    /// Return negative arrival mass and the arc-ordered constraint rows.
+    fn evaluate(&self, py: Python<'_>, x: Vec<f64>) -> PyResult<(f64, Vec<f64>)> {
+        py.detach(|| self.inner.evaluate(&x)).map_err(to_python)
+    }
+
+    /// Return analytic constraint derivatives in the declared CSR order.
+    fn jacobian_values(&self, py: Python<'_>, x: Vec<f64>) -> PyResult<Vec<f64>> {
+        py.detach(|| self.inner.jacobian_values(&x))
+            .map_err(to_python)
+    }
+
+    /// Add node states to a single-leg starting decision.
+    fn lift(
+        &self,
+        py: Python<'_>,
+        throttle: Vec<[f64; 3]>,
+        arrival_mass: f64,
+        departure_excess: [f64; 3],
+    ) -> PyResult<Vec<f64>> {
+        py.detach(|| self.inner.lift(&throttle, arrival_mass, departure_excess))
+            .map_err(to_python)
+    }
+}
+
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativeGym>()?;
+    module.add_class::<PySimsFlanaganChain>()?;
     module.add_function(wrap_pyfunction!(_gym_problem, module)?)?;
     module.add_function(wrap_pyfunction!(_gym_ids, module)?)?;
     module.add_function(wrap_pyfunction!(_launcher_mass, module)?)?;
