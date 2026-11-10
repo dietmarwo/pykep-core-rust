@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import pykep_rust as pk
-from pykep_rust.trajopt import gym
+from pykep_rust.trajopt import SimsFlanaganChain, gym
 
 
 epoch = pk.Epoch(0.0, "mjd2000")
@@ -48,3 +48,14 @@ assert_type(leg.mismatch_constraints(), list[float])
 tops = gym.tops_twobody("P4", nseg=16, time_encoding="softmax")
 assert_type(tops.get_bounds(), tuple[list[float], list[float]])
 assert_type(tops.gradient(tops.get_bounds()[0]), list[float])
+
+chain = SimsFlanaganChain(
+    [1.0, 0.0, 0.0, 0.0, 1.0, 0.0], [0.96, 0.28, 0.01, -0.28, 0.96, 0.0],
+    1.0, 3, 4, 0.3, 0.12, 1.5, 1.0,
+)
+assert_type(chain.dimension, int)
+assert_type(chain.elements, list[list[int]])
+decision = chain.lift([[0.04, 0.22, -0.01]] * 12, 0.98, [0.0, 0.02, 0.001])
+assert_type(decision, list[float])
+assert_type(chain.evaluate(decision), tuple[float, list[float]])
+assert_type(chain.jacobian_values(decision), list[float])

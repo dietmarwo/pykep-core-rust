@@ -95,3 +95,22 @@ above.
 
 Construction and evaluation raise `ValueError` for invalid values or shapes
 and `RuntimeError` for propagation failures.
+
+## Multiple-shooting chain
+
+`pykep_trajopt::SimsFlanaganChain` adds explicit node states between uniform
+arcs of one fixed-duration leg. Each arc returns seven matching constraints
+and the squared norms of its controls. The total duration, impulse model and
+global forward/backward cut match the single leg. The backward mass update
+is retained on the far side of the cut. The Jacobian is analytic and
+available as CSR, and the arc row groups can be passed to a partitioned
+SQP solver.
+
+Python wheels from 0.1.6 export
+`pykep_rust.trajopt.SimsFlanaganChain`. The `lift` method converts an array of
+throttles, a terminal mass and a departure velocity excess to a node-ordered
+decision vector. Read `jacobian_indptr`, `jacobian_indices` and `elements`
+once, then call `evaluate(x)` and `jacobian_values(x)` at each point. The
+objective is negative terminal mass, so the last gradient entry is -1.
+The [SQP5 tutorial](https://github.com/dietmarwo/SQP-craft/tree/main/tutorials/low-thrust-pykep)
+shows the full Earth–Mars example and the independent DOP853 replay.

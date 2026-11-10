@@ -5,11 +5,13 @@ mod boundary;
 mod gym;
 mod impulsive;
 mod launcher;
+mod shooting;
 pub use gym::{CLASSICAL_IDS, GymProblem};
 pub use impulsive::{
     Arrival, FlightTimes, ImpulseOptions, ImpulsiveProblem, MgaDsmOptions, MgaOptions, MissionBody,
 };
 pub use launcher::Launcher;
+pub use shooting::SimsFlanaganChain;
 mod problem;
 mod tops;
 mod tops_data;

@@ -207,6 +207,34 @@ impl SimsFlanaganLeg {
         )
     }
 
+    /// Endpoints propagated independently to the cut from each side.
+    ///
+    /// A cut of one gives the forward endpoint and the unchanged arrival.
+    /// A cut of zero gives the unchanged departure and the backward endpoint.
+    ///
+    /// # Errors
+    /// Returns a propagation or endpoint-validation error.
+    pub fn matchpoint_states(&self) -> Result<[SpacecraftEndpoint; 2]> {
+        let duration = self.settings.time_of_flight / self.segment_count() as f64;
+        let durations = vec![duration; self.segment_count()];
+        let propagate = |endpoint, forward| {
+            let x = nominal_half(
+                endpoint,
+                &self.throttles,
+                &durations,
+                self.settings,
+                self.forward_segments,
+                forward,
+            )?;
+            let [rx, ry, rz, vx, vy, vz, mass] = x;
+            SpacecraftEndpoint::new([rx, ry, rz, vx, vy, vz], mass)
+        };
+        Ok([
+            propagate(self.departure, true)?,
+            propagate(self.arrival, false)?,
+        ])
+    }
+
     /// Evaluates `dot(u_i,u_i) - 1` for every segment.
     pub fn throttle_constraints(&self) -> Vec<f64> {
         throttle_constraints(&self.throttles)

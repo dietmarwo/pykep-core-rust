@@ -34,7 +34,10 @@ classical missions, four fixed and four moving TOPS formulations and launcher
 tables. The runtime uses Rust evaluators and optional optimizer adapters.
 SPICE, TLE, Python-defined ephemerides and symbolic heyoka expression graphs
 are outside the supported catalog. See the [gym guide](docs/trajectory-gym.md)
-and [migration matrix](docs/python-migration.md).
+and [migration matrix](docs/python-migration.md). Wheels from 0.1.6 add
+`pykep_rust.trajopt.SimsFlanaganChain`, fixed-duration multiple shooting of
+one Sims–Flanagan leg with an analytic CSR Jacobian and arc row groups for
+sparse SQP ([low-thrust legs](docs/low-thrust-legs.md#multiple-shooting-chain)).
 
 ## Current release behavior
 

@@ -29,7 +29,9 @@ Release wheels from 0.1.5, built with the `trajopt` feature, include
 `pykep_rust.trajopt.gym`. The problem protocol exposes raw fitness,
 flattened TOPS gradients, metadata, decoding and ordered float64 batches.
 See [gym constructors and examples](trajectory-gym.md) and
-[Python timing boundaries](matched-benchmarks.md).
+[Python timing boundaries](matched-benchmarks.md). From 0.1.6 the same
+wheels export `pykep_rust.trajopt.SimsFlanaganChain` for multiple shooting
+([low-thrust legs](low-thrust-legs.md#multiple-shooting-chain)).
 
 ## Units, shapes, and defaults
 
@@ -79,7 +81,8 @@ array shapes, worker-pool contract, SpOC 4 motivation, and guidance for
 avoiding nested parallelism.
 
 The complete callable surface and defaults are statically described by the
-shipped `py.typed` marker, `_pykep_rust.pyi` and `trajopt/gym.pyi`. See
+shipped `py.typed` marker, `_pykep_rust.pyi`, `trajopt/__init__.pyi` and
+`trajopt/gym.pyi`. See
 [python-migration.md](python-migration.md) for the upstream name and behavior
 mapping, [conventions.md](conventions.md) for numerical conventions, and the
 model-specific dynamics and leg guides for parameter layouts.
