@@ -1,7 +1,9 @@
 # Native astrodynamics in Rust
 
-Release 0.1.5 adds a [trajectory gym](trajectory-gym.md)
-and [matched PyKEP benchmarks](matched-benchmarks.md).
+Release 0.1.5 added a [trajectory gym](trajectory-gym.md)
+and [matched PyKEP benchmarks](matched-benchmarks.md). Release 0.1.6 adds
+[Sims–Flanagan multiple shooting](low-thrust-legs.md#multiple-shooting-chain)
+for sparse SQP solvers.
 
 `pykep-rust` is an independent native Rust port of the numerical C++ library
 in pykep version 3 (`kep3`). The reusable `pykep-core` crate contains the

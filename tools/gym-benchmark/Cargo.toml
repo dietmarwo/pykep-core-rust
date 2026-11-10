@@ -8,7 +8,7 @@ description = "Native trajectory gym replay and fcmaes optimization."
 publish = false
 
 [dependencies]
-pykep-core = { path = "../../crates/pykep-core", version = "=0.1.5", default-features = false }
+pykep-core = { path = "../../crates/pykep-core", version = "=0.1.6", default-features = false }
 pykep-trajopt = { workspace = true }
 fcmaes-core = "=0.2.1"
 serde = { version = "1", features = ["derive"] }

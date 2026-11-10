@@ -21,7 +21,7 @@ cargo add pykep-core                -> use pykep_core
 python -m pip install pykep-rust    -> import pykep_rust
 ```
 
-The current synchronized release is 0.1.5 on crates.io and PyPI. Rust 1.88 is
+The current synchronized release is 0.1.6 on crates.io and PyPI. Rust 1.88 is
 the tested minimum toolchain. Published wheels target CPython 3.11 through
 3.13 and need neither a Rust toolchain nor a C/C++ compiler. Building the
 Python source distribution does require Rust. The default Rust feature embeds
