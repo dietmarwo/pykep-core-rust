@@ -1,7 +1,8 @@
 # Implementation status
 
-Release 0.1.5 adds the [trajectory gym](trajectory-gym.md) and
-[PyKEP 3.1.0 comparisons](matched-benchmarks.md). Those reports give the
+Release 0.1.5 added the [trajectory gym](trajectory-gym.md) and
+[PyKEP 3.1.0 comparisons](matched-benchmarks.md); 0.1.6 adds
+[multiple shooting](low-thrust-legs.md#multiple-shooting-chain). Those reports give the
 current scope, numerical discrepancies and timing boundaries. The core
 inventory below records the module status as of 2026-08-03.
 
@@ -40,7 +41,7 @@ installed Python extension. CI compiles the Rust examples and executes the
 basic Python examples. The gym has separate API, packaging, finite-difference
 Jacobian and replay checks.
 
-The synchronized 0.1.5 release is published as `pykep-core` on crates.io and
+The synchronized 0.1.6 release is published as `pykep-core` on crates.io and
 `pykep-rust` on PyPI. The internal `pykep-py` implementation crate remains
 `publish = false` by design. Tag-gated trusted-publishing workflows, clean
 crate/wheel/source-distribution consumption, docs.rs, and GitHub Pages are part
@@ -53,7 +54,9 @@ eleven built-in models. Version 0.1.5 adds the trajectory gym, Taylor events
 and four-lane batches, tangent Taylor sensitivities, analytic DOP853 model
 Jacobians for the Kepler and CR3BP ZOH models, and Taylor or DOP853 selection
 for ZOH-leg mismatch, history and Jacobian calls in Rust and Python. Calls
-without a selector retain their DOP853 behavior. See the
+without a selector retain their DOP853 behavior. Version 0.1.6 adds
+Sims–Flanagan multiple shooting with an analytic sparse Jacobian
+([low-thrust legs](low-thrust-legs.md#multiple-shooting-chain)). See the
 [performance decision guide](https://github.com/dietmarwo/pykep-core-rust/blob/main/PERFORMANCE_GUIDE.md)
 for the measured boundary between the ahead-of-time Rust backend and warmed
 upstream heyoka.

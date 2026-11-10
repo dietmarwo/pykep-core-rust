@@ -1,7 +1,7 @@
 # pykep-core
 
 `pykep-core` is an independent native Rust implementation of numerical
-algorithms from pykep version 3. Version 0.1.5 includes:
+algorithms from pykep version 3. Version 0.1.6 includes:
 
 - **Numerical foundations:** physical constants, Julian-date arithmetic,
   microsecond-resolution epochs, Stumpff functions, Kepler equations, anomaly

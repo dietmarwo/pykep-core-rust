@@ -6,6 +6,8 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-10
+
 ### Added
 
 - Fixed-duration Sims–Flanagan multiple shooting: `pykep_trajopt::SimsFlanaganChain`
