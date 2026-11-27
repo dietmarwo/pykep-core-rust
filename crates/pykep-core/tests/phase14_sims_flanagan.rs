@@ -143,6 +143,9 @@ fn fixed_legs_match_cpp_constraints_and_analytic_gradients() {
 }
 
 #[test]
+// Each control column maps to a segment and a throttle component, and the
+// analytic rows are indexed by that column; a range loop states this directly.
+#[allow(clippy::needless_range_loop)]
 fn analytic_gradient_matches_scaled_central_differences() {
     let document: Value = serde_json::from_str(include_str!("data/phase14-v1.json")).unwrap();
     let case = &document["fixed"][2];

@@ -6,6 +6,14 @@ the pre-1.0 series, minor releases may deliberately evolve the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- The unpublished benchmark tools use fcmaes-core 0.5.0, released on
+  27 November 2026: `pykep-gym-benchmark` (was 0.2.1) and
+  `pykep-lambert-optimization-benchmark` (was 0.1.3). They compile
+  unchanged; the lockfile keeps one fcmaes-core instead of two. Numbers
+  recorded with the earlier versions were not repeated.
+
 ## [0.1.6] - 2026-11-10
 
 ### Added
